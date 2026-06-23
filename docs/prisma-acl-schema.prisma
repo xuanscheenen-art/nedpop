@@ -1,0 +1,67 @@
+// NedPop ACL schema reference.
+// The current app uses Supabase, but this Prisma model shows the same backend contract:
+// users.unlockedLevels controls paid A1/A2/B1 access, while A0 remains public.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CourseLevel {
+  A0
+  A1
+  A2
+  B1
+}
+
+enum ProtectedModule {
+  course
+  word_bubble
+  scenario
+}
+
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique
+  displayName    String?
+  avatarUrl      String?
+  unlockedLevels CourseLevel[] @default([])
+  reviewedWords  UserReviewedWord[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+model Word {
+  id            String        @id
+  dutch         String
+  meaningZh     String?
+  meaningEn     String?
+  level         CourseLevel
+  payload       Json          @default("{}")
+  reviewedBy    UserReviewedWord[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([level])
+  @@map("words")
+}
+
+model UserReviewedWord {
+  userId     String   @db.Uuid
+  wordId     String
+  reviewedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@id([userId, wordId])
+  @@index([userId, reviewedAt])
+  @@map("user_reviewed_words")
+}
