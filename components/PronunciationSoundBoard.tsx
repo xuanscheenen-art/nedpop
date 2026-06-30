@@ -70,13 +70,18 @@ const specialSounds: SpecialSound[] = [
   { sound: "ui", isolatedAudioSrc: "/audio/nl/isolated-sounds/ui.wav", example: "ui, huis, tuin", hintZh: "先听 ui 本身：圆嘴开始，再向前滑。再听 ui / huis / tuin。", hintEn: "Hear ui itself first: start rounded, then glide forward. Then hear ui / huis / tuin." },
   { sound: "eu", isolatedAudioSrc: "/audio/nl/isolated-sounds/eu.wav", example: "deur, keuken, neus", hintZh: "先听 eu 本身：前舌圆唇音，不是 e + u。再听 deur / keuken / neus。", hintEn: "Hear eu itself first: front rounded vowel, not e + u. Then hear deur / keuken / neus." },
   { sound: "ou / au", isolatedAudioSrc: "/audio/nl/isolated-sounds/au-ou.wav", example: "koud, auto, blauw", hintZh: "先听 ou/au 这个滑音本身：开口再滑向圆嘴。", hintEn: "Hear the ou/au glide itself first: open, then glide to rounded lips." },
-  { sound: "ai", example: "saai, maai, haai", hintZh: "先听 ai 这个罕见组合：比普通“哎”更宽、更扁。", hintEn: "Hear ai as a rare wider, flatter glide." },
+  { sound: "ai", isolatedAudioSrc: "/audio/nl/isolated-sounds/ai.wav", example: "saai, maai, haai", hintZh: "先听 ai 这个罕见组合本身：比普通“哎”更宽、更扁。", hintEn: "Hear the ai glide itself: wider and flatter than a plain ay." },
   { sound: "g / ch", isolatedAudioSrc: "/audio/nl/isolated-sounds/g-ch.wav", example: "goed, dag, schip", hintZh: "先听喉后部摩擦音本身。再听 goed / dag / schip。", hintEn: "Hear the back-of-throat friction itself first. Then hear goed / dag / schip." },
-  { sound: "w", example: "wat, wijn, wit", hintZh: "先找上牙轻碰下唇的阻碍感，再发短短的 w。", hintEn: "Find the light upper-teeth-to-lower-lip contact, then release a short Dutch w." },
-  { sound: "r", example: "rood, reis, brood", hintZh: "先找颤动：舌尖或喉咙都可以，重点是别读成英语软 r。", hintEn: "Find a trill or throat vibration; do not turn it into a soft English r." },
-  { sound: "sj / tj", example: "sjaal, meisje, hondje", hintZh: "先听 sj/tj 作为辅音组合，尤其注意 -tje 的短促小化词尾。", hintEn: "Treat sj/tj as consonant chunks, especially the clipped diminutive ending -tje." },
+  { sound: "sj / tj", isolatedAudioSrc: "/audio/nl/isolated-sounds/sj-tj.wav", example: "sjaal, meisje, hondje", hintZh: "先听 sj/tj 这组读音本身，再听它在词里的样子。", hintEn: "Hear the sj/tj sounds themselves first, then how they sit inside words." },
   { sound: "sch", isolatedAudioSrc: "/audio/nl/isolated-sounds/sch.wav", example: "school", exampleAudioSrc: "/audio/nl/words/school.wav", hintZh: "先听 sch 本身：s + 荷兰语 ch，不是英语 sh。再听 school。", hintEn: "Hear sch itself first: s plus Dutch ch, not English sh. Then hear school." },
-  { sound: "-en", isolatedAudioSrc: "/audio/nl/isolated-sounds/en-ending.wav", example: "wonen", exampleAudioSrc: "/audio/nl/words/wonen.wav", hintZh: "先听弱读 -en 本身：结尾放轻。再听 wonen。", hintEn: "Hear the reduced -en ending itself first: keep the ending light. Then hear wonen." },
+  { sound: "-en", isolatedAudioSrc: "/audio/nl/isolated-sounds/en-ending.wav", example: "wonen", exampleAudioSrc: "/audio/nl/words/wonen.wav", hintZh: "先听 -en 词尾弱读本身，结尾放轻。再听 wonen。", hintEn: "Hear the reduced -en ending itself first. Keep it light, then hear wonen." },
+];
+
+const singleLetterDifficultSounds: SpecialSound[] = [
+  { sound: "g", isolatedAudioSrc: "/audio/nl/isolated-sounds/g-ch.wav", example: "goed, dag, graag", hintZh: "先听 g 的喉后摩擦，再和 r 的颤动分开。", hintEn: "Hear the back-throat friction of g, then separate it from the vibration of r." },
+  { sound: "h", isolatedAudioSrc: "/audio/nl/isolated-sounds/h.wav", example: "huis, hoe, hier", hintZh: "先听 h 的轻送气，不要刮喉，也不要发成 r。", hintEn: "Hear h as light breath: no throat scrape and no r-like vibration." },
+  { sound: "w", isolatedAudioSrc: "/audio/nl/isolated-sounds/w.wav", example: "wat, wijn, wit", hintZh: "先找上牙轻碰下唇的阻碍感，再发短短的 w。", hintEn: "Find the light upper-teeth-to-lower-lip contact, then release a short Dutch w." },
+  { sound: "r", isolatedAudioSrc: "/audio/nl/isolated-sounds/r.wav", example: "rood, reis, brood", hintZh: "先找颤动：舌尖或喉咙都可以，重点是别读成英语软 r。", hintEn: "Find a trill or throat vibration; do not turn it into a soft English r." },
 ];
 
 const focusGroups: FocusGroup[] = [
@@ -200,6 +205,14 @@ const specialSoundAssociations: Record<string, { zh: string; en: string }> = {
   "g / ch": {
     zh: "像喉后部轻轻摩擦的气流，不是 English go 的硬 g。",
     en: "Use back-of-throat friction, not the hard g in English go.",
+  },
+  g: {
+    zh: "喉后部摩擦，像轻轻清嗓子；和 r 的颤动分开。",
+    en: "Back-throat friction, like a light throat clear; keep it separate from r vibration.",
+  },
+  h: {
+    zh: "轻轻送气，像哈一口气；不要刮喉，也不要滚起来。",
+    en: "A light breath, like a soft ha; do not scrape the throat or roll it.",
   },
   w: {
     zh: "上牙轻轻碰下唇，带一点摩擦，不是英语里松松的 w。",
@@ -330,6 +343,22 @@ const specialSoundStories: Record<
     funFactZh: "想象大冬天嘴里含了一口浓痰想吐掉，或者吃鱼卡了刺，喉咙后半部分摩擦出粗犷的“赫——”。气流一定要刮着嗓子出来！",
     funFactEn: "Imagine clearing something from the back of your throat. The airflow has to scrape, not pop.",
   },
+  g: {
+    descriptionZh: "喉后摩擦音。和 ch 同音，但作为字母 g 很容易被误读成英语 go 的硬 g。",
+    descriptionEn: "A back-throat fricative. It matches ch, but the letter g is often misread as hard English g.",
+    mnemonicZh: "不要用舌根爆破；把气流放到喉咙后面轻轻刮出来。",
+    mnemonicEn: "Do not pop it with the tongue root; let the air scrape lightly at the back of the throat.",
+    funFactZh: "把 g 想成“清嗓子按钮”：按一下是 g/ch 的摩擦；如果声音开始颤动，就已经跑到 r 那边去了。",
+    funFactEn: "Think of g as the throat-clear button: friction means g/ch; vibration means you drifted toward r.",
+  },
+  h: {
+    descriptionZh: "轻送气音。像轻轻哈气，没有 g 的刮擦，也没有 r 的颤动。",
+    descriptionEn: "A light breath sound: no g-like scrape and no r-like vibration.",
+    mnemonicZh: "像冬天往玻璃上哈气：“哈——”，但短一点、轻一点。",
+    mnemonicEn: "Like breathing ha onto a cold window, but shorter and lighter.",
+    funFactZh: "把 h 想成“给镜子哈雾气”：只有空气经过；一旦嗓子刮起来是 g，一旦颤起来是 r。",
+    funFactEn: "Treat h as fogging a mirror: just air. Scrape turns into g; vibration turns into r.",
+  },
   w: {
     descriptionZh: "带有一点点微妙摩擦感的“乌”音，绝不是英语松弛的 w。",
     descriptionEn: "A Dutch w has a tiny bit of friction; it is not the loose English w.",
@@ -397,9 +426,13 @@ export function PronunciationSoundBoard() {
     });
   };
 
-  const speakExampleWord = (text: string) => {
+  const speakExampleWord = (text: string, mode: "example" | "pronunciation" = "example") => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      setLastPlayed(language === "zh" ? `没有可播放的例词音频：${text}` : `No playable example audio: ${text}`);
+      setLastPlayed(
+        language === "zh"
+          ? `没有可播放的${mode === "example" ? "例词" : "读音"}音频：${text}`
+          : `No playable ${mode === "example" ? "example" : "pronunciation"} audio: ${text}`,
+      );
       return;
     }
     audioRef.current?.pause();
@@ -408,7 +441,11 @@ export function PronunciationSoundBoard() {
     utterance.lang = "nl-NL";
     utterance.rate = 0.78;
     setCurrentAudioSrc("");
-    setLastPlayed(language === "zh" ? `正在播放例词：${text}` : `Playing example word: ${text}`);
+    setLastPlayed(
+      language === "zh"
+        ? `正在播放${mode === "example" ? "例词" : "读音"}：${text}`
+        : `Playing ${mode === "example" ? "example" : "pronunciation"}: ${text}`,
+    );
     window.speechSynthesis.speak(utterance);
   };
 
@@ -434,9 +471,9 @@ export function PronunciationSoundBoard() {
     },
     {
       id: "special",
-      title: language === "zh" ? "特殊组合音" : "Special chunks",
-      body: language === "zh" ? "再把荷兰语特有音整体记。" : "Then learn Dutch-specific chunks as whole sounds.",
-      count: language === "zh" ? "17 个" : "17 sounds",
+      title: language === "zh" ? "特殊发音" : "Special sounds",
+      body: language === "zh" ? "组合音、词尾和单字母难点分开放。" : "Chunks, endings, and tricky single letters are separated.",
+      count: language === "zh" ? "15+4" : "15+4",
     },
     {
       id: "contrast",
@@ -468,8 +505,8 @@ export function PronunciationSoundBoard() {
       <div className="mt-5 rounded-2xl bg-skywash px-4 py-3 text-sm font-bold leading-6 text-ocean/75">
         {lastPlayed ||
           (language === "zh"
-      ? "每张卡都有两个试听：字母区听字母名和例词；组合音区先听“音本身”，再听例词。"
-      : "Each card has two audio actions: letters play letter names and example words; sound chunks play the sound itself first, then an example word.")}
+      ? "每张卡都有两个试听：字母区听字母名和例词；组合音区先听读音，再听例词。"
+      : "Each card has two audio actions: letters play letter names and example words; sound chunks play the pronunciation first, then an example word.")}
         <audio ref={audioRef} controls className="mt-3 w-full" preload="auto">
           {currentAudioSrc && <source src={currentAudioSrc} type="audio/wav" />}
         </audio>
@@ -606,7 +643,7 @@ export function PronunciationSoundBoard() {
 
       {activePanel === "special" ? (
       <div className="mt-8">
-        <p className="text-sm font-black tracking-[0.16em] text-pop">{language === "zh" ? "特殊发音和组合音" : "Special sounds and combinations"}</p>
+        <p className="text-sm font-black tracking-[0.16em] text-pop">{language === "zh" ? "特殊组合音和词尾" : "Special chunks and endings"}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {specialSounds.map((item) => {
             const story = specialSoundStories[item.sound];
@@ -620,23 +657,23 @@ export function PronunciationSoundBoard() {
                   <button
                     type="button"
                     onClick={() => {
-                      const label = language === "zh" ? `${item.sound} 音本身` : `${item.sound} sound itself`;
+                      const label = language === "zh" ? `${item.sound} 读音` : `${item.sound} pronunciation`;
                       if (item.isolatedAudioSrc) {
                         play(item.isolatedAudioSrc, label);
                         return;
                       }
-                      speakExampleWord(item.sound);
+                      speakExampleWord(item.sound, "pronunciation");
                     }}
                     className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1.5 text-xs font-black text-pop ring-1 ring-blue-100 transition hover:bg-peach"
                     aria-label={`Play Dutch sound ${item.sound}`}
                     title={language === "zh" ? "听特殊音" : "Hear sound"}
                   >
                     <Volume2 size={15} />
-                    {language === "zh" ? "音本身" : "Sound"}
+                    {language === "zh" ? "听读音" : "Hear"}
                   </button>
                 </div>
                 <p className="mt-2 text-xs font-black text-ocean/60">
-                  {language === "zh" ? "先听组合音本身，不先听单词。" : "Hear the isolated sound first, before the word."}
+                  {language === "zh" ? "先听这组读音，再听例词。" : "Hear this pronunciation first, then the example word."}
                 </p>
                 {story ? (
                   <div className="mt-3 space-y-2">
@@ -684,6 +721,86 @@ export function PronunciationSoundBoard() {
               </article>
             );
           })}
+        </div>
+        <div className="mt-7">
+          <p className="text-sm font-black tracking-[0.16em] text-pop">{language === "zh" ? "单字母难点" : "Tricky single letters"}</p>
+          <p className="mt-2 text-sm font-bold leading-6 text-ocean/60">
+            {language === "zh"
+              ? "这些不是组合音，但很容易被英语或中文习惯带偏，所以单独练。"
+              : "These are not sound chunks, but learners often carry English or Chinese habits into them."}
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {singleLetterDifficultSounds.map((item) => {
+              const story = specialSoundStories[item.sound];
+              return (
+                <article
+                  key={item.sound}
+                  className="rounded-[22px] bg-skywash p-4 text-left ring-1 ring-blue-100"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-2xl font-black text-ink">{item.sound}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const label = language === "zh" ? `${item.sound} 读音` : `${item.sound} pronunciation`;
+                        if (item.isolatedAudioSrc) {
+                          play(item.isolatedAudioSrc, label);
+                          return;
+                        }
+                        speakExampleWord(item.sound, "pronunciation");
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1.5 text-xs font-black text-pop ring-1 ring-blue-100 transition hover:bg-peach"
+                      aria-label={`Play Dutch sound ${item.sound}`}
+                      title={language === "zh" ? "听读音" : "Hear pronunciation"}
+                    >
+                      <Volume2 size={15} />
+                      {language === "zh" ? "听读音" : "Hear"}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs font-black text-ocean/60">
+                    {language === "zh" ? "先听这个音，再听例词。" : "Hear this sound first, then the example words."}
+                  </p>
+                  {story ? (
+                    <div className="mt-3 space-y-2">
+                      <div className="rounded-2xl bg-peach px-3 py-2 text-xs font-black leading-5 text-ocean">
+                        <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-pop">
+                          {language === "zh" ? "声音感觉" : "Sound feel"}
+                        </span>
+                        {language === "zh" ? story.descriptionZh : story.descriptionEn}
+                      </div>
+                      <div className="rounded-2xl bg-white/80 px-3 py-2 text-xs font-black leading-5 text-ocean">
+                        <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-pop">
+                          {language === "zh" ? "记忆动作" : "Mouth cue"}
+                        </span>
+                        {language === "zh" ? story.mnemonicZh : story.mnemonicEn}
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-white px-3 py-2">
+                    <p className="text-sm font-bold text-ocean/70">{item.example}</p>
+                    <button
+                      type="button"
+                      onClick={() => playExample(item.exampleAudioSrc, item.example)}
+                      className="inline-flex items-center gap-1 rounded-full bg-skywash px-2 py-1.5 text-xs font-black text-pop transition hover:bg-peach"
+                      aria-label={`Play Dutch example word ${item.example}`}
+                      title={language === "zh" ? "听例词" : "Hear example word"}
+                    >
+                      <Volume2 size={14} />
+                      {language === "zh" ? "例词" : "Word"}
+                    </button>
+                  </div>
+                  {story ? (
+                    <p className="mt-2 rounded-2xl bg-white/70 px-3 py-2 text-xs font-bold leading-5 text-ocean/65">
+                      <span className="font-black text-pop">{language === "zh" ? "脑内小剧场：" : "Mental image: "}</span>
+                      {language === "zh" ? story.funFactZh : story.funFactEn}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs font-bold text-ocean/55">{language === "zh" ? item.hintZh : item.hintEn}</p>
+                  )}
+                </article>
+              );
+            })}
+          </div>
         </div>
       </div>
       ) : null}

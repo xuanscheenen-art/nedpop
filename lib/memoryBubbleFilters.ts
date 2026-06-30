@@ -5,6 +5,7 @@ const relationPriority: MemoryBubbleRelationType[] = [
   "compound-part",
   "compound-family",
   "part-related",
+  "pronoun-family",
   "verb-form",
   "verb-noun-pair",
   "word-family",
@@ -34,6 +35,7 @@ const specificityScore: Record<MemoryBubbleRelationType, number> = {
   "compound-parent": 14,
   "compound-family": 18,
   "part-related": 22,
+  "pronoun-family": 26,
   "verb-form": 25,
   "verb-noun-pair": 24,
   "word-family": 23,
@@ -69,6 +71,14 @@ function levelFitScore(candidate: MemoryBubbleCandidate) {
   return 3;
 }
 
+function isBroadFallbackBubble(candidate: MemoryBubbleCandidate) {
+  return (
+    candidate.evidence === "safe-rule" &&
+    candidate.source === "rule" &&
+    (candidate.relationType === "category-member" || candidate.relationType === "scenario-word")
+  );
+}
+
 export function hardRejectMemoryBubble(candidate: MemoryBubbleCandidate) {
   const text = `${candidate.reasonZh} ${candidate.reasonEn}`;
   if (!candidate.reasonZh.trim()) return "missing-reason";
@@ -97,6 +107,8 @@ export function scoreMemoryBubble(candidate: MemoryBubbleCandidate): ScoredMemor
 
 export function filterLearnerBubbles(candidates: MemoryBubbleCandidate[], limit = 8) {
   const seen = new Set<string>();
+  const relationCounts = new Map<MemoryBubbleRelationType, number>();
+  let broadFallbackCount = 0;
   return candidates
     .map(scoreMemoryBubble)
     .filter((candidate) =>
@@ -114,7 +126,14 @@ export function filterLearnerBubbles(candidates: MemoryBubbleCandidate[], limit 
     .filter((candidate) => {
       const key = normalizeWordText(candidate.targetText);
       if (!key || normalizeWordText(candidate.sourceText) === key || seen.has(key)) return false;
+      const relationCount = relationCounts.get(candidate.relationType) ?? 0;
+      if (candidate.relationType === "scenario-word" && relationCount >= 3) return false;
+      if (candidate.relationType === "category-member" && relationCount >= 6) return false;
+      if (candidate.relationType === "time-category" && relationCount >= 3) return false;
+      if (isBroadFallbackBubble(candidate) && broadFallbackCount >= 2) return false;
       seen.add(key);
+      relationCounts.set(candidate.relationType, relationCount + 1);
+      if (isBroadFallbackBubble(candidate)) broadFallbackCount += 1;
       return true;
     })
     .slice(0, limit);

@@ -11,6 +11,45 @@ type LessonPlanDraft = Omit<LessonPlan, "nextLessonId" | "methodTargets"> & {
   speak: string;
 };
 
+type MethodTargetKey = "decode" | "link" | "rule" | "speak";
+
+const methodTargetExactEn: Record<string, string> = {
+  "Decode: 读长词 telefoonnummer/geboortedatum。": "Read long words like telefoonnummer and geboortedatum.",
+  "Link: 信息字段和真实表格连接。": "Connect personal-information fields with real forms.",
+  "Rule: mijn + noun；Ik ben ... jaar。": "Use mijn + noun and Ik ben ... jaar.",
+  "Speak: 输出个人信息。": "Say your personal information out loud.",
+  "Decode: 拆 woon/uit/Nederland 的声音。": "Break down the sounds in woon, uit, and Nederland.",
+  "Link: uit = from/out，in = in。": "Connect uit with from/out, and in with in.",
+  "Rule: 来源用 uit，居住用 in。": "Use uit for origin and in for where you live.",
+  "Speak: 输出一个迷你自我介绍。": "Give a tiny self-introduction.",
+  "Decode: 练 spreek/Nederlands/Chinees 的组合音。": "Practice the sound chunks in spreek, Nederlands, and Chinees.",
+  "Link: Nederlands/Chinees/Engels 作为语言名词块。": "Treat Nederlands, Chinees, and Engels as language-name chunks.",
+  "Rule: geen 用在 Ik spreek geen ...。": "Use geen in Ik spreek geen ...",
+  "Speak: 做语言能力问答。": "Do a short language-ability Q&A.",
+  "先听 wil / nodig / help，能认出这几个高频声音。": "Listen for wil, nodig, and help, and recognize these high-frequency sounds.",
+  "把 Ik wil ... 和 Ik heb ... nodig 当成整块需求句记。": "Memorize Ik wil ... and Ik heb ... nodig as whole need phrases.",
+  "先不讲完整语法，只会用两个固定句型。": "Use two fixed sentence patterns before worrying about full grammar.",
+  "最后练习把需求说完整，具体句子在后面步骤里学。": "Practice saying a complete need; the exact sentences come in the next steps.",
+  "先听 begrijp / herhaal / langzaam，能跟读出来。": "Listen to begrijp, herhaal, and langzaam until you can repeat them.",
+  "把整句当救命句记，不一个词一个词硬拆。": "Memorize the whole rescue phrase instead of breaking it word by word.",
+  "Kunt u ...? 先作为礼貌请求固定句型。": "Use Kunt u ...? as a fixed polite request pattern.",
+  "最后练习在听不懂时把对话救回来，具体表达放到后面学。": "Practice rescuing the conversation when you do not understand.",
+  "Decode: 拆 voornaam/achternaam/geboortedatum。": "Break down voornaam, achternaam, and geboortedatum.",
+  "Link: 字段名和自己真实信息连接。": "Connect field labels with your own real information.",
+  "Rule: mijn + 信息字段，Waar moet ik ...?。": "Use mijn + an information field, and Waar moet ik ...?",
+  "Speak: 表格求助输出。": "Ask for help with a form.",
+};
+
+const methodTargetFallbackEn: Record<MethodTargetKey, string> = {
+  decode: "Read the key Dutch words and sound chunks.",
+  link: "Connect the words with the real-life task.",
+  rule: "Use the target pattern in a simple sentence.",
+  speak: "Say the task out loud in practical Dutch.",
+};
+
+const localizeMethodTarget = (key: MethodTargetKey, text: string): LocalizedText =>
+  lt(text, methodTargetExactEn[text] ?? methodTargetFallbackEn[key]);
+
 const lesson = (
   level: LessonPlanLevel,
   order: number,
@@ -61,10 +100,10 @@ const lesson = (
 const connectMethod = (plan: LessonPlanDraft): Omit<LessonPlan, "nextLessonId"> => ({
   ...plan,
   methodTargets: {
-    decode: lt(plan.decode, plan.decode),
-    link: lt(plan.link, plan.link),
-    rule: lt(plan.rule, plan.rule),
-    speak: lt(plan.speak, plan.speak),
+    decode: localizeMethodTarget("decode", plan.decode),
+    link: localizeMethodTarget("link", plan.link),
+    rule: localizeMethodTarget("rule", plan.rule),
+    speak: localizeMethodTarget("speak", plan.speak),
   },
 });
 

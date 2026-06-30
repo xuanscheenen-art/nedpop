@@ -1,3 +1,6 @@
+import { badGenericTargetTemplateIssue, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
+import type { WordItem } from "@/types/vocabulary";
+
 type WordSentenceSource = {
   dutch: string;
   article?: "de" | "het";
@@ -526,7 +529,7 @@ const explicitLines: Record<string, string[]> = {
   werk: ["Ik ga naar mijn werk.", "Ik ben vandaag op het werk.", "Ik kan niet naar mijn werk komen."],
   collega: ["Ik bel mijn collega.", "Mijn collega is ziek.", "Ik werk met mijn collega."],
   ziekmelding: ["Ik doe een ziekmelding.", "Ik bel voor een ziekmelding.", "Mijn ziekmelding is doorgegeven."],
-  salaris: ["Mijn salaris staat op mijn rekening.", "Ik krijg mijn salaris op vrijdag.", "Ik heb een vraag over mijn salaris."],
+  salaris: ["Mijn salaris staat op mijn rekening.", "Ik krijg mijn salaris op vrijdag.", "Ik controleer mijn salaris op mijn loonstrook."],
   "e-mail": ["Ik stuur een e-mail.", "Ik heb een e-mail gekregen.", "Kunt u mij een e-mail sturen?"],
   bericht: ["Ik stuur een bericht.", "Ik heb een bericht gekregen.", "Kunt u het bericht herhalen?"],
   telefoonnummer: ["Mijn telefoonnummer is ...", "Kunt u mijn telefoonnummer noteren?", "Ik geef mijn telefoonnummer door."],
@@ -562,12 +565,12 @@ const explicitLines: Record<string, string[]> = {
   hoesten: ["Ik moet hoesten.", "Ik hoest veel.", "Ik moet vaak hoesten."],
   rusten: ["Ik rust even.", "Ik moet vandaag rusten.", "Ik wil even rusten."],
   herstel: ["Mijn herstel duurt langer.", "Ik heb tijd nodig voor herstel.", "Ik ben nog bezig met herstel."],
-  loonstrook: ["Ik heb mijn loonstrook gekregen.", "Op mijn loonstrook staat mijn salaris.", "Ik heb een vraag over mijn loonstrook."],
+  loonstrook: ["Ik heb mijn loonstrook gekregen.", "Op mijn loonstrook staat mijn salaris.", "Ik controleer mijn loonstrook."],
   proeftijd: ["Mijn proeftijd is drie maanden.", "Ik zit nog in mijn proeftijd.", "Wanneer eindigt mijn proeftijd?"],
   afwezigheid: ["Ik geef mijn afwezigheid door.", "Mijn afwezigheid staat in het systeem.", "Ik meld mijn afwezigheid vandaag."],
   uitzendbureau: ["Ik werk via een uitzendbureau.", "Het uitzendbureau belt mij morgen.", "Ik heb contact met het uitzendbureau."],
   verlof: ["Ik vraag verlof aan.", "Ik heb morgen verlof.", "Mijn verlof is goedgekeurd."],
-  waterrekening: ["Ik moet de waterrekening betalen.", "De waterrekening is hoger dan normaal.", "Ik heb een vraag over de waterrekening."],
+  waterrekening: ["Ik moet de waterrekening betalen.", "De waterrekening is hoger dan normaal.", "Ik betaal de waterrekening vandaag."],
   herinnering: ["Ik heb een herinnering gekregen.", "De herinnering gaat over de rekening.", "Ik moet op de herinnering reageren."],
 };
 
@@ -606,24 +609,14 @@ const weakSentencePatterns = [
   /^Dit is (de|het)\s+[a-zA-ZÀ-ÿ-]+\.?$/i,
 ];
 
-const bodyPartWordsPattern = "(arm|been|hoofd|buik|hand|voet|rug|keel|oor|neus|mond|tand|schouder|knie|nek)";
-const symptomWordsPattern = "(verkouden|hoesten|hoofdpijn|buikpijn|keelpijn|koorts|duizelig|misselijk|moe|benauwd)";
-const adminWorkWordsPattern = "(salaris|loonstrook|proeftijd|afwezigheid|herinnering|waterrekening|herstel|verlof|uitzendbureau)";
-const badLearnerLinePatterns = [
-  /^Ik ga naar (uit|hier|daar)\.?$/i,
-  new RegExp(`^Ik ga naar ((de|het)\\s+)?${bodyPartWordsPattern}\\.?$`, "i"),
-  new RegExp(`^Ik ga naar ${symptomWordsPattern}\\.?$`, "i"),
-  new RegExp(`^Ik gebruik ((de|het)\\s+)?${bodyPartWordsPattern}\\.?$`, "i"),
-  new RegExp(`^Waar is ((de|het)\\s+)?${bodyPartWordsPattern}\\??$`, "i"),
-  new RegExp(`^Ik heb (de|het)\\s+${bodyPartWordsPattern} nodig\\.?$`, "i"),
-  new RegExp(`^Ik zoek ((de|het|een)\\s+)?${adminWorkWordsPattern}\\.?$`, "i"),
-  new RegExp(`^Ik ga naar ${adminWorkWordsPattern}\\.?$`, "i"),
-  /^Ik zeg (heet|heb|ben|wel|geen|wanneer|waar|wat|wie|hoe)\.?$/i,
-  /^Dit is (heet|ben|heb|wil|kan|dit|dat|dag)\.?$/i,
-  /^Dit is (de|het)\s+[a-zA-ZÀ-ÿ-]+\.?$/i,
-];
-
-const isBadLearnerLine = (value: string) => badLearnerLinePatterns.some((pattern) => pattern.test(value.trim()));
+const isBadLearnerLine = (word: WordSentenceSource, value: string) =>
+  isKnownBadLearnerLine(value) ||
+  Boolean(badGenericTargetTemplateIssue({
+    dutch: word.dutch,
+    article: word.article,
+    theme: word.theme ?? "",
+    scenarioTags: word.scenarioTags ?? [],
+  } as WordItem, value));
 
 const withPeriod = (value: string) => {
   const trimmed = value.trim();
@@ -689,7 +682,7 @@ export function usableSentenceLinesFor(word: WordSentenceSource, limit = 3) {
   if (example && !isWeakSentence(example) && !isBareWordSentence(example, word.dutch)) lines.add(withPeriod(example));
 
   return Array.from(lines)
-    .filter((line) => !isBadLearnerLine(line))
+    .filter((line) => !isBadLearnerLine(word, line))
     .slice(0, limit);
 }
 

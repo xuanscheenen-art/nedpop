@@ -25,7 +25,7 @@ export type MemoryPathQualityResult = {
 };
 
 const genericFillerPattern =
-  /这个词建议通过短语和例句记|建议通过短语和例句记|放进一个真实短句|放进短语和例句|这个词最好通过常用搭配记|先背能直接用的词块|暂时没有强|put it into a real sentence|common chunks and real sentences|usable phrases and sentences|generic|placeholder|manual|missing|creator/i;
+  /这个词建议通过短语和例句记|建议通过短语和例句记|放进一个真实短句|放进短语和例句|这个词最好通过常用搭配记|先背能直接用的词块|贴在|小标签|一看到这块|落回荷兰语|场景卡|这种真实用法|暂时没有强|put it into a real sentence|common chunks and real sentences|usable phrases and sentences|label attached|scene card|generic|placeholder|manual review|missing memory|missing path|creator/i;
 
 const forcedSoundPattern = /谐音|听起来像|sounds like|homophone/i;
 const abstractChinesePattern = /场景里记|整块记|常用搭配|真实句子/i;

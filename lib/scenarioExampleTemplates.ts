@@ -7,6 +7,31 @@ const hasTag = (word: WordItem, tag: string) => word.scenarioTags.includes(tag);
 const inScenario = (microScenario: MicroScenario | undefined, needle: string) =>
   Boolean(microScenario && [microScenario.id, microScenario.titleZh, microScenario.titleEn, ...microScenario.sceneFlowZh, ...microScenario.sceneFlowEn].join(" ").toLowerCase().includes(needle));
 
+const practicalExactScenarioExamples: Record<string, TemplateExample[]> = {
+  elektriciteit: [{ dutch: "Ik betaal elke maand voor elektriciteit.", meaningZh: "我每月支付电费。", meaningEn: "I pay for electricity every month.", type: "scenario", phraseChunkUsed: "voor elektriciteit betalen", scenarioTags: ["housing", "payment"] }],
+  huurtoeslag: [{ dutch: "Ik vraag huurtoeslag aan.", meaningZh: "我申请房租补贴。", meaningEn: "I apply for housing benefit.", type: "scenario", phraseChunkUsed: "huurtoeslag aanvragen", scenarioTags: ["benefits", "housing"] }],
+  wijziging: [{ dutch: "Ik geef de wijziging door.", meaningZh: "我报告这个变更。", meaningEn: "I report the change.", type: "scenario", phraseChunkUsed: "de wijziging doorgeven", scenarioTags: ["appointment", "official"] }],
+  annulering: [{ dutch: "Ik bevestig de annulering per e-mail.", meaningZh: "我通过电子邮件确认取消。", meaningEn: "I confirm the cancellation by email.", type: "scenario", phraseChunkUsed: "de annulering bevestigen", scenarioTags: ["appointment", "email"] }],
+  afspraakkaart: [{ dutch: "Neem de afspraakkaart mee naar de huisarts.", meaningZh: "把预约卡带去家庭医生那里。", meaningEn: "Take the appointment card to the GP.", type: "scenario", phraseChunkUsed: "de afspraakkaart meenemen", scenarioTags: ["appointment", "health"] }],
+  incasso: [{ dutch: "De incasso gaat automatisch van mijn rekening af.", meaningZh: "自动扣款会从我的账户扣除。", meaningEn: "The direct debit is taken automatically from my account.", type: "scenario", phraseChunkUsed: "automatische incasso", scenarioTags: ["payment", "bill"] }],
+  onderhoud: [{ dutch: "De verhuurder regelt het onderhoud.", meaningZh: "房东安排维修保养。", meaningEn: "The landlord arranges the maintenance.", type: "scenario", phraseChunkUsed: "onderhoud regelen", scenarioTags: ["housing"] }],
+  opzegtermijn: [{ dutch: "De opzegtermijn is een maand.", meaningZh: "解约通知期是一个月。", meaningEn: "The notice period is one month.", type: "scenario", phraseChunkUsed: "de opzegtermijn", scenarioTags: ["housing", "contract"] }],
+  huurverhoging: [{ dutch: "Ik krijg een brief over de huurverhoging.", meaningZh: "我收到一封关于涨租的信。", meaningEn: "I receive a letter about the rent increase.", type: "scenario", phraseChunkUsed: "brief over de huurverhoging", scenarioTags: ["housing", "reading"] }],
+  storingsnummer: [{ dutch: "Bel het storingsnummer bij een probleem.", meaningZh: "有问题时拨打故障电话。", meaningEn: "Call the fault reporting number when there is a problem.", type: "scenario", phraseChunkUsed: "het storingsnummer bellen", scenarioTags: ["housing", "phone"] }],
+  huurspecificatie: [{ dutch: "Op de huurspecificatie staan de servicekosten.", meaningZh: "房租明细上写着服务费。", meaningEn: "The service costs are listed on the rent specification.", type: "scenario", phraseChunkUsed: "op de huurspecificatie", scenarioTags: ["housing", "bill"] }],
+  woningcorporatie: [{ dutch: "Ik bel de woningcorporatie over de lekkage.", meaningZh: "我给住房协会打电话说漏水问题。", meaningEn: "I call the housing corporation about the leak.", type: "scenario", phraseChunkUsed: "de woningcorporatie bellen", scenarioTags: ["housing", "phone"] }],
+  bevestigingsmail: [{ dutch: "Ik krijg een bevestigingsmail van de afspraak.", meaningZh: "我收到预约确认邮件。", meaningEn: "I receive a confirmation email for the appointment.", type: "scenario", phraseChunkUsed: "een bevestigingsmail krijgen", scenarioTags: ["appointment", "email"] }],
+  adreswijziging: [{ dutch: "Ik geef mijn adreswijziging door aan de gemeente.", meaningZh: "我向市政厅申报地址变更。", meaningEn: "I report my address change to the municipality.", type: "scenario", phraseChunkUsed: "adreswijziging doorgeven", scenarioTags: ["gemeente", "form"] }],
+  bezwaar: [{ dutch: "Ik wil bezwaar maken tegen het besluit.", meaningZh: "我想对这个决定提出异议。", meaningEn: "I want to object to the decision.", type: "output", phraseChunkUsed: "bezwaar maken tegen", scenarioTags: ["official", "writing"] }],
+  intakegesprek: [{ dutch: "Morgen heb ik een intakegesprek.", meaningZh: "明天我有一次初次面谈。", meaningEn: "Tomorrow I have an intake conversation.", type: "scenario", phraseChunkUsed: "een intakegesprek hebben", scenarioTags: ["official", "appointment"] }],
+  betalingsregeling: [{ dutch: "Ik vraag een betalingsregeling aan.", meaningZh: "我申请付款安排。", meaningEn: "I apply for a payment plan.", type: "scenario", phraseChunkUsed: "een betalingsregeling aanvragen", scenarioTags: ["payment", "bill"] }],
+  contractverlenging: [{ dutch: "Ik bespreek de contractverlenging met mijn werkgever.", meaningZh: "我和雇主讨论合同延长。", meaningEn: "I discuss the contract extension with my employer.", type: "scenario", phraseChunkUsed: "de contractverlenging bespreken", scenarioTags: ["work", "contract"] }],
+  arbeidsovereenkomst: [{ dutch: "Ik onderteken de arbeidsovereenkomst.", meaningZh: "我签署劳动合同。", meaningEn: "I sign the employment contract.", type: "scenario", phraseChunkUsed: "de arbeidsovereenkomst ondertekenen", scenarioTags: ["work", "contract"] }],
+  afspraakherinnering: [{ dutch: "Ik krijg een afspraakherinnering per sms.", meaningZh: "我收到短信预约提醒。", meaningEn: "I receive an appointment reminder by text message.", type: "scenario", phraseChunkUsed: "een afspraakherinnering krijgen", scenarioTags: ["appointment", "phone"] }],
+  wijzigingsformulier: [{ dutch: "Ik vul het wijzigingsformulier in.", meaningZh: "我填写更改表格。", meaningEn: "I fill in the change form.", type: "scenario", phraseChunkUsed: "het wijzigingsformulier invullen", scenarioTags: ["form", "official"] }],
+  machtiging: [{ dutch: "Ik geef een machtiging voor automatische incasso.", meaningZh: "我授权自动扣款。", meaningEn: "I give authorization for direct debit.", type: "scenario", phraseChunkUsed: "een machtiging geven", scenarioTags: ["official", "payment"] }],
+};
+
 const b1ExactScenarioExamples: Record<string, TemplateExample[]> = {
   afdeling: [{ dutch: "Ik werk op de afdeling administratie.", meaningZh: "我在行政部门工作。", meaningEn: "I work in the administration department.", type: "scenario", phraseChunkUsed: "op de afdeling", scenarioTags: ["work"] }],
   loon: [{ dutch: "Mijn loon wordt elke maand betaald.", meaningZh: "我的工资每个月发放。", meaningEn: "My wage is paid every month.", type: "scenario", phraseChunkUsed: "loon betaald krijgen", scenarioTags: ["work", "money"] }],
@@ -59,7 +84,7 @@ const b1ExactScenarioExamples: Record<string, TemplateExample[]> = {
   omleiding: [{ dutch: "Door de omleiding rijdt de bus anders.", meaningZh: "因为绕行，公交改道行驶。", meaningEn: "Because of the diversion, the bus runs differently.", type: "scenario", phraseChunkUsed: "door de omleiding", scenarioTags: ["transport"] }],
   conducteur: [{ dutch: "De conducteur controleert mijn kaartje.", meaningZh: "列车员检查我的车票。", meaningEn: "The conductor checks my ticket.", type: "scenario", phraseChunkUsed: "conducteur controleert", scenarioTags: ["transport"] }],
   boete: [{ dutch: "Ik moet een boete betalen.", meaningZh: "我必须交罚款。", meaningEn: "I have to pay a fine.", type: "scenario", phraseChunkUsed: "boete betalen", scenarioTags: ["transport", "payment"] }],
-  reisinformatie: [{ dutch: "Ik kijk naar de reisinformatie op de app.", meaningZh: "我在应用里查看出行信息。", meaningEn: "I check the travel information in the app.", type: "scenario", phraseChunkUsed: "reisinformatie bekijken", scenarioTags: ["transport", "digital"] }],
+  reisinformatie: [{ dutch: "Ik lees de reisinformatie in de app.", meaningZh: "我在应用里读出行信息。", meaningEn: "I read the travel information in the app.", type: "scenario", phraseChunkUsed: "reisinformatie lezen", scenarioTags: ["transport", "digital"] }],
   overstap: [{ dutch: "Mijn overstap is op spoor 3.", meaningZh: "我的换乘在 3 号轨道。", meaningEn: "My transfer is at track 3.", type: "scenario", phraseChunkUsed: "mijn overstap", scenarioTags: ["transport"] }],
   "vervangend vervoer": [{ dutch: "Er rijdt vervangend vervoer tussen de stations.", meaningZh: "车站之间有替代交通运行。", meaningEn: "Replacement transport runs between the stations.", type: "scenario", phraseChunkUsed: "vervangend vervoer", scenarioTags: ["transport"] }],
   klant: [{ dutch: "De klant heeft een vraag over de bestelling.", meaningZh: "顾客有一个关于订单的问题。", meaningEn: "The customer has a question about the order.", type: "scenario", phraseChunkUsed: "de klant heeft een vraag", scenarioTags: ["shopping"] }],
@@ -79,7 +104,7 @@ const b1ExactScenarioExamples: Record<string, TemplateExample[]> = {
   klacht: [{ dutch: "Ik heb een klacht over de levering.", meaningZh: "我对配送有投诉。", meaningEn: "I have a complaint about the delivery.", type: "output", phraseChunkUsed: "een klacht over", scenarioTags: ["shopping", "complaint"] }],
   reparatieverzoek: [{ dutch: "Ik stuur een reparatieverzoek naar de verhuurder.", meaningZh: "我给房东发送维修请求。", meaningEn: "I send a repair request to the landlord.", type: "scenario", phraseChunkUsed: "een reparatieverzoek sturen", scenarioTags: ["housing"] }],
   bestelbevestiging: [{ dutch: "Ik heb de bestelbevestiging per e-mail gekregen.", meaningZh: "我通过电子邮件收到了订单确认。", meaningEn: "I received the order confirmation by email.", type: "scenario", phraseChunkUsed: "bestelbevestiging per e-mail", scenarioTags: ["shopping", "email"] }],
-  opdracht: [{ dutch: "Ik heb een vraag over de opdracht.", meaningZh: "我有一个关于任务的问题。", meaningEn: "I have a question about the assignment.", type: "output", phraseChunkUsed: "een vraag over de opdracht", scenarioTags: ["education"] }],
+  opdracht: [{ dutch: "Ik lever de opdracht morgen in.", meaningZh: "我明天提交这项任务。", meaningEn: "I hand in the assignment tomorrow.", type: "scenario", phraseChunkUsed: "de opdracht inleveren", scenarioTags: ["education"] }],
   oplossing: [{ dutch: "Ik wil samen een oplossing zoeken.", meaningZh: "我想一起寻找解决方案。", meaningEn: "I want to look for a solution together.", type: "output", phraseChunkUsed: "een oplossing zoeken", scenarioTags: ["complaint", "work"] }],
   onderwerp: [{ dutch: "Zet het onderwerp duidelijk in de e-mail.", meaningZh: "请把主题清楚地写在邮件里。", meaningEn: "Put the subject clearly in the email.", type: "scenario", phraseChunkUsed: "het onderwerp vermelden", scenarioTags: ["email"] }],
   informatie: [{ dutch: "Ik zoek informatie over de cursus.", meaningZh: "我查找关于课程的信息。", meaningEn: "I look for information about the course.", type: "scenario", phraseChunkUsed: "informatie zoeken", scenarioTags: ["education", "digital"] }],
@@ -103,6 +128,10 @@ export const scenarioExamplesForWord = (
 ): TemplateExample[] => {
   const dutch = norm(word.dutch);
   const examples: TemplateExample[] = [];
+
+  if (practicalExactScenarioExamples[dutch]) {
+    examples.push(...practicalExactScenarioExamples[dutch]);
+  }
 
   if (word.level === "B1" && b1ExactScenarioExamples[dutch]) {
     examples.push(...b1ExactScenarioExamples[dutch]);
@@ -144,7 +173,7 @@ export const scenarioExamplesForWord = (
     if (dutch === "motivatiebrief") examples.push({ dutch: "In mijn motivatiebrief leg ik uit waarom ik geschikt ben.", meaningZh: "我在动机信里解释为什么我适合。", meaningEn: "In my motivation letter I explain why I am suitable.", type: "output", phraseChunkUsed: "in mijn motivatiebrief", scenarioTags: ["work", "writing"] });
     if (dutch === "werkgever") examples.push({ dutch: "Mijn werkgever stuurt de loonstrook digitaal.", meaningZh: "我的雇主以电子方式发送工资单。", meaningEn: "My employer sends the payslip digitally.", type: "scenario", phraseChunkUsed: "mijn werkgever", scenarioTags: ["work", "digital"] });
     if (dutch === "werknemer") examples.push({ dutch: "Als werknemer heb ik recht op pauze.", meaningZh: "作为雇员，我有休息的权利。", meaningEn: "As an employee I have the right to a break.", type: "scenario", phraseChunkUsed: "als werknemer", scenarioTags: ["work", "law"] });
-    if (dutch === "arbeidscontract" || dutch === "contract") examples.push({ dutch: "Ik heb een vraag over mijn arbeidscontract.", meaningZh: "我有一个关于劳动合同的问题。", meaningEn: "I have a question about my employment contract.", type: "output", phraseChunkUsed: "een vraag over mijn arbeidscontract", scenarioTags: ["work"] });
+    if (dutch === "arbeidscontract" || dutch === "contract") examples.push({ dutch: "Ik lees mijn arbeidscontract goed door.", meaningZh: "我认真读我的劳动合同。", meaningEn: "I read my employment contract carefully.", type: "scenario", phraseChunkUsed: "mijn arbeidscontract doorlezen", scenarioTags: ["work"] });
     if (dutch === "loonstrook") examples.push({ dutch: "Op mijn loonstrook staat mijn brutoloon en nettoloon.", meaningZh: "我的工资单上写着税前工资和税后工资。", meaningEn: "My payslip shows my gross pay and net pay.", type: "scenario", phraseChunkUsed: "op mijn loonstrook", scenarioTags: ["work", "money"] });
     if (dutch === "salaris") examples.push({ dutch: "Mijn salaris wordt aan het einde van de maand betaald.", meaningZh: "我的工资在月底支付。", meaningEn: "My salary is paid at the end of the month.", type: "scenario", phraseChunkUsed: "salaris betalen", scenarioTags: ["work", "money"] });
     if (dutch === "proeftijd") examples.push({ dutch: "In mijn proeftijd kan het contract sneller stoppen.", meaningZh: "在试用期内，合同可以更快终止。", meaningEn: "During my probation period, the contract can end more quickly.", type: "scenario", phraseChunkUsed: "in mijn proeftijd", scenarioTags: ["work", "law"] });
@@ -160,7 +189,7 @@ export const scenarioExamplesForWord = (
   if (word.level === "B1" && (hasTag(word, "education") || inScenario(microScenario, "education"))) {
     if (dutch === "opleiding") examples.push({ dutch: "Ik volg een opleiding op mbo-niveau.", meaningZh: "我在上 mbo 等级的培训/教育。", meaningEn: "I am following a program at mbo level.", type: "scenario", phraseChunkUsed: "een opleiding volgen", scenarioTags: ["education", "work"] });
     if (dutch === "mbo") examples.push({ dutch: "Deze opleiding is op mbo-niveau.", meaningZh: "这个课程是 mbo 水平。", meaningEn: "This program is at mbo level.", type: "scenario", phraseChunkUsed: "op mbo-niveau", scenarioTags: ["education"] });
-    if (dutch === "opdracht") examples.push({ dutch: "Ik heb een vraag over de opdracht.", meaningZh: "我有一个关于任务的问题。", meaningEn: "I have a question about the assignment.", type: "output", phraseChunkUsed: "een vraag over de opdracht", scenarioTags: ["education"] });
+    if (dutch === "opdracht") examples.push({ dutch: "Ik lever de opdracht morgen in.", meaningZh: "我明天提交这项任务。", meaningEn: "I hand in the assignment tomorrow.", type: "scenario", phraseChunkUsed: "de opdracht inleveren", scenarioTags: ["education"] });
     if (dutch === "stage") examples.push({ dutch: "Tijdens mijn stage leer ik in de praktijk.", meaningZh: "在实习期间我在实践中学习。", meaningEn: "During my internship I learn in practice.", type: "scenario", phraseChunkUsed: "tijdens mijn stage", scenarioTags: ["education", "work"] });
     if (dutch === "studieadvies") examples.push({ dutch: "Ik wil graag studieadvies vragen.", meaningZh: "我想咨询学习建议。", meaningEn: "I would like to ask for study advice.", type: "output", phraseChunkUsed: "studieadvies vragen", scenarioTags: ["education"] });
     if (dutch === "begeleider") examples.push({ dutch: "Mijn begeleider geeft feedback op mijn opdracht.", meaningZh: "我的指导老师对我的作业给反馈。", meaningEn: "My supervisor gives feedback on my assignment.", type: "scenario", phraseChunkUsed: "feedback geven op", scenarioTags: ["education"] });

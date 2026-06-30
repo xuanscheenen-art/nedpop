@@ -127,7 +127,7 @@ export const generateMicroScenarioForDayPack = (dayPack: DailyWordPack): MicroSc
       sceneFlowZh: ["说明工作情况", "提到合同/排班", "提出问题", "给出建议或请求"],
       sceneFlowEn: ["Explain the work situation", "Mention contract or schedule", "State a problem", "Make a suggestion or request"],
       targetWords,
-      targetPhraseChunks: ["Ik heb een vraag over mijn contract.", "Volgens mijn rooster werk ik morgen.", "Ik stel voor om dit te bespreken."],
+      targetPhraseChunks: ["Ik lees mijn contract goed door.", "Volgens mijn rooster werk ik morgen.", "Ik stel voor om dit te bespreken."],
       suggestedSentenceOpenings: ["Volgens", "Ik heb", "Ik stel voor", "Daarnaast"],
     };
   }
@@ -141,7 +141,7 @@ export const generateMicroScenarioForDayPack = (dayPack: DailyWordPack): MicroSc
       sceneFlowZh: ["说明课程或任务", "描述进度", "提出问题", "总结下一步"],
       sceneFlowEn: ["Explain the course or task", "Describe progress", "Ask a question", "Summarize the next step"],
       targetWords,
-      targetPhraseChunks: ["Ik volg een opleiding.", "Ik heb een vraag over de opdracht.", "Mijn voorstel is om eerst de tekst te lezen."],
+      targetPhraseChunks: ["Ik volg een opleiding.", "Ik lever de opdracht morgen in.", "Mijn voorstel is om eerst de tekst te lezen."],
       suggestedSentenceOpenings: ["Ik volg", "Mijn voorstel", "Volgens", "Daarna"],
     };
   }

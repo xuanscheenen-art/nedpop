@@ -1,12 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Info, MessageCircle, PencilLine } from "lucide-react";
+import { NextStepCard } from "@/components/NextStepCard";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { scenarioLessons } from "@/data/scenarioLessons";
 import { authChangedEvent, getCurrentUser } from "@/lib/auth";
+import { getBaseCourseLessons } from "@/lib/contentStore";
 import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
+import { getDefaultLearningProgress, getLearningProgress, learningProgressChangedEvent, markStepComplete, type LearningLevel, type LearningProgress } from "@/lib/learningProgress";
+import { getNextRecommendedAction } from "@/lib/nextAction";
 import type { CourseLevel } from "@/types/course";
 
 const initialScenario = scenarioLessons.find((scenario) => scenario.level === "A0") ?? scenarioLessons[0];
@@ -25,8 +30,16 @@ export default function ScenariosPage() {
   const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
+  const [learningProgress, setLearningProgress] = useState<LearningProgress>(() => getDefaultLearningProgress());
+  const [scenarioComplete, setScenarioComplete] = useState(false);
   const selected = scenarioLessons.find((scenario) => scenario.id === selectedId) ?? initialScenario;
   const visibleScenarios = scenarioLessons.filter((scenario) => scenario.level === selectedLevel);
+  const selectedScenarioIndex = Math.max(visibleScenarios.findIndex((scenario) => scenario.id === selected.id), 0);
+  const selectedDayForProgress = selectedScenarioIndex + 1;
+  const nextLessonId = getBaseCourseLessons().find((lesson) => lesson.level === selected.level && lesson.order === selectedDayForProgress + 1)?.id;
+  const guidanceAction = getNextRecommendedAction(learningProgress);
+  const shouldShowBaseGuidance =
+    !learningProgress.pronunciationBaseCompleted || !learningProgress.starterWordsCompleted || !learningProgress.grammarBaseCompleted;
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +70,20 @@ export default function ScenariosPage() {
   }, []);
 
   useEffect(() => {
-    const scenario = new URLSearchParams(window.location.search).get("scenario");
+    const syncLearningProgress = () => setLearningProgress(getLearningProgress());
+    window.addEventListener(learningProgressChangedEvent, syncLearningProgress);
+    window.addEventListener("storage", syncLearningProgress);
+    return () => {
+      window.removeEventListener(learningProgressChangedEvent, syncLearningProgress);
+      window.removeEventListener("storage", syncLearningProgress);
+    };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const scenario = params.get("scenario");
+    const level = params.get("level") as CourseLevel | null;
+    const day = Number(params.get("day"));
     const target = scenarioLessons.find((item) => item.id === scenario);
     if (target) {
       if (!canAccessLevel(target.level, accessLevel, signedIn)) {
@@ -66,8 +92,34 @@ export default function ScenariosPage() {
       }
       setSelectedId(target.id);
       setSelectedLevel(target.level);
+      return;
+    }
+    if (level && scenarioLevels.includes(level)) {
+      if (!canAccessLevel(level, accessLevel, signedIn)) {
+        setUpgradeLevel(level);
+        return;
+      }
+      const inLevel = scenarioLessons.filter((item) => item.level === level);
+      const targetIndex = Number.isFinite(day) && day > 0 ? Math.min(Math.floor(day) - 1, inLevel.length - 1) : 0;
+      const dayTarget = inLevel[Math.max(targetIndex, 0)];
+      if (dayTarget) {
+        setSelectedLevel(level);
+        setSelectedId(dayTarget.id);
+      }
     }
   }, [accessLevel, signedIn]);
+
+  useEffect(() => {
+    const steps = learningProgress.completedStepsByDay[selected.level as LearningLevel]?.[String(selectedDayForProgress)] ?? [];
+    setScenarioComplete(steps.includes("scenario-output"));
+  }, [learningProgress, selected.level, selectedDayForProgress]);
+
+  const completeScenarioOutput = () => {
+    markStepComplete(selected.level, selectedDayForProgress, "scenario-output", {
+      advanceCurrent: learningProgress.currentLevel === selected.level && learningProgress.currentDay === selectedDayForProgress,
+    });
+    setScenarioComplete(true);
+  };
 
   const chooseLevel = (level: CourseLevel) => {
     if (!canAccessLevel(level, accessLevel, signedIn)) {
@@ -106,6 +158,25 @@ export default function ScenariosPage() {
           </div>
         </div>
       </section>
+
+      {shouldShowBaseGuidance ? (
+        <section className="mb-7 rounded-[28px] border border-blue-100 bg-white p-5 shadow-soft sm:flex sm:items-center sm:justify-between sm:gap-5">
+          <div>
+            <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "先回学习路线" : "Follow the learning path first"}</p>
+            <p className="mt-2 text-lg font-black leading-8 text-ink">
+              {language === "zh"
+                ? "场景输出是最后一步。建议你先完成发音底座、A0 Day 1 生存词课程和最小语法地基，再来这里练输出。"
+                : "Scenario output is the final step. Finish the pronunciation base, A0 Day 1 starter lesson, and Grammar Base 1 first."}
+            </p>
+          </div>
+          <Link
+            href={guidanceAction.route}
+            className="mt-4 inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean sm:mt-0"
+          >
+            {language === "zh" ? "回到学习路线" : "Back to path"}
+          </Link>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="rounded-[30px] border border-blue-100 bg-white p-4 shadow-soft">
@@ -229,6 +300,28 @@ export default function ScenariosPage() {
                 <p className="mt-4 rounded-2xl bg-white p-4 font-black leading-7 text-ocean">A0/A1 先练口语句，写作任务之后开放。</p>
               )}
             </div>
+          </section>
+          <section className="mt-6">
+            {scenarioComplete ? (
+              <NextStepCard
+                eyebrow={language === "zh" ? "学习接力" : "Learning handoff"}
+                currentLabel={language === "zh" ? "场景输出已完成" : "Scenario output complete"}
+                title={language === "zh" ? "今天完成" : "Today's flow complete"}
+                reason={language === "zh" ? "这一轮已经走完，可以进入下一课，或者把词放进复习池。" : "This round is done. Move to the next lesson or review your words."}
+                buttonLabel={language === "zh" ? "进入下一课" : "Open next lesson"}
+                route={nextLessonId ? `/learn/${nextLessonId}` : "/dashboard"}
+                secondaryLabel={language === "zh" ? "加入复习池" : "Open review pool"}
+                secondaryRoute="/word-review"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={completeScenarioOutput}
+                className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean"
+              >
+                {language === "zh" ? "完成场景输出" : "Mark scenario output complete"}
+              </button>
+            )}
           </section>
         </article>
       </section>

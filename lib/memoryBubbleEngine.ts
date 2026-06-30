@@ -8,6 +8,7 @@ export type RelationSource = "rule" | "seed" | "manual" | "candidate";
 
 export type MemoryBubbleRelationType =
   | "word-family"
+  | "pronoun-family"
   | "verb-form"
   | "verb-noun-pair"
   | "compound-part"
@@ -28,6 +29,7 @@ export type MemoryBubbleRelationType =
 
 export type MemoryBubbleRelationGroup =
   | "词形联想"
+  | "代词家族"
   | "组成部分"
   | "动词形式"
   | "同词族"
@@ -48,6 +50,7 @@ export const memoryBubbleRelationLabels: Record<MemoryBubbleRelationType, { zh: 
   "compound-family": { zh: "同组拼词", en: "Compound Set", groupZh: "组成部分", groupEn: "Parts" },
   "part-related": { zh: "短语小块", en: "Phrase Piece", groupZh: "组成部分", groupEn: "Parts" },
   "word-family": { zh: "同词根 / 同家族", en: "Word Family", groupZh: "同词族", groupEn: "Word Family" },
+  "pronoun-family": { zh: "代词家族", en: "Pronoun Set", groupZh: "代词家族", groupEn: "Pronouns" },
   "verb-form": { zh: "动词形式", en: "Verb Form", groupZh: "动词形式", groupEn: "Verb Forms" },
   "verb-noun-pair": { zh: "词族联想", en: "Verb/Noun Pair", groupZh: "同词族", groupEn: "Word Family" },
   synonym: { zh: "同义词", en: "Synonym", groupZh: "词形联想", groupEn: "Word Links" },
@@ -56,7 +59,7 @@ export const memoryBubbleRelationLabels: Record<MemoryBubbleRelationType, { zh: 
   "comparative-superlative": { zh: "比较级 / 最高级", en: "Comparative", groupZh: "比较级/最高级", groupEn: "Comparative" },
   "category-member": { zh: "同类别", en: "Category", groupZh: "同类别", groupEn: "Category" },
   "time-category": { zh: "时间相关", en: "Time Related", groupZh: "时间相关", groupEn: "Time Related" },
-  "scenario-word": { zh: "同场景", en: "Scenario Word", groupZh: "同场景", groupEn: "Scenario" },
+  "scenario-word": { zh: "实用联想", en: "Useful Link", groupZh: "同场景", groupEn: "Scenario" },
   "action-object": { zh: "动作相关", en: "Action Link", groupZh: "动作相关", groupEn: "Action" },
   "state-action": { zh: "状态相关", en: "State Link", groupZh: "状态相关", groupEn: "State" },
   "confusion-pair": { zh: "易混词", en: "Confusion Pair", groupZh: "易混词", groupEn: "Confusion" },

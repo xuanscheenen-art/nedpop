@@ -1,54 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, CalendarDays, Ear, MessageCircle, Puzzle } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Ear, MessageCircle, Puzzle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 const method = [
-  { key: "method.decode", detail: { zh: "先读得出来", en: "Read the sounds first" }, icon: Ear },
-  { key: "method.link", detail: { zh: "把词变成记忆", en: "Turn words into memory" }, icon: BookOpenCheck },
-  { key: "method.rule", detail: { zh: "固定规则反复套", en: "Practice fixed patterns" }, icon: Puzzle },
-  { key: "method.speak", detail: { zh: "放进真实场景", en: "Use it in real situations" }, icon: MessageCircle },
+  {
+    title: { zh: "发音底座", en: "Pronunciation" },
+    detail: { zh: "先读得出来", en: "Read words first" },
+    icon: Ear,
+  },
+  {
+    title: { zh: "A0 Day 1", en: "A0 Day 1" },
+    detail: { zh: "先能开口", en: "Say starter lines" },
+    icon: MessageCircle,
+  },
+  {
+    title: { zh: "最小语法", en: "Tiny grammar" },
+    detail: { zh: "只学立刻能用的", en: "Only what you need now" },
+    icon: Puzzle,
+  },
+  {
+    title: { zh: "每日泡泡", en: "Daily bubbles" },
+    detail: { zh: "每天扩一点词", en: "Grow words daily" },
+    icon: BookOpenCheck,
+  },
+  {
+    title: { zh: "遇到再补", en: "Rules on demand" },
+    detail: { zh: "规则跟着课程走", en: "Add rules when needed" },
+    icon: Puzzle,
+  },
+  {
+    title: { zh: "场景输出", en: "Scenario output" },
+    detail: { zh: "最后说出来", en: "Use it out loud" },
+    icon: MessageCircle,
+  },
 ] as const;
 
 const usageSteps = [
   {
-    title: { zh: "发音解码", en: "Pronunciation decoder" },
+    title: { zh: "发音底座", en: "Sound base" },
     body: {
-      zh: "先学 26 个字母和特殊组合音，看到词先能读出来。",
-      en: "Start with the 26 letters and special sound combinations so you can read words first.",
+      zh: "先学字母和组合音，看到新词能自己读。",
+      en: "Learn letters and sound chunks so you can read new words yourself.",
     },
     icon: Ear,
   },
   {
-    title: { zh: "每日课程", en: "Daily lessons" },
+    title: { zh: "A0 Day 1 生存词", en: "A0 Day 1 starter" },
     body: {
-      zh: "从 A0 Day 1 开始，每天只学一小包内容。",
-      en: "Begin at A0 Day 1 and learn one small pack each day.",
+      zh: "在第一课里用 ik、ben、woon、kom、naam 这些小词说出第一批句子。",
+      en: "Inside Lesson 1, use ik, ben, woon, kom, and naam to say your first lines.",
     },
-    icon: CalendarDays,
+    icon: MessageCircle,
   },
   {
-    title: { zh: "单词泡泡", en: "Word bubbles" },
+    title: { zh: "最小语法地基", en: "Grammar Base 1" },
     body: {
-      zh: "用记忆路径、词形联想、同类词和例句记住单词。",
-      en: "Use memory paths, word-form links, category links, and example sentences to remember words.",
+      zh: "只学 zijn、hebben、基础词序和简单问题。",
+      en: "Learn only zijn, hebben, basic word order, and simple questions.",
+    },
+    icon: Puzzle,
+  },
+  {
+    title: { zh: "每日单词泡泡", en: "Daily word bubbles" },
+    body: {
+      zh: "每天学一小包词，用记忆路径、联想泡泡和例句记住。",
+      en: "Learn one small word pack each day with memory paths, links, and examples.",
     },
     icon: BookOpenCheck,
   },
   {
-    title: { zh: "语法规则", en: "Grammar rules" },
+    title: { zh: "遇到再补语法", en: "Grammar on demand" },
     body: {
-      zh: "遇到动词、de/het、复数、词序时，再用规则卡搞懂。",
-      en: "When verbs, de/het, plurals, or word order appear, use rule cards to understand them.",
+      zh: "课程遇到 de/het、复数、niet/geen、完成式时再补规则。",
+      en: "Add de/het, plurals, niet/geen, and perfect tense when lessons need them.",
     },
     icon: Puzzle,
   },
   {
     title: { zh: "场景输出", en: "Scenario output" },
     body: {
-      zh: "最后进入医生、市政厅、超市、交通等场景，把前面学的说出来。",
-      en: "Finally enter GP, municipality, supermarket, transport, and other scenarios to say what you learned.",
+      zh: "最后把词放进医生、市政厅、超市、交通等场景里说出来。",
+      en: "Then use those words in GP, municipality, supermarket, and transport scenarios.",
     },
     icon: MessageCircle,
   },
@@ -108,13 +142,13 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative mt-6 grid gap-3 sm:grid-cols-4">
+          <div className="relative mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {method.map((step) => {
               const Icon = step.icon;
               return (
-                <div key={step.key} className="rounded-3xl bg-white p-4 ring-1 ring-blue-100">
+                <div key={step.title.zh} className="rounded-3xl bg-white p-4 ring-1 ring-blue-100">
                   <Icon size={20} className="text-pop" />
-                  <p className="mt-3 text-lg font-black text-ink">{t(step.key)}</p>
+                  <p className="mt-3 text-lg font-black text-ink">{step.title[language]}</p>
                   <p className="mt-2 text-sm font-bold leading-6 text-ocean/65">{step.detail[language]}</p>
                 </div>
               );
@@ -127,28 +161,28 @@ export default function LandingPage() {
           <div className="max-w-3xl">
             <p className="text-sm font-black tracking-[0.18em] text-pop">Learning flow</p>
             <h2 className="mt-3 text-4xl font-black leading-tight text-ink">
-              {language === "zh" ? "怎么使用内德泡泡？" : "How to use NedPop"}
+              {language === "zh" ? "先按这个顺序学" : "Learn in this order"}
             </h2>
             <p className="mt-4 text-lg font-bold leading-8 text-ocean/70">
               {language === "zh"
-                ? "不要一上来就背场景。先会读，再记词，再懂规则，最后才开口用。"
-                : "Do not start by memorizing scenarios. First read sounds, then learn words, understand rules, and only then use Dutch out loud."}
+                ? "先会读。再用一小包生存词开口。然后学最小语法地基。之后每天靠单词泡泡扩词汇，遇到规则再补语法。最后进入场景输出。"
+                : "Read first. Say starter lines with a tiny word pack. Add the smallest grammar base. Then grow words through daily bubbles, add rules when needed, and finish with scenario output."}
             </p>
           </div>
 
-          <ol className="mt-7 grid gap-4 lg:grid-cols-5">
+          <ol className="mt-7 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {usageSteps.map((step, index) => {
               const Icon = step.icon;
               return (
-                <li key={step.title.zh} className="rounded-[24px] bg-slate-50 p-5 ring-1 ring-blue-100">
+                <li key={step.title.zh} className="rounded-[22px] bg-slate-50 p-4 ring-1 ring-blue-100">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="flex size-11 items-center justify-center rounded-full bg-peach text-pop">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-peach text-pop">
                       <Icon size={20} />
                     </span>
                     <span className="text-sm font-black text-ocean/40">{String(index + 1).padStart(2, "0")}</span>
                   </div>
-                  <h3 className="mt-4 text-xl font-black leading-tight text-ink">{step.title[language]}</h3>
-                  <p className="mt-3 text-sm font-bold leading-7 text-ocean/70">{step.body[language]}</p>
+                  <h3 className="mt-3 text-xl font-black leading-tight text-ink">{step.title[language]}</h3>
+                  <p className="mt-2 text-sm font-bold leading-6 text-ocean/70">{step.body[language]}</p>
                 </li>
               );
             })}
@@ -156,8 +190,8 @@ export default function LandingPage() {
 
           <p className="mt-6 rounded-[22px] bg-ink px-5 py-4 text-lg font-black leading-8 text-white">
             {language === "zh"
-              ? "场景练习不是入口，是出口。"
-              : "Scenario practice is not the entrance. It is the exit."}
+              ? "先打地基，再每天学，最后开口用。"
+              : "Build the base first, learn a little each day, then use it out loud."}
           </p>
         </div>
       </section>

@@ -34,11 +34,18 @@ const { memoryAssociationsFor } = require("@/lib/wordAssociations");
 const { validateVocabularyQuality } = require("@/lib/vocabularyQuality");
 
 const normalize = (value) => value.trim().toLowerCase();
-const b1Words = wordItems.filter((word) => word.originalLevel === "B1" || word.level === "B1");
-const b1Ids = new Set(b1Words.map((word) => word.id));
-const qualityIssues = validateVocabularyQuality(wordItems).filter((issue) => b1Ids.has(issue.wordId));
+const requestedLevels = String(process.env.AUDIT_LEVELS ?? "B1")
+  .split(",")
+  .map((level) => level.trim().toUpperCase())
+  .filter(Boolean);
+const auditAllLevels = requestedLevels.includes("ALL");
+const auditedWords = auditAllLevels
+  ? wordItems
+  : wordItems.filter((word) => requestedLevels.includes(word.originalLevel ?? word.level) || requestedLevels.includes(word.level));
+const auditedIds = new Set(auditedWords.map((word) => word.id));
+const qualityIssues = validateVocabularyQuality(wordItems).filter((issue) => auditedIds.has(issue.wordId));
 
-const rows = b1Words.map((word) => {
+const rows = auditedWords.map((word) => {
   const examples = generateExamplesForWord(word).filter((example) => !example.needsHumanReview && example.dutch.trim());
   const phraseChunks = new Set(examples.map((example) => example.phraseChunkUsed).filter(Boolean));
   const associations = memoryAssociationsFor(word, wordItems, 8);
@@ -83,7 +90,8 @@ if (process.env.AUDIT_NAMES_ONLY === "1") {
 }
 
 console.log(JSON.stringify({
-  b1Words: b1Words.length,
+  auditLevels: auditAllLevels ? "all" : requestedLevels,
+  words: auditedWords.length,
   qualityIssues: qualityIssues.length,
   byIssue,
   missingExamples: missingExamples.length,

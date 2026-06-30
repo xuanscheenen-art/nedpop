@@ -1,6 +1,17 @@
 import { relationLexicons } from "@/data/relationLexicons";
 import { inferWordType } from "@/lib/exampleTemplates";
 import type { MemoryBubbleCandidate, MemoryBubbleRelationType } from "@/lib/memoryBubbleEngine";
+import {
+  allowsLooseFallbackRelations,
+  contextTagsFor,
+  functionWordRelatedBuckets,
+  hasSharedSemanticContext,
+  hasSharedStrictSemanticContext,
+  phraseLikeTarget,
+  safeRelatedBucketFor,
+  shouldSuppressBroadCategoryRelation,
+  usesStrictAssociations,
+} from "@/lib/memoryBubbleSemantics";
 import { analyzeWordFormationFromAnalysis } from "@/lib/wordFormationAnalyzer";
 import type { WordAnalysis } from "@/lib/wordAnalysis";
 import { analyzeWord, normalizeWordText } from "@/lib/wordAnalysis";
@@ -16,6 +27,22 @@ function targetAvailable(target: string, wordMap: Map<string, WordItem>) {
 
 function targetMeaningFor(target: string) {
   return relationLexicons.baseMorphemes[normalizeWordText(target)];
+}
+
+function lexiconCategoryIdsFor(target: string) {
+  const key = normalizeWordText(target);
+  return relationLexicons.categories
+    .filter((category) => {
+      const heads = category.heads.map(normalizeWordText);
+      const members = category.members.map(normalizeWordText);
+      return heads.includes(key) || members.includes(key);
+    })
+    .map((category) => normalizeWordText(category.id));
+}
+
+function sharesExactLexiconCategory(source: string, target: string) {
+  const targetIds = new Set(lexiconCategoryIdsFor(target));
+  return lexiconCategoryIdsFor(source).some((id) => targetIds.has(id));
 }
 
 function knownMeaningOrWord(target: string, allWords: WordItem[]) {
@@ -91,278 +118,10 @@ const genericCompoundRoots = new Set([
   "dag",
 ]);
 
-const strictAssociationWords = new Set([
-  "aangifte",
-  "afsluiting",
-  "betreft",
-  "besluit",
-  "gebeurtenis",
-  "herinnering",
-  "reactie",
-  "reactietermijn",
-  "uitnodiging",
-  "vergunning",
-  "voorstel",
-  "waarschuwing",
-]);
-
-const broadCategoryIdsForStrictWords = new Set([
-  "business-workplace",
-  "civic-participation",
-  "community",
-  "contact-info",
-  "digital-admin",
-  "digital-account-actions",
-  "email-message",
-  "formal-email-writing",
-  "forms-documents",
-  "gemeente",
-  "housing",
-  "job-search",
-  "legal-safety",
-  "marital-status",
-  "neighborhood-services",
-  "official-admin-extended",
-  "opinion-argument",
-  "personal-info",
-  "phone-contact",
-  "public-services",
-  "residence-location",
-  "text-reading",
-  "work",
-]);
-
-function usesStrictAssociations(analysis: WordAnalysis) {
-  const theme = normalizeWordText(analysis.word.theme);
-  return (
-    analysis.word.level === "B1" ||
-    analysis.word.originalLevel === "B1" ||
-    strictAssociationWords.has(analysis.normalizedForm) ||
-    theme.startsWith("b1") ||
-    /official|formal|letter|admin|safety|legal|society/.test(theme)
-  );
-}
-
-function allowsLooseFallbackRelations(analysis: WordAnalysis) {
-  return !["phrase", "function-word", "adverb"].includes(analysis.wordType);
-}
-
-function shouldSuppressBroadCategoryRelation(analysis: WordAnalysis, categoryId: string, sourceIsHead: boolean) {
-  return !sourceIsHead && usesStrictAssociations(analysis) && broadCategoryIdsForStrictWords.has(normalizeWordText(categoryId));
-}
-
-function phraseLikeTarget(target: string) {
-  return target.trim().split(/\s+/).filter(Boolean).length > 1 || /[.!?]$/.test(target.trim());
-}
-
-function lexicalContextFor(analysis: WordAnalysis) {
-  return [
-    analysis.normalizedForm,
-    analysis.word.theme,
-    analysis.word.meaning.zh,
-    analysis.word.meaning.en,
-    ...analysis.categoryTags,
-  ].join(" ").toLowerCase();
-}
-
-function contextTokensFor(context: string) {
-  return new Set(context.split(/[^a-zA-ZÀ-ÿ0-9]+/).map(normalizeWordText).filter(Boolean));
-}
-
-function hasAnyToken(tokens: Set<string>, values: string[]) {
-  return values.some((value) => tokens.has(normalizeWordText(value)));
-}
-
-const safeRelatedBuckets = [
-  {
-    id: "greeting",
-    labelZh: "问候礼貌",
-    labelEn: "greetings and polite phrases",
-    words: ["hallo", "dag", "bedankt", "sorry", "welkom", "goedemorgen", "goedemiddag", "goedenavond", "tot ziens", "alsjeblieft", "alstublieft"],
-    patterns: [/\b(greeting|polite|groet|hello|thanks|sorry)\b/i, /你好|谢谢|抱歉|礼貌|问候/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-  {
-    id: "identity",
-    labelZh: "个人信息",
-    labelEn: "personal information",
-    words: ["naam", "voornaam", "achternaam", "heet", "heten", "ben", "bent", "is", "mijn", "jouw", "uw", "wie", "wat", "leeftijd", "geboortedatum"],
-    patterns: [/\b(name|naam|geboorte|leeftijd)\b/i, /名字|姓名|出生|几岁|叫/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "study",
-    labelZh: "学习读写",
-    labelEn: "study, reading, and writing",
-    words: ["boek", "woordenboek", "schrift", "pen", "potlood", "papier", "tekst", "zin", "lezen", "schrijven", "leren", "oefenen", "herhalen", "luisteren", "spreken"],
-    patterns: [/\b(school|study|class|text|read|write|learn|lesson|cursus)\b/i, /学习|学校|读|写|课|本子|笔|文本|句子/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-  {
-    id: "weather",
-    labelZh: "天气",
-    labelEn: "weather",
-    words: ["weer", "zon", "regen", "wind", "warm", "koud"],
-    patterns: [/\b(weather|rain|sun|wind|warm|cold)\b/i, /天气|太阳|雨|风|冷|热/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "clothes",
-    labelZh: "衣物",
-    labelEn: "clothes",
-    words: ["jas", "trui", "broek", "schoenen", "jurk", "rok", "sok", "muts", "shirt", "hemd"],
-    patterns: [/\b(clothes|coat|shirt|shoe|sock|wear)\b/i, /衣|外套|裤|鞋|袜|帽|穿/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "colors",
-    labelZh: "颜色",
-    labelEn: "colors",
-    words: ["rood", "blauw", "groen", "geel", "zwart", "wit", "grijs", "bruin", "kleur"],
-    patterns: [/\b(color|colour|red|blue|green|yellow|black|white|grey|gray|brown)\b/i, /颜色|红|蓝|绿|黄|黑|白|灰|棕/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "seasons",
-    labelZh: "季节",
-    labelEn: "seasons",
-    words: ["lente", "zomer", "herfst", "winter"],
-    patterns: [/\b(season|spring|summer|autumn|fall|winter)\b/i, /季节|春|夏|秋|冬/],
-    relationType: "time-category" as MemoryBubbleRelationType,
-  },
-  {
-    id: "home",
-    labelZh: "家和空间",
-    labelEn: "home and space",
-    words: ["huis", "kamer", "deur", "raam", "sleutel", "woning", "woonruimte", "woonkamer", "thuis", "adres"],
-    patterns: [/\b(home|house|room|door|window|key|housing)\b/i, /家|房|门|窗|钥匙|住房/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "transport",
-    labelZh: "交通出行",
-    labelEn: "transport",
-    words: ["trein", "bus", "fiets", "auto", "station", "halte", "perron", "spoor", "kaartje", "reis", "rit", "route", "reisplanner", "richting", "lijn", "overstappen", "inchecken", "uitchecken", "ov-chipkaart", "vertraging", "lopen"],
-    patterns: [/\b(transport|train|bus|bike|station|travel|trip|walk|route|check in|check out|transfer)\b/i, /交通|火车|公交|自行车|车站|旅行|路线|换乘|刷卡|走/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-  {
-    id: "basic-actions",
-    labelZh: "基础动作",
-    labelEn: "basic actions",
-    words: ["gaan", "ga", "komen", "kom", "lopen", "loop", "staan", "sta", "zitten", "zit", "liggen", "leg", "leggen", "maken", "maak", "doen", "doe", "geven", "geef", "kijken", "kijk", "zien", "zie", "eten", "eet", "drinken", "drink", "slapen", "slaap"],
-    patterns: [/\b(action|verb|walk|stand|sit|make|do|give|look|see|eat|drink|sleep)\b/i, /动作|走|站|坐|做|给|看|吃|喝|睡/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-  {
-    id: "describing",
-    labelZh: "描述词",
-    labelEn: "describing words",
-    words: ["oud", "nieuw", "snel", "langzaam", "juist", "fout", "groot", "klein", "makkelijk", "moeilijk", "goed", "slecht"],
-    patterns: [/\b(old|new|fast|slow|right|wrong|big|small|easy|difficult|good|bad)\b/i, /旧|老|新|快|慢|对|错|大|小|容易|难|好|坏/],
-    relationType: "category-member" as MemoryBubbleRelationType,
-  },
-  {
-    id: "digital",
-    labelZh: "手机电脑",
-    labelEn: "phone and computer",
-    words: ["app", "foto", "computer", "laptop", "telefoon", "bericht", "e-mail", "e-mailadres"],
-    patterns: [/\b(app|photo|computer|laptop|phone|message|email)\b/i, /应用|照片|电脑|手机|电话|消息|邮件/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-  {
-    id: "phone-contact",
-    labelZh: "电话联系方式",
-    labelEn: "phone contact",
-    words: ["telefoon", "telefoonnummer", "mobiel", "nummer", "bellen", "bericht"],
-    patterns: [/\b(phone|mobile|telephone|call|message|contact)\b/i, /电话|手机|联系|消息/],
-    relationType: "scenario-word" as MemoryBubbleRelationType,
-  },
-] as const;
-
-const functionWordRelatedBuckets = new Set(["greeting", "identity"]);
-
-function safeRelatedBucketIdsForWord(word: WordItem | undefined, fallbackText: string) {
-  const key = normalizeWordText(fallbackText);
-  const context = [
-    key,
-    word?.theme,
-    word?.meaning.zh,
-    word?.meaning.en,
-    ...(word?.scenarioTags ?? []),
-  ].filter(Boolean).join(" ");
-  return safeRelatedBuckets
-    .filter((bucket) =>
-      bucket.words.map(normalizeWordText).includes(key) ||
-      bucket.patterns.some((pattern) => pattern.test(context)),
-    )
-    .map((bucket) => bucket.id);
-}
-
-function safeRelatedBucketFor(source: WordItem, target: WordItem | undefined, targetText: string) {
-  const sourceBuckets = safeRelatedBucketIdsForWord(source, source.dutch);
-  const targetBuckets = safeRelatedBucketIdsForWord(target, targetText);
-  const shared = sourceBuckets.find((bucket) => targetBuckets.includes(bucket));
-  return safeRelatedBuckets.find((bucket) => bucket.id === shared);
-}
-
-function hasSharedScenarioTag(source: WordItem, target: WordItem | undefined) {
-  if (!target) return false;
-  const targetTags = new Set(target.scenarioTags.map(normalizeWordText));
-  return source.scenarioTags.some((tag) => targetTags.has(normalizeWordText(tag)));
-}
-
 function isReciprocalRelated(source: WordItem, target: WordItem | undefined) {
   if (!target) return false;
   const sourceKey = normalizeWordText(source.dutch);
   return target.relatedWords.map(normalizeWordText).includes(sourceKey);
-}
-
-function lexiconCategoryTagsFor(target: string) {
-  const key = normalizeWordText(target);
-  const tags = new Set<string>();
-  relationLexicons.categories.forEach((category) => {
-    const heads = category.heads.map(normalizeWordText);
-    const members = category.members.map(normalizeWordText);
-    if (!heads.includes(key) && !members.includes(key)) return;
-    tags.add(normalizeWordText(category.id));
-    category.tags.forEach((tag) => tags.add(normalizeWordText(tag)));
-  });
-  return tags;
-}
-
-function semanticTagsFor(word: WordItem | undefined, fallbackText: string) {
-  const tags = new Set<string>([
-    ...safeRelatedBucketIdsForWord(word, fallbackText).map(normalizeWordText),
-    ...lexiconCategoryTagsFor(fallbackText),
-  ]);
-  word?.scenarioTags.forEach((tag) => tags.add(normalizeWordText(tag)));
-  return tags;
-}
-
-function hasSharedSemanticContext(source: WordItem, target: WordItem | undefined, targetText: string) {
-  const sourceTags = semanticTagsFor(source, source.dutch);
-  const targetTags = semanticTagsFor(target, targetText);
-  return [...sourceTags].some((tag) => targetTags.has(tag));
-}
-
-function strictSemanticTagsFor(word: WordItem | undefined, fallbackText: string, allWords: WordItem[]) {
-  const tags = new Set<string>(lexiconCategoryTagsFor(fallbackText));
-  word?.scenarioTags.forEach((tag) => tags.add(normalizeWordText(tag)));
-  if (word) {
-    analyzeWord(word, allWords).categoryTags.forEach((tag) => tags.add(normalizeWordText(tag)));
-  }
-  return tags;
-}
-
-function hasSharedStrictSemanticContext(source: WordAnalysis, target: WordItem | undefined, targetText: string, allWords: WordItem[]) {
-  const sourceTags = new Set([
-    ...source.scenarioTags.map(normalizeWordText),
-    ...source.categoryTags.map(normalizeWordText),
-    ...lexiconCategoryTagsFor(source.normalizedForm),
-  ]);
-  const targetTags = strictSemanticTagsFor(target, targetText, allWords);
-  return [...sourceTags].some((tag) => targetTags.has(tag));
 }
 
 function isCompoundSource(analysis: WordAnalysis) {
@@ -389,79 +148,6 @@ function shouldShowRootFamilyTarget(analysis: WordAnalysis, root: string, target
   return hasSharedSemanticContext(analysis.word, targetWord, target);
 }
 
-function contextTagsFor(analysis: WordAnalysis) {
-  const context = lexicalContextFor(analysis);
-  const tokens = contextTokensFor(context);
-  const tags = new Set(analysis.categoryTags.map(normalizeWordText));
-  const isEmailAddress = /e-?mail|email/.test(context);
-  const residenceLike =
-    !isEmailAddress &&
-    (
-      hasAnyToken(tokens, ["woon", "wonen", "woning", "adres", "postcode", "provincie", "buurt", "wijk", "straat", "huisnummer", "plaats", "stad"]) ||
-      /居住|住址|邮编|社区|省|街区|街道|门牌/.test(context)
-    );
-
-  if (residenceLike) {
-    tags.delete("shopping");
-    tags.delete("supermarket");
-    tags.add("residence-location");
-    tags.add("housing");
-    tags.add("gemeente");
-  }
-  if (hasAnyToken(tokens, ["naam", "voornaam", "achternaam", "leeftijd", "geboorte", "geboortedatum", "geboorteplaats", "nationaliteit", "geslacht", "personal", "details"]) || /名字|姓名|出生|国籍|性别/.test(context)) {
-    tags.add("personal-info");
-  }
-  if (hasAnyToken(tokens, ["alleenstaand", "getrouwd", "gescheiden", "weduwe", "weduwnaar"]) || /婚姻|单身|已婚|离婚|寡妇|鳏夫/.test(context)) {
-    tags.add("marital-status");
-  }
-  if (hasAnyToken(tokens, ["meneer", "mevrouw", "aanspreking"]) || /先生|女士|称呼/.test(context)) {
-    tags.add("formal-address");
-  }
-  if (hasAnyToken(tokens, ["land", "landen", "countries", "country", "nederland", "china", "duitsland", "belgië", "frankrijk", "spanje"]) || /国家|中国|荷兰|德国|法国|西班牙|比利时/.test(context)) {
-    tags.add("countries");
-  }
-  if (hasAnyToken(tokens, ["taal", "language", "languages", "nederlands", "engels", "chinees", "duits", "frans", "spaans", "vertaling", "tolk"]) || /语言|荷兰语|英语|中文|翻译|口译/.test(context)) {
-    tags.add("language");
-  }
-  if (hasAnyToken(tokens, ["telefoon", "telefoonnummer", "mobiel", "nummer", "bellen", "email", "contact"]) || /e-?mail|mailadres|电话|手机|号码|邮箱|邮件地址|联系方式/.test(context)) {
-    tags.add("contact");
-    tags.add("phone-contact");
-  }
-  if (hasAnyToken(tokens, ["bijlage", "bericht", "onderwerp", "aanhef", "groet", "afzender", "ontvanger", "email"]) || /e-?mail|邮件|附件|发件人|收件人|主题/.test(context)) {
-    tags.add("email");
-  }
-  if (hasAnyToken(tokens, ["formulier", "document", "bijlage", "kopie", "kopiëren", "handtekening", "stempel", "printer", "printen", "scannen", "mapje", "bewijs", "verklaring"]) || /表格|文件|附件|复印|签名|印章|打印|扫描/.test(context)) {
-    tags.add("form");
-    tags.add("document");
-  }
-  if (hasAnyToken(tokens, ["gemeente", "paspoort", "inschrijven", "aanvraag", "afspraak"]) || /市政|护照|登记|申请|预约/.test(context)) {
-    tags.add("gemeente");
-  }
-  if (hasAnyToken(tokens, ["huur", "kamer", "verhuurder", "reparatie", "sleutel"]) || /住房|租|房间|维修|钥匙/.test(context)) {
-    tags.add("housing");
-  }
-  if (hasAnyToken(tokens, ["boodschap", "boodschappen", "winkel", "supermarkt", "kassa", "prijs", "geld"]) || /购物|商店|超市|收银|价格/.test(context)) {
-    tags.add("shopping");
-  }
-  if (hasAnyToken(tokens, ["trein", "bus", "fiets", "station", "halte", "perron", "spoor", "transport", "vervoer", "route", "reisplanner", "richting", "lijn", "overstappen", "inchecken", "uitchecken", "ov-chipkaart"]) || /交通|火车|公交|自行车|车站|站台|轨道|路线|换乘|刷卡进站|刷卡出站/.test(context)) {
-    tags.add("transport");
-  }
-  if (hasAnyToken(tokens, ["huisarts", "ziek", "pijn", "medicijn", "apotheek", "gezondheid"]) || /医生|生病|疼|药/.test(context)) {
-    tags.add("health");
-  }
-  if (hasAnyToken(tokens, ["eten", "drinken", "brood", "melk", "water", "koffie", "thee", "food", "drink"]) || /吃|喝|面包|牛奶|咖啡/.test(context)) {
-    tags.add("food-drink");
-  }
-  if (hasAnyToken(tokens, ["hulp", "helpen", "vraag", "medewerker", "help"]) || /帮助|问题/.test(context)) {
-    tags.add("help");
-  }
-  if (hasAnyToken(tokens, ["nul", "een", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen", "tien", "twintig", "honderd", "number"]) || /数字|零/.test(context)) {
-    tags.add("numbers");
-  }
-
-  return Array.from(tags);
-}
-
 function categoryReasonFor(categoryId: string, sourceText: string, target: string, sourceIsHead = false) {
   const headPrefix = sourceIsHead
     ? `${target} 是 ${sourceText} 这个主题下的具体词。`
@@ -471,6 +157,16 @@ function categoryReasonFor(categoryId: string, sourceText: string, target: strin
     : `${sourceText} and ${target}`;
 
   switch (categoryId) {
+    case "relative-days":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 在同一条“昨天、今天、明天、后天”的时间线上。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} sit on the same yesterday-today-tomorrow timeline.`,
+      };
+    case "day-parts":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 是一天里的时间段，按早上、中午、晚上、夜里顺序记。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} are parts of the day; learn them in morning-to-night order.`,
+      };
     case "personal-info":
       return {
         zh: sourceIsHead ? headPrefix : `${headPrefix} 都常出现在个人信息表或自我介绍里。`,
@@ -541,6 +237,11 @@ function categoryReasonFor(categoryId: string, sourceText: string, target: strin
         zh: sourceIsHead ? headPrefix : `${headPrefix} 都常在看病、药房或身体不舒服场景出现。`,
         en: sourceIsHead ? headEnPrefix : `${headEnPrefix} both appear in doctor, pharmacy, or illness contexts.`,
       };
+    case "body-parts":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 都在身体地图上，指部位时能互相定位。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} belong on the body map and help locate body parts.`,
+      };
     case "complaint":
       return {
         zh: sourceIsHead ? headPrefix : `${headPrefix} 都常在投诉、报修或说明问题的场景出现。`,
@@ -556,6 +257,21 @@ function categoryReasonFor(categoryId: string, sourceText: string, target: strin
       return {
         zh: sourceIsHead ? headPrefix : `${headPrefix} 都是时间表达。`,
         en: sourceIsHead ? headEnPrefix : `${headEnPrefix} are both time expressions.`,
+      };
+    case "sequence-time":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 都在表达动作或时间顺序：先、之后、马上、稍后。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} both express action or time order: first, after that, immediately, or soon.`,
+      };
+    case "frequency-time":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 都在表达频率或周期，适合按“多久一次”一起记。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} both express frequency or period, so learn them as how often words.`,
+      };
+    case "family":
+      return {
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 都是亲属/家庭词，放在家庭关系图里更好记。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} are family words, easier to remember on one family map.`,
       };
     case "languages":
       return {
@@ -574,8 +290,8 @@ function categoryReasonFor(categoryId: string, sourceText: string, target: strin
       };
     case "formal-address":
       return {
-        zh: sourceIsHead ? headPrefix : `${headPrefix} 都是称呼或称谓相关词。`,
-        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} are address/title words.`,
+        zh: sourceIsHead ? headPrefix : `${headPrefix} 是正式称呼里最常见的一对：meneer 称呼先生，mevrouw 称呼女士。邮件、柜台、电话里先认这一对。`,
+        en: sourceIsHead ? headEnPrefix : `${headEnPrefix} are the core formal address pair: meneer for Mr./sir, mevrouw for Ms./madam. Recognize them in emails, desks, and calls.`,
       };
     case "work":
       return {
@@ -602,6 +318,7 @@ function allowLexiconOnlyTarget(type: MemoryBubbleRelationType) {
     "part-related",
     "verb-form",
     "verb-noun-pair",
+    "pronoun-family",
     "comparative-superlative",
     "time-contrast",
     "time-category",
@@ -614,6 +331,43 @@ function allowLexiconOnlyTarget(type: MemoryBubbleRelationType) {
     "action-object",
     "state-action",
   ].includes(type);
+}
+
+const pronounFamilies: Record<string, string[]> = {
+  ik: ["mij", "me", "mijn", "wij", "we"],
+  mij: ["ik", "me", "mijn"],
+  me: ["ik", "mij", "mijn"],
+  mijn: ["ik", "mij", "me"],
+  wij: ["we", "ons", "onze", "ik"],
+  we: ["wij", "ons", "onze", "ik"],
+  ons: ["wij", "we", "onze"],
+  onze: ["wij", "we", "ons"],
+  jij: ["je", "jou", "jouw", "jullie"],
+  je: ["jij", "jou", "jouw", "jullie"],
+  jou: ["jij", "je", "jouw"],
+  jouw: ["jij", "je", "jou"],
+  u: ["uw", "jij", "je"],
+  uw: ["u"],
+  jullie: ["jij", "je", "jou", "jouw"],
+};
+
+export function generatePronounFamilyRelations(analysis: WordAnalysis, allWords: WordItem[]) {
+  const targets = pronounFamilies[analysis.normalizedForm];
+  if (!targets) return [];
+
+  return targets
+    .map((target) =>
+      candidate(analysis, target, "pronoun-family", allWords, {
+        evidence: "lexicon",
+        source: "seed",
+        targetMeaning: targetMeaningFor(target),
+        reasonZh: `${analysis.word.dutch} 和 ${target} 是同一组人称代词/物主形式，先放在一张小表里一起记。`,
+        reasonEn: `${analysis.word.dutch} and ${target} belong to the same pronoun or possessive set, so learn them together as one small table.`,
+        strength: "strong",
+        confidence: "high",
+      }),
+    )
+    .filter(Boolean) as MemoryBubbleCandidate[];
 }
 
 function candidate(
@@ -907,6 +661,119 @@ export function generateComparativeRelations(analysis: WordAnalysis, allWords: W
   );
 }
 
+const orderedTimeGroups = [
+  {
+    id: "relative-day",
+    words: ["gisteren", "vandaag", "morgen", "overmorgen"],
+    reasonZh: "这组按时间轴记：gisteren 昨天 → vandaag 今天 → morgen 明天 → overmorgen 后天。",
+    reasonEn: "Learn this as a timeline: gisteren yesterday -> vandaag today -> morgen tomorrow -> overmorgen the day after tomorrow.",
+  },
+  {
+    id: "day-part",
+    words: ["ochtend", "middag", "avond", "nacht"],
+    reasonZh: "这组按一天的顺序记：ochtend 早上 → middag 中午/下午 → avond 晚上 → nacht 夜里。",
+    reasonEn: "Learn these in the order of the day: ochtend morning -> middag midday/afternoon -> avond evening -> nacht night.",
+  },
+  {
+    id: "weekday",
+    words: ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag", "zondag"],
+    reasonZh: "这组按星期顺序记，比只说“都是时间词”更容易回忆。",
+    reasonEn: "Learn these in weekday order; that is more memorable than a broad time category.",
+  },
+] as const;
+
+export function generateOrderedTimeRelations(analysis: WordAnalysis, allWords: WordItem[]) {
+  const source = analysis.normalizedForm;
+  return orderedTimeGroups.flatMap((group) => {
+    const index = group.words.map(normalizeWordText).indexOf(source);
+    if (index < 0) return [];
+    const targets = group.words
+      .map((target, targetIndex) => ({ target, distance: Math.abs(targetIndex - index) }))
+      .filter((item) => item.distance > 0)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, group.id === "relative-day" ? 3 : 2);
+
+    return targets
+      .map(({ target }) => candidate(analysis, target, "time-contrast", allWords, {
+        evidence: "lexicon",
+        source: "seed",
+        targetMeaning: targetMeaningFor(target),
+        reasonZh: group.reasonZh,
+        reasonEn: group.reasonEn,
+        strength: "strong",
+        confidence: "high",
+      }))
+      .filter(Boolean) as MemoryBubbleCandidate[];
+  });
+}
+
+const focusedCategoryTargets: Record<string, Record<string, string[]>> = {
+  family: {
+    moeder: ["vader", "ouders", "kind", "zoon", "dochter", "familie", "gezin"],
+    vader: ["moeder", "ouders", "kind", "zoon", "dochter", "familie", "gezin"],
+    ouders: ["moeder", "vader", "kind", "zoon", "dochter", "familie", "gezin"],
+    broer: ["zus", "moeder", "vader", "familie", "gezin"],
+    zus: ["broer", "moeder", "vader", "familie", "gezin"],
+    zoon: ["dochter", "kind", "moeder", "vader", "ouders", "familie"],
+    dochter: ["zoon", "kind", "moeder", "vader", "ouders", "familie"],
+    kind: ["baby", "jongen", "meisje", "moeder", "vader", "ouders", "familie"],
+    kleinkind: ["opa", "oma", "kind", "familie", "gezin"],
+    baby: ["kind", "jongen", "meisje", "moeder", "vader", "familie"],
+    jongen: ["meisje", "kind", "baby", "familie"],
+    meisje: ["jongen", "kind", "baby", "familie"],
+    oom: ["tante", "neef", "nicht", "familie", "man"],
+    tante: ["oom", "neef", "nicht", "familie", "vrouw"],
+    neef: ["nicht", "oom", "tante", "familie"],
+    nicht: ["neef", "oom", "tante", "familie"],
+    opa: ["oma", "kleinkind", "familie"],
+    oma: ["opa", "kleinkind", "familie"],
+    man: ["vrouw", "familie", "vader", "oom"],
+    vrouw: ["man", "familie", "moeder", "tante"],
+  },
+  "sequence-time": {
+    eerst: ["daarna", "meteen", "straks", "laatst", "eerder", "later"],
+    daarna: ["eerst", "meteen", "straks", "later"],
+    meteen: ["straks", "daarna", "eerst", "later"],
+    straks: ["meteen", "daarna", "later", "eerst"],
+    laatst: ["eerst", "daarna", "eerder", "later", "laatste"],
+    eerder: ["later", "eerst", "daarna"],
+    later: ["eerder", "daarna", "straks"],
+  },
+  "frequency-time": {
+    "elke week": ["week", "maand", "jaar", "dag", "vaak", "soms"],
+    "per maand": ["maand", "week", "jaar", "dag", "vaak", "soms"],
+    week: ["maand", "jaar", "dag", "elke week", "per maand"],
+    maand: ["week", "jaar", "dag", "per maand", "elke week"],
+    jaar: ["maand", "week", "dag"],
+    dag: ["week", "maand", "jaar", "vandaag", "morgen"],
+    altijd: ["vaak", "soms", "nooit", "meestal"],
+    vaak: ["soms", "altijd", "meestal", "nooit"],
+    soms: ["vaak", "nooit", "altijd", "meestal"],
+    nooit: ["soms", "vaak", "altijd"],
+    meestal: ["vaak", "soms", "altijd"],
+  },
+  "business-workplace": {
+    kantoor: ["bedrijf", "receptie", "personeel", "afdeling", "werkplek", "leiding", "chef", "winkelmedewerker"],
+    bedrijf: ["kantoor", "receptie", "personeel", "afdeling", "werkplek", "directeur"],
+    receptie: ["kantoor", "bedrijf", "personeel", "medewerker"],
+    personeel: ["bedrijf", "kantoor", "directeur", "afdeling", "werkplek"],
+    directeur: ["bedrijf", "kantoor", "personeel", "afdeling"],
+    leiding: ["chef", "directeur", "personeel", "bedrijf", "kantoor"],
+  },
+};
+
+function orderedFocusedTargets(categoryId: string, source: string, targets: string[]) {
+  const priority = focusedCategoryTargets[normalizeWordText(categoryId)]?.[source];
+  if (!priority?.length) return targets;
+  const available = new Set(targets.map(normalizeWordText));
+  const prioritized = priority.filter((target) => available.has(normalizeWordText(target)));
+  const prioritizedKeys = new Set(prioritized.map(normalizeWordText));
+  return [
+    ...prioritized,
+    ...targets.filter((target) => !prioritizedKeys.has(normalizeWordText(target))),
+  ];
+}
+
 export function generateCategoryRelations(analysis: WordAnalysis, allWords: WordItem[]) {
   const source = analysis.normalizedForm;
   return relationLexicons.categories.flatMap((category) => {
@@ -917,7 +784,6 @@ export function generateCategoryRelations(analysis: WordAnalysis, allWords: Word
     if (!sourceIsHead && !sourceIsMember) return [];
     const hasRoleAwareScenario = relationLexicons.scenarioRelations.some(([from]) => normalizeWordText(from) === source);
     if (hasRoleAwareScenario) return [];
-    if (category.id === "family" && !sourceIsHead) return [];
     if (shouldSuppressBroadCategoryRelation(analysis, category.id, sourceIsHead)) return [];
     const sourceHasActionObjects = Boolean(relationLexicons.actionObjects[analysis.baseForm] ?? relationLexicons.actionObjects[analysis.normalizedForm]);
     const targets = sourceIsHead
@@ -929,11 +795,14 @@ export function generateCategoryRelations(analysis: WordAnalysis, allWords: Word
           ...category.heads.filter((head) => targetAvailable(head, wordMapFor(allWords))),
           ...category.members.filter((member) => normalizeWordText(member) !== source),
         ];
+    const focusedTargets = category.id === "formal-address" && !sourceIsHead
+      ? targets.filter((target) => ["meneer", "mevrouw"].includes(normalizeWordText(target)))
+      : orderedFocusedTargets(category.id, source, targets);
     const configuredLimit = "headPreviewLimit" in category && typeof category.headPreviewLimit === "number"
       ? category.headPreviewLimit
       : undefined;
     const targetLimit = configuredLimit ?? (sourceIsHead && category.members.length > 8 ? 4 : 6);
-    return targets.slice(0, targetLimit).map((target) => {
+    return focusedTargets.slice(0, targetLimit).map((target) => {
       const reason = categoryReasonFor(category.id, analysis.word.dutch, target, sourceIsHead);
       return candidate(analysis, target, "category-member", allWords, {
         evidence: "lexicon",
@@ -952,6 +821,9 @@ export function generateSameCategoryFallbackRelations(analysis: WordAnalysis, al
   const source = analysis.normalizedForm;
   const contextTags = new Set(contextTagsFor(analysis));
   return relationLexicons.categories.flatMap((category) => {
+    const heads = category.heads.map(normalizeWordText);
+    const members = category.members.map(normalizeWordText);
+    if (!heads.includes(source) && !members.includes(source)) return [];
     const categoryKeys = new Set([category.id, ...category.tags].map(normalizeWordText));
     if (![...contextTags].some((tag) => categoryKeys.has(tag))) return [];
     const targets = [...category.heads, ...category.members]
@@ -1078,6 +950,10 @@ export function generateDeclaredRelatedWordRelations(analysis: WordAnalysis, all
     const bucket = safeRelatedBucketFor(analysis.word, targetWord, target);
     if (!bucket) return [];
     if (bucket.id === "basic-actions") return [];
+    const broadBucketNeedsExactCategory = new Set(["study", "home", "describing"]);
+    if (broadBucketNeedsExactCategory.has(bucket.id) && !sharesExactLexiconCategory(analysis.word.dutch, targetWord?.dutch ?? target)) {
+      return [];
+    }
     const targetType = targetWord ? inferWordType(targetWord) : undefined;
     if (
       (analysis.wordType === "function-word" || targetType === "function-word") &&
@@ -1275,12 +1151,14 @@ export function generateAllRuleCandidates(analysis: WordAnalysis, allWords: Word
     ...generateWordFormationRelations(analysis, allWords),
     ...generateCompoundRelations(analysis, allWords),
     ...generateVerbFormRelations(analysis, allWords),
+    ...generatePronounFamilyRelations(analysis, allWords),
     ...generateVerbNounPairRelations(analysis, allWords),
     ...generateDerivationRelations(analysis, allWords),
     ...generateSafeRootFamilyRelations(analysis, allWords),
     ...generateSynonymRelations(analysis, allWords),
     ...generateOppositeRelations(analysis, allWords),
     ...generateComparativeRelations(analysis, allWords),
+    ...generateOrderedTimeRelations(analysis, allWords),
     ...generateCategoryRelations(analysis, allWords),
     ...generateScenarioRelations(analysis, allWords),
     ...generateActionObjectRelations(analysis, allWords),

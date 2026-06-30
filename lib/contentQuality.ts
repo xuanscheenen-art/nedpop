@@ -5,6 +5,7 @@ import { completionIssuesForWord, creatorWordToWordItem, isBlank, isWeakText } f
 import { checkGeneratedExample } from "@/lib/checkGeneratedExample";
 import { verbUsageFor } from "@/lib/dutchVerbForms";
 import type { GeneratedExample } from "@/lib/exampleSentenceGenerator";
+import { isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import { wordTypeFor } from "@/lib/memoryPath";
 
 export type ContentQualitySeverity = "high" | "medium" | "low";
@@ -79,17 +80,13 @@ const hasPlaceholderMeaning = (text: string) =>
   /需要人工|placeholder|真实场景|这个词|该句|这句/i.test(text);
 
 const suspiciousDutchSentence = (sentence: string) =>
+  isKnownBadLearnerLine(sentence) ||
   [
     /^Ik zie de minuut\.$/i,
     /^Ik zeg heet\.$/i,
     /^Heb\.$/i,
     /^Wanneer\.$/i,
     /^Kijken\.$/i,
-    /^Spreek jij de supermarkt\?$/i,
-    /^Ik spreek geen water\.$/i,
-    /^Het is tegenover een afspraak\.$/i,
-    /^Ik heb een afspraak\.$/i,
-    /^Ik ben een afspraak\.$/i,
   ].some((pattern) => pattern.test(sentence.trim()));
 
 const generatedExampleForCheck = (word: CreatorWord, example: CreatorExampleSentence, index: number): GeneratedExample => ({

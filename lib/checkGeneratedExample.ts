@@ -1,6 +1,7 @@
 import type { WordItem } from "@/types/vocabulary";
 import { inferWordType, verbFormsForWord } from "@/lib/exampleTemplates";
 import type { GeneratedExample } from "@/lib/exampleSentenceGenerator";
+import { badGenericTargetTemplateIssue, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 
 const wordCount = (sentence: string) => sentence.trim().replace(/[.!?]+$/, "").split(/\s+/).filter(Boolean).length;
 const lower = (value: string) => value.toLowerCase();
@@ -10,6 +11,7 @@ const containsSeparableVerbUse = (sentence: string, token: string) => {
   const separableForms: Record<string, [verbForm: string, particle: string]> = {
     inspreken: ["spreek", "in"],
     opbellen: ["bel", "op"],
+    opstaan: ["sta", "op"],
     invullen: ["vul", "in"],
     aanmelden: ["meld", "aan"],
     afmelden: ["meld", "af"],
@@ -49,16 +51,23 @@ const containsSeparableVerbUse = (sentence: string, token: string) => {
     afhalen: ["haal", "af"],
     afstemmen: ["stem", "af"],
     aanbieden: ["bied", "aan"],
+    aanpassen: ["pas", "aan"],
+    uitleggen: ["leg", "uit"],
   };
   const form = separableForms[lowerToken];
   if (form) return containsWord(sentence, form[0]) && containsWord(sentence, form[1]);
   return false;
 };
+const containsVerbUse = (sentence: string, token: string) => {
+  const forms = verbFormsForWord(token);
+  if (!forms) return false;
+  return [forms.infinitive, forms.ik, forms.jij, forms.hij, forms.wij].some((form) => containsWord(sentence, form)) ||
+    containsSeparableVerbUse(sentence, forms.infinitive);
+};
 const generatedMeaningPattern = /词：|word:|自动扩充|generated expansion|需要人工|placeholder|后台|creator/i;
+const analyticGlossPattern = /(^|[\s，。])[^，。.!?]{1,20}\s[+＋]\s[^，。.!?]{1,20}/;
 const safeStandaloneWords = new Set(["hallo", "dag", "ja", "nee", "sorry", "bedankt", "alsjeblieft", "alstublieft", "dank je", "dank u", "tot ziens", "goedemorgen", "goedenavond", "prima", "oké", "welkom"]);
 const weakDitIsNouns = new Set(["adres", "formulier", "rekening", "afspraak", "gemeente", "huisarts", "ziekenhuis", "verzekering", "woning", "huur", "factuur", "document", "brief", "e-mail"]);
-const bodyPartPattern = "(arm|been|hoofd|buik|hand|voet|rug|keel|oor|neus|mond|tand|schouder|knie|nek)";
-const symptomPattern = "(verkouden|hoesten|hoofdpijn|buikpijn|keelpijn|koorts|duizelig|misselijk|moe|benauwd)";
 const adjectiveEForm = (adjective: string) => {
   const irregular: Record<string, string> = { groot: "grote", oud: "oude", nieuw: "nieuwe", duur: "dure", goedkoop: "goedkope" };
   return irregular[adjective.toLowerCase()] ?? `${adjective}e`;
@@ -85,6 +94,7 @@ export const checkGeneratedExample = (
   if (!example.meaningZh.trim()) checked = downgrade(checked, "missing-chinese-meaning");
   if (!example.meaningEn.trim()) checked = downgrade(checked, "missing-english-meaning");
   if (generatedMeaningPattern.test(`${example.meaningZh} ${example.meaningEn}`)) checked = downgrade(checked, "placeholder-meaning");
+  if (analyticGlossPattern.test(`${example.meaningZh} ${example.meaningEn}`)) checked = downgrade(checked, "analytic-gloss-meaning");
   if (!example.audioText.trim()) checked = downgrade(checked, "missing-audio-text");
 
   const forms = verbFormsForWord(word);
@@ -93,7 +103,7 @@ export const checkGeneratedExample = (
     : wordType === "adjective"
       ? [dutch, adjectiveEForm(dutch)]
     : [dutch, word.plural ?? ""].filter(Boolean);
-  const phrasePartsPresent = wordType === "phrase" && dutch.split(/\s+/).every((token) => containsWord(sentence, token) || containsSeparableVerbUse(sentence, token));
+  const phrasePartsPresent = wordType === "phrase" && dutch.split(/\s+/).every((token) => containsWord(sentence, token) || containsVerbUse(sentence, token));
   const targetPresent =
     wordType === "number" ||
     ["function-word", "country-name", "day-month", "language-name"].includes(wordType) ||
@@ -103,83 +113,15 @@ export const checkGeneratedExample = (
   if (!targetPresent) checked = downgrade(checked, "target-word-not-present");
 
   const lowered = lower(sentence);
-  const knownBad = [
-    /^Ik werken\.$/i,
-    /^Ik zijn\.$/i,
-    /^Ik nodig help\.$/i,
-    /^Kunt u mij hulp\?$/i,
-    /^Ik heb een afspraak\.$/i,
-    /^Ik ben een afspraak\.$/i,
-    /^Ik zie de minuut\.$/i,
-    /^Ik zeg heet\.$/i,
-    /^Ik ga naar uit\.$/i,
-    /^Ik ga naar hier\.$/i,
-    /^Ik ga naar daar\.$/i,
-    new RegExp(`^Ik ga naar (de|het) ${bodyPartPattern}\\.$`, "i"),
-    new RegExp(`^Ik ga naar ${symptomPattern}\\.$`, "i"),
-    new RegExp(`^Ik gebruik (de|het) ${bodyPartPattern}\\.$`, "i"),
-    new RegExp(`^Ik heb (de|het) ${bodyPartPattern} nodig\\.$`, "i"),
-    new RegExp(`^Waar is (de|het) ${bodyPartPattern}\\?$`, "i"),
-    /^Spreek jij de supermarkt\?$/i,
-    /^Ik spreek geen water\.$/i,
-    /^Het is tegenover een afspraak\.$/i,
-  ];
-  if (knownBad.some((pattern) => pattern.test(sentence))) checked = downgrade(checked, "known-bad-sentence");
-  if (wordType === "noun") {
-    const target = word.dutch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`^Ik zoek\\s+(de|het|een)?\\s*${target}\\.?$`, "i").test(sentence)) {
-      const allowedSearchNouns = new Set(["station", "halte", "perron", "uitgang", "balie"]);
-      if (!allowedSearchNouns.has(lower(word.dutch))) {
-        checked = downgrade(checked, "generic-ik-zoek-template");
-      }
-    }
-    if (new RegExp(`^Ik heb\\s+(de|het)\\s+${target}\\s+nodig\\.?$`, "i").test(sentence)) {
-      checked = downgrade(checked, "generic-de-het-nodig-template");
-    }
-    if (new RegExp(`^Ik ga naar\\s+(de|het)?\\s*${target}\\.?$`, "i").test(sentence)) {
-      const allowedPlaceNouns = new Set([
-        "school",
-        "werk",
-        "huis",
-        "supermarkt",
-        "station",
-        "halte",
-        "perron",
-        "gemeente",
-        "huisarts",
-        "ziekenhuis",
-        "tandarts",
-        "apotheek",
-        "balie",
-        "winkel",
-        "centrum",
-        "bibliotheek",
-        "park",
-        "restaurant",
-        "café",
-        "postkantoor",
-        "gemeentehuis",
-        "politiebureau",
-        "bioscoop",
-        "museum",
-        "zwembad",
-        "sportschool",
-        "kerk",
-        "moskee",
-        "toilet",
-        "parkeerplaats",
-        "fietsenstalling",
-        "stationingang",
-        "halteplaats",
-        "wachtruimte",
-      ]);
-      if (!allowedPlaceNouns.has(lower(word.dutch))) {
-        checked = downgrade(checked, "generic-naar-template");
-      }
-    }
-  }
+  if (isKnownBadLearnerLine(sentence)) checked = downgrade(checked, "known-bad-sentence");
+  if (/\b(ik|jij|je|u|hij|zij|ze|wij|we|jullie)\s+\1\b/i.test(sentence)) checked = downgrade(checked, "duplicate-subject");
+  const genericIssue = badGenericTargetTemplateIssue(word, sentence);
+  if (genericIssue) checked = downgrade(checked, genericIssue);
   if (wordType !== "phrase" && sentence.replace(/[.!?]+$/, "").trim().toLowerCase() === lower(word.dutch) && !safeStandaloneWords.has(lower(word.dutch))) {
     checked = downgrade(checked, "bare-word-is-not-example");
+  }
+  if (wordType === "phrase" && sentence.replace(/[.!?]+$/, "").trim().toLowerCase() === lower(word.dutch) && !safeStandaloneWords.has(lower(word.dutch))) {
+    checked = downgrade(checked, "phrase-echo-is-not-example");
   }
   if (/\bde adres\b/i.test(sentence)) checked = downgrade(checked, "wrong-article-de-adres");
   if (/\bhet boeken\b/i.test(sentence)) checked = downgrade(checked, "wrong-plural-article-het-boeken");
@@ -189,7 +131,9 @@ export const checkGeneratedExample = (
   }
 
   if (wordType === "verb" && forms) {
-    if (containsWord(sentence, `Ik ${forms.infinitive}`)) checked = downgrade(checked, "verb-infinitive-after-ik");
+    if (new RegExp(`^Ik\\s+${forms.infinitive.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(sentence)) {
+      checked = downgrade(checked, "verb-infinitive-after-ik");
+    }
     if (/^Ik\s+(zijn|hebben|kunnen|willen|moeten|gaan|komen|wonen|werken|leren|kijken|helpen|begrijpen|schrijven)\b/i.test(sentence)) {
       checked = downgrade(checked, "verb-wrong-form-after-ik");
     }

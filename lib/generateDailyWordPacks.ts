@@ -30,7 +30,7 @@ const levelConfig: Record<
     priorityTags: ["greeting", "identity", "numbers", "time"],
   },
   A1: {
-    totalDays: 45,
+    totalDays: 65,
     newPerDay: 10,
     reviewPerDay: 3,
     recognitionPerDay: 0,
@@ -39,7 +39,7 @@ const levelConfig: Record<
     priorityTags: ["identity", "time", "family", "housing", "supermarket", "transport", "health", "work"],
   },
   A2: {
-    totalDays: 42,
+    totalDays: 60,
     newPerDay: 10,
     reviewPerDay: 3,
     recognitionPerDay: 2,
@@ -48,13 +48,13 @@ const levelConfig: Record<
     priorityTags: ["health", "appointment", "gemeente", "housing", "work", "sick-leave", "transport", "bill", "insurance", "email", "form", "phone-call", "complaint"],
   },
   B1: {
-    totalDays: 42,
+    totalDays: 70,
     newPerDay: 12,
     reviewPerDay: 4,
     recognitionPerDay: 2,
     estimatedMinutes: 35,
-    title: lt("B1 工作学习任务", "B1 Work & Study Tasks"),
-    priorityTags: ["work", "education", "reading", "writing", "digital", "tax", "benefits", "health", "housing", "transport", "safety", "society", "complaint", "bill"],
+    title: lt("B1 独立任务表达", "B1 Independent Task Dutch"),
+    priorityTags: ["identity", "health", "neighborhood", "budget", "work", "education", "travel", "environment", "media", "culture", "opinion", "presentation", "reading", "writing", "digital", "tax", "benefits", "safety", "society", "complaint", "bill"],
   },
 };
 
@@ -233,12 +233,12 @@ function sentencePatternsFor(level: CourseLevel, dayNumber: number, words: Daily
 function outputTaskFor(level: CourseLevel, theme: string, examples: string[]) {
   return {
     zh: level === "B1"
-      ? `用今日新词和复习词写/说一个 ${theme} 相关的 B1 工作学习句。`
+      ? `用今日新词和复习词写/说一个 ${theme} 相关的 B1 独立表达句。`
       : level === "A2"
         ? `用今日新词和复习词完成一个 ${theme} 办事情景句。`
         : `用今日新词和复习词说一句 ${theme} 相关的短句。`,
     en: level === "B1"
-      ? `Use today's new and review words to write or say one B1 work/study sentence about ${theme}.`
+      ? `Use today's new and review words to write or say one B1 independent-task sentence about ${theme}.`
       : level === "A2"
         ? `Use today's new and review words to complete one practical ${theme} sentence.`
         : `Use today's new and review words to say one short ${theme} sentence.`,

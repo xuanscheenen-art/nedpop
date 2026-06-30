@@ -63,7 +63,11 @@ const functionWords = new Set([
   "bovendien",
   "namelijk",
   "daardoor",
+  "doordat",
   "daarom",
+  "als",
+  "toen",
+  "kortom",
   "geen",
   "niet",
   "wel",
@@ -137,6 +141,7 @@ const functionWords = new Set([
   "meteen",
   "daarna",
   "eerst",
+  "laatst",
   "misschien",
   "zeker",
   "ongeveer",
@@ -151,13 +156,8 @@ const functionWords = new Set([
   "contant",
   "totaal",
   "extra",
-  "verboden",
-  "toegestaan",
-  "openbaar",
-  "privé",
   "dus",
   "toch",
-  "verplicht",
   "samen",
   "alleen",
   "nogmaals",
@@ -588,6 +588,48 @@ const verbInfinitives = new Set([
   "repareren",
   "bevestigen",
   "passen",
+  "pinnen",
+  "vinden",
+  "oefenen",
+  "vertellen",
+  "weten",
+  "denken",
+  "meenemen",
+  "sturen",
+  "langskomen",
+  "aanvragen",
+  "verplaatsen",
+  "inschrijven",
+  "ziekmelden",
+  "vertrekken",
+  "aankomen",
+  "overgeven",
+  "terugkomen",
+  "vervangen",
+  "overleggen",
+  "doorgeven",
+  "overstappen",
+  "uitvallen",
+  "annuleren",
+  "inchecken",
+  "uitchecken",
+  "vergeten",
+  "kloppen",
+  "reageren",
+  "klagen",
+  "ontbreken",
+  "meedenken",
+  "inloggen",
+  "reserveren",
+  "hergebruiken",
+  "samenvatten",
+  "waarderen",
+  "toelichten",
+  "doorvragen",
+  "sparen",
+  "lenen",
+  "samenwerken",
+  "reflecteren",
 ]);
 
 const adjectives = new Set([
@@ -666,12 +708,20 @@ const adjectives = new Set([
   "beschikbaar",
   "betrouwbaar",
   "flexibel",
+  "formeel",
+  "vriendelijk",
   "aanwezig",
   "afwezig",
   "gemiddeld",
   "gratis",
   "glad",
+  "verboden",
+  "toegestaan",
+  "openbaar",
+  "privé",
   "verplicht",
+  "eens",
+  "oneens",
   "beschadigd",
   "duidelijk",
   "onduidelijk",
@@ -706,30 +756,130 @@ export const infinitiveForWord = (word: WordItem | string) => {
 const regularVerbForms = (infinitive: string) => {
   const spellingChanges: Record<string, string> = {
     heten: "heet",
+    eten: "eet",
     spreken: "spreek",
     nemen: "neem",
     geven: "geef",
+    krijgen: "krijg",
     staan: "sta",
+    opstaan: "sta",
+    liggen: "lig",
     zetten: "zet",
     zitten: "zit",
     betalen: "betaal",
+    bewaren: "bewaar",
     herhalen: "herhaal",
     halen: "haal",
     spelen: "speel",
     horen: "hoor",
     douchen: "douche",
+    logeren: "logeer",
     proberen: "probeer",
     repareren: "repareer",
+    reserveren: "reserveer",
+    waarderen: "waardeer",
+    reflecteren: "reflecteer",
+    identificeren: "identificeer",
+    lopen: "loop",
+    hardlopen: "loop",
+    zwemmen: "zwem",
+    zingen: "zing",
+    koken: "kook",
+    slapen: "slaap",
+    vertellen: "vertel",
+    weten: "weet",
+    vegen: "veeg",
+    strijken: "strijk",
+    proeven: "proef",
     schudden: "schud",
     smeren: "smeer",
     begrijpen: "begrijp",
     controleren: "controleer",
+    declareren: "declareer",
+    retourneren: "retourneer",
+    trakteren: "trakteer",
+    annuleren: "annuleer",
+    reageren: "reageer",
     accepteren: "accepteer",
     weigeren: "weiger",
     verhuizen: "verhuis",
     bewijzen: "bewijs",
+    besparen: "bespaar",
     kiezen: "kies",
     verzenden: "verzend",
+    versturen: "verstuur",
+    sturen: "stuur",
+    vergeten: "vergeet",
+    klagen: "klaag",
+    ontbreken: "ontbreek",
+    stemmen: "stem",
+    sparen: "spaar",
+    lenen: "leen",
+    beschrijven: "beschrijf",
+    invullen: "vul",
+    meenemen: "neem",
+    samenwonen: "woon",
+    aanmelden: "meld",
+    afmelden: "meld",
+    aantrekken: "trek",
+    uittrekken: "trek",
+    terugbrengen: "breng",
+    opruimen: "ruim",
+    schoonmaken: "maak",
+    afwassen: "was",
+    afdrogen: "droog",
+    ophangen: "hang",
+    weggooien: "gooi",
+    inpakken: "pak",
+    uitpakken: "pak",
+    aanzetten: "zet",
+    uitzetten: "zet",
+    aanraken: "raak",
+    uitloggen: "log",
+    inloggen: "log",
+    uitnodigen: "nodig",
+    afspreken: "spreek",
+    achterlaten: "laat",
+    klaarmaken: "maak",
+    uitschrijven: "schrijf",
+    aanvinken: "vink",
+    toevoegen: "voeg",
+    bijvoegen: "voeg",
+    doorverwijzen: "verwijs",
+    innemen: "neem",
+    opzeggen: "zeg",
+    thuisblijven: "blijf",
+    omreizen: "reis",
+    uitstappen: "stap",
+    instappen: "stap",
+    doorsturen: "stuur",
+    opnemen: "neem",
+    oplossen: "los",
+    terugstorten: "stort",
+    afhalen: "haal",
+    afstemmen: "stem",
+    nakijken: "kijk",
+    aanvragen: "vraag",
+    inschrijven: "schrijf",
+    ziekmelden: "meld",
+    aankomen: "kom",
+    terugkomen: "kom",
+    doorgeven: "geef",
+    doorvragen: "vraag",
+    overstappen: "stap",
+    uitvallen: "val",
+    inchecken: "check",
+    uitchecken: "check",
+    terugbetalen: "betaal",
+    meedenken: "denk",
+    samenwerken: "werk",
+    samenvatten: "vat",
+    toelichten: "licht",
+    aankleden: "kleed",
+    inwerken: "werk",
+    uitleggen: "leg",
+    aanpassen: "pas",
+    aanbieden: "bied",
   };
   if (spellingChanges[infinitive]) return spellingChanges[infinitive];
   if (infinitive.endsWith("llen") || infinitive.endsWith("ppen") || infinitive.endsWith("kken") || infinitive.endsWith("ssen") || infinitive.endsWith("ggen") || infinitive.endsWith("nnen")) {
@@ -900,6 +1050,12 @@ const phraseChunkMeanings: Record<string, LocalizedText> = {
   "Nederlands leren": lt("学荷兰语", "learn Dutch"),
   "Nederlands spreken": lt("说荷兰语", "speak Dutch"),
   "Chinees spreken": lt("说中文", "speak Chinese"),
+  "vakantie hebben": lt("放假", "be on holiday / have time off"),
+  "op vakantie gaan": lt("去度假", "go on holiday"),
+  "de vakantie begint": lt("假期开始", "the holiday starts"),
+  "tegen de deur duwen": lt("推门", "push against the door"),
+  "aan de deur trekken": lt("拉门", "pull the door"),
+  "duwen en trekken": lt("推和拉", "push and pull"),
   "Ik begrijp het": lt("我明白了", "I understand it"),
   "een sollicitatie versturen": lt("提交求职申请", "submit a job application"),
   "een sollicitatiegesprek hebben": lt("有一次求职面试", "have a job interview"),
@@ -952,6 +1108,7 @@ const phraseChunkMeanings: Record<string, LocalizedText> = {
   "veel hoesten": lt("咳嗽很多", "cough a lot"),
   "even rusten": lt("休息一下", "rest for a moment"),
   "vandaag rusten": lt("今天休息", "rest today"),
+  "rust nemen": lt("休息一下", "take a rest"),
   "duizelig zijn": lt("头晕", "be dizzy"),
   "misselijk zijn": lt("恶心想吐", "feel nauseous"),
   "moe zijn": lt("累了", "be tired"),
@@ -971,6 +1128,7 @@ const phraseChunkMeanings: Record<string, LocalizedText> = {
   "het formulier invullen": lt("填写表格", "fill in the form"),
   "een document nodig hebben": lt("需要一份文件", "need a document"),
   "naar de gemeente gaan": lt("去市政厅", "go to the municipality"),
+  "naar de dokter gaan": lt("去看医生", "go to the doctor"),
   "probleem met mijn woning": lt("我的住房有问题", "problem with my home"),
   "de huur betalen": lt("付房租", "pay the rent"),
   "naar de apotheek gaan": lt("去药房", "go to the pharmacy"),
@@ -1008,6 +1166,18 @@ const phraseChunkMeanings: Record<string, LocalizedText> = {
   "de waterrekening is hoger": lt("水费账单更高", "the water bill is higher"),
   "een herinnering krijgen": lt("收到提醒/催缴信", "receive a reminder"),
   "herinnering over de rekening": lt("关于账单的提醒", "reminder about the bill"),
+  "in de ochtend": lt("在上午", "in the morning"),
+  "in de namiddag": lt("在下午晚些时候", "in the late afternoon"),
+  "in de nacht": lt("在夜里", "at night"),
+  "om middernacht": lt("在午夜", "at midnight"),
+  "middagpauze hebben": lt("午休", "have a lunch break"),
+  "een werkdag": lt("一个工作日", "a workday"),
+  "een feestdag": lt("一个节日/假日", "a holiday"),
+  "mijn verjaardag": lt("我的生日", "my birthday"),
+  "in de kalender": lt("在日历里", "in the calendar"),
+  "laatst ziek zijn": lt("最近生病", "be sick recently"),
+  "elke week": lt("每周", "every week"),
+  "per maand": lt("每月/按月", "per month"),
 };
 
 export const phraseChunkMeaningFor = (chunk: string): LocalizedText | undefined => phraseChunkMeanings[chunk.trim()];
@@ -1029,6 +1199,10 @@ const functionWordExamples: Record<string, TemplateExample[]> = {
   bovendien: [{ dutch: "Bovendien heb ik al ervaring met klantcontact.", meaningZh: "而且，我已经有客户沟通经验。", meaningEn: "Moreover, I already have experience with customer contact.", type: "output", phraseChunkUsed: "bovendien heb ik ervaring", scenarioTags: ["work"] }],
   namelijk: [{ dutch: "Ik heb een vraag, namelijk over de betaling.", meaningZh: "我有一个问题，也就是关于付款的问题。", meaningEn: "I have a question, namely about the payment.", type: "output", phraseChunkUsed: "namelijk over", scenarioTags: ["bill", "writing"] }],
   daardoor: [{ dutch: "Daardoor kan ik de afspraak niet halen.", meaningZh: "因此我赶不上这个预约。", meaningEn: "As a result, I cannot make the appointment.", type: "scenario", phraseChunkUsed: "daardoor kan ik niet", scenarioTags: ["appointment"] }],
+  doordat: [{ dutch: "Doordat de trein vertraging heeft, kom ik later.", meaningZh: "因为火车晚点，我会晚点到。", meaningEn: "Because the train is delayed, I will arrive later.", type: "scenario", phraseChunkUsed: "doordat de trein vertraging heeft", scenarioTags: ["transport", "appointment"] }],
+  als: [{ dutch: "Als u tijd heeft, kunt u mij bellen.", meaningZh: "如果您有时间，可以给我打电话。", meaningEn: "If you have time, you can call me.", type: "output", phraseChunkUsed: "als u tijd heeft", scenarioTags: ["phone-call", "appointment"] }],
+  toen: [{ dutch: "Toen ik de brief kreeg, heb ik meteen gereageerd.", meaningZh: "当我收到信时，我马上回复了。", meaningEn: "When I received the letter, I responded immediately.", type: "scenario", phraseChunkUsed: "toen ik de brief kreeg", scenarioTags: ["writing", "admin"] }],
+  kortom: [{ dutch: "Kortom, ik ben het ermee eens.", meaningZh: "总之，我同意这件事。", meaningEn: "In short, I agree with it.", type: "output", phraseChunkUsed: "kortom", scenarioTags: ["opinion", "writing"] }],
   geen: [{ dutch: "Ik heb geen tijd.", meaningZh: "我没有时间。", meaningEn: "I have no time.", type: "minimal", phraseChunkUsed: "geen tijd", scenarioTags: ["daily"] }],
   niet: [{ dutch: "Ik begrijp het niet.", meaningZh: "我不明白。", meaningEn: "I do not understand it.", type: "output", phraseChunkUsed: "niet begrijpen", scenarioTags: ["help", "classroom"] }],
   wel: [{ dutch: "Dat klopt wel.", meaningZh: "那确实是对的。", meaningEn: "That is indeed correct.", type: "contrast", phraseChunkUsed: "klopt wel", scenarioTags: ["daily"] }],
@@ -1089,6 +1263,7 @@ const functionWordExamples: Record<string, TemplateExample[]> = {
   meteen: [{ dutch: "Ik kom meteen.", meaningZh: "我马上来。", meaningEn: "I will come immediately.", type: "scenario", phraseChunkUsed: "meteen komen", scenarioTags: ["time"] }],
   daarna: [{ dutch: "Daarna ga ik naar huis.", meaningZh: "之后我回家。", meaningEn: "After that I go home.", type: "scenario", phraseChunkUsed: "daarna gaan", scenarioTags: ["time"] }],
   eerst: [{ dutch: "Eerst betaal ik.", meaningZh: "我先付款。", meaningEn: "First I pay.", type: "scenario", phraseChunkUsed: "eerst betalen", scenarioTags: ["payment"] }],
+  laatst: [{ dutch: "Ik was laatst ziek.", meaningZh: "我最近生病了。", meaningEn: "I was sick recently.", type: "scenario", phraseChunkUsed: "laatst ziek zijn", scenarioTags: ["time", "health"] }],
   misschien: [{ dutch: "Misschien kom ik morgen.", meaningZh: "也许我明天来。", meaningEn: "Maybe I will come tomorrow.", type: "scenario", phraseChunkUsed: "misschien komen", scenarioTags: ["time"] }],
   zeker: [{ dutch: "Dat weet ik zeker.", meaningZh: "我确定知道。", meaningEn: "I know that for sure.", type: "scenario", phraseChunkUsed: "zeker weten", scenarioTags: ["daily"] }],
   ongeveer: [{ dutch: "Het kost ongeveer tien euro.", meaningZh: "大约十欧。", meaningEn: "It costs about ten euros.", type: "scenario", phraseChunkUsed: "ongeveer tien euro", scenarioTags: ["payment"] }],
@@ -1107,6 +1282,8 @@ const functionWordExamples: Record<string, TemplateExample[]> = {
   toegestaan: [{ dutch: "Parkeren is toegestaan.", meaningZh: "允许停车。", meaningEn: "Parking is allowed.", type: "scenario", phraseChunkUsed: "is toegestaan", scenarioTags: ["public-signs"] }],
   openbaar: [{ dutch: "Dit is openbaar vervoer.", meaningZh: "这是公共交通。", meaningEn: "This is public transport.", type: "scenario", phraseChunkUsed: "openbaar vervoer", scenarioTags: ["transport"] }],
   privé: [{ dutch: "Dit is privé.", meaningZh: "这是私人的。", meaningEn: "This is private.", type: "scenario", phraseChunkUsed: "privé", scenarioTags: ["public-signs"] }],
+  eens: [{ dutch: "Ik ben het eens met dit voorstel.", meaningZh: "我同意这个提议。", meaningEn: "I agree with this proposal.", type: "output", phraseChunkUsed: "het eens zijn met", scenarioTags: ["opinion"] }],
+  oneens: [{ dutch: "Ik ben het oneens met dit besluit.", meaningZh: "我不同意这个决定。", meaningEn: "I disagree with this decision.", type: "output", phraseChunkUsed: "het oneens zijn met", scenarioTags: ["opinion"] }],
   dus: [{ dutch: "Ik ben ziek, dus ik blijf thuis.", meaningZh: "我病了，所以我待在家里。", meaningEn: "I am sick, so I stay home.", type: "scenario", phraseChunkUsed: "dus", scenarioTags: ["health"] }],
   daarom: [{ dutch: "Ik ben ziek. Daarom blijf ik thuis.", meaningZh: "我病了。因此我待在家里。", meaningEn: "I am sick. Therefore I stay home.", type: "scenario", phraseChunkUsed: "daarom blijf ik", scenarioTags: ["health", "writing"] }],
   toch: [{ dutch: "Ik kom toch.", meaningZh: "我还是会来。", meaningEn: "I will come after all.", type: "scenario", phraseChunkUsed: "toch komen", scenarioTags: ["appointment"] }],
@@ -1454,6 +1631,10 @@ const adjectiveExamples: Record<string, TemplateExample[]> = {
   getrouwd: [{ dutch: "Ik ben getrouwd.", meaningZh: "我已婚。", meaningEn: "I am married.", type: "scenario", phraseChunkUsed: "getrouwd zijn", scenarioTags: ["identity", "form"] }],
   gescheiden: [{ dutch: "Ik ben gescheiden.", meaningZh: "我离婚了。", meaningEn: "I am divorced.", type: "scenario", phraseChunkUsed: "gescheiden zijn", scenarioTags: ["identity", "form"] }],
   beschikbaar: [{ dutch: "Ik ben morgen beschikbaar.", meaningZh: "我明天有空。", meaningEn: "I am available tomorrow.", type: "scenario", phraseChunkUsed: "beschikbaar zijn", scenarioTags: ["appointment"] }],
+  formeel: [{ dutch: "Deze e-mail is formeel.", meaningZh: "这封邮件是正式的。", meaningEn: "This email is formal.", type: "scenario", phraseChunkUsed: "een formele e-mail", scenarioTags: ["email", "writing"] }],
+  vriendelijk: [{ dutch: "De medewerker is vriendelijk.", meaningZh: "工作人员很友好。", meaningEn: "The employee is friendly.", type: "scenario", phraseChunkUsed: "vriendelijk zijn", scenarioTags: ["work", "service"] }],
+  eens: [{ dutch: "Ik ben het eens met dit voorstel.", meaningZh: "我同意这个提议。", meaningEn: "I agree with this proposal.", type: "output", phraseChunkUsed: "het eens zijn met", scenarioTags: ["opinion"] }],
+  oneens: [{ dutch: "Ik ben het oneens met dit besluit.", meaningZh: "我不同意这个决定。", meaningEn: "I disagree with this decision.", type: "output", phraseChunkUsed: "het oneens zijn met", scenarioTags: ["opinion"] }],
   duidelijk: [{ dutch: "Dat is duidelijk.", meaningZh: "这很清楚。", meaningEn: "That is clear.", type: "output", phraseChunkUsed: "duidelijk zijn", scenarioTags: ["help"] }],
   onduidelijk: [{ dutch: "Dat is onduidelijk.", meaningZh: "这不清楚。", meaningEn: "That is unclear.", type: "output", phraseChunkUsed: "onduidelijk zijn", scenarioTags: ["help"] }],
   mogelijk: [{ dutch: "Is dat mogelijk?", meaningZh: "那可以吗？", meaningEn: "Is that possible?", type: "output", phraseChunkUsed: "mogelijk zijn", scenarioTags: ["appointment"] }],
@@ -1513,6 +1694,59 @@ const nounExamples: Record<string, TemplateExample[]> = {
   boek: [
     { dutch: "Dit is mijn boek.", meaningZh: "这是我的书。", meaningEn: "This is my book.", type: "minimal", phraseChunkUsed: "mijn boek", scenarioTags: ["classroom"] },
   ],
+  vakantie: [
+    { dutch: "Ik heb vakantie.", meaningZh: "我放假。", meaningEn: "I am on holiday.", type: "minimal", phraseChunkUsed: "vakantie hebben", scenarioTags: ["leisure", "time"] },
+    { dutch: "Wij gaan op vakantie.", meaningZh: "我们去度假。", meaningEn: "We are going on holiday.", type: "scenario", phraseChunkUsed: "op vakantie gaan", scenarioTags: ["leisure", "travel"] },
+    { dutch: "De vakantie begint maandag.", meaningZh: "假期周一开始。", meaningEn: "The holiday starts on Monday.", type: "scenario", phraseChunkUsed: "de vakantie begint", scenarioTags: ["leisure", "time"] },
+  ],
+  dokter: [
+    { dutch: "Ik ga naar de dokter.", meaningZh: "我去看医生。", meaningEn: "I go to the doctor.", type: "scenario", phraseChunkUsed: "naar de dokter gaan", scenarioTags: ["health"] },
+  ],
+  rust: [
+    { dutch: "Ik neem even rust.", meaningZh: "我休息一下。", meaningEn: "I take a short rest.", type: "scenario", phraseChunkUsed: "rust nemen", scenarioTags: ["health", "daily"] },
+  ],
+  ochtend: [
+    { dutch: "Ik werk in de ochtend.", meaningZh: "我上午工作。", meaningEn: "I work in the morning.", type: "scenario", phraseChunkUsed: "in de ochtend", scenarioTags: ["time", "routine"] },
+  ],
+  namiddag: [
+    { dutch: "Ik kom in de namiddag.", meaningZh: "我下午晚些时候来。", meaningEn: "I come in the late afternoon.", type: "scenario", phraseChunkUsed: "in de namiddag", scenarioTags: ["time", "appointment"] },
+  ],
+  nacht: [
+    { dutch: "Ik slaap in de nacht.", meaningZh: "我夜里睡觉。", meaningEn: "I sleep at night.", type: "scenario", phraseChunkUsed: "in de nacht", scenarioTags: ["time", "routine"] },
+  ],
+  middernacht: [
+    { dutch: "Ik slaap om middernacht.", meaningZh: "我午夜时在睡觉。", meaningEn: "I sleep at midnight.", type: "scenario", phraseChunkUsed: "om middernacht", scenarioTags: ["time", "routine"] },
+  ],
+  middagpauze: [
+    { dutch: "Ik heb middagpauze.", meaningZh: "我有午休。", meaningEn: "I have a lunch break.", type: "scenario", phraseChunkUsed: "middagpauze hebben", scenarioTags: ["time", "work"] },
+  ],
+  werkdag: [
+    { dutch: "Vandaag is een werkdag.", meaningZh: "今天是工作日。", meaningEn: "Today is a workday.", type: "scenario", phraseChunkUsed: "een werkdag", scenarioTags: ["time", "work"] },
+  ],
+  feestdag: [
+    { dutch: "Vandaag is een feestdag.", meaningZh: "今天是节日/假日。", meaningEn: "Today is a holiday.", type: "scenario", phraseChunkUsed: "een feestdag", scenarioTags: ["time"] },
+  ],
+  verjaardag: [
+    { dutch: "Vandaag is mijn verjaardag.", meaningZh: "今天是我的生日。", meaningEn: "Today is my birthday.", type: "scenario", phraseChunkUsed: "mijn verjaardag", scenarioTags: ["time", "family"] },
+  ],
+  kalender: [
+    { dutch: "De afspraak staat in de kalender.", meaningZh: "预约在日历里。", meaningEn: "The appointment is in the calendar.", type: "scenario", phraseChunkUsed: "in de kalender", scenarioTags: ["time", "appointment"] },
+  ],
+  oom: [
+    { dutch: "Mijn oom komt vandaag.", meaningZh: "我叔叔/舅舅今天来。", meaningEn: "My uncle is coming today.", type: "minimal", phraseChunkUsed: "mijn oom", scenarioTags: ["family"] },
+  ],
+  tante: [
+    { dutch: "Mijn tante komt vandaag.", meaningZh: "我阿姨/姑姑今天来。", meaningEn: "My aunt is coming today.", type: "minimal", phraseChunkUsed: "mijn tante", scenarioTags: ["family"] },
+  ],
+  neef: [
+    { dutch: "Mijn neef komt vandaag.", meaningZh: "我的侄子/外甥/堂表兄弟今天来。", meaningEn: "My male cousin or nephew is coming today.", type: "minimal", phraseChunkUsed: "mijn neef", scenarioTags: ["family"] },
+  ],
+  nicht: [
+    { dutch: "Mijn nicht komt vandaag.", meaningZh: "我的侄女/外甥女/堂表姐妹今天来。", meaningEn: "My female cousin or niece is coming today.", type: "minimal", phraseChunkUsed: "mijn nicht", scenarioTags: ["family"] },
+  ],
+  kleinkind: [
+    { dutch: "Mijn kleinkind speelt.", meaningZh: "我的孙辈在玩。", meaningEn: "My grandchild is playing.", type: "minimal", phraseChunkUsed: "mijn kleinkind", scenarioTags: ["family"] },
+  ],
   aankomst: [
     { dutch: "De aankomst is om negen uur.", meaningZh: "到达时间是九点。", meaningEn: "The arrival is at nine o'clock.", type: "scenario", phraseChunkUsed: "de aankomst", scenarioTags: ["transport"] },
   ],
@@ -1526,7 +1760,7 @@ const nounExamples: Record<string, TemplateExample[]> = {
     { dutch: "De reiziger stapt in.", meaningZh: "乘客上车。", meaningEn: "The passenger gets on.", type: "scenario", phraseChunkUsed: "instappen", scenarioTags: ["transport"] },
   ],
   reisplanner: [
-    { dutch: "Ik kijk in de reisplanner.", meaningZh: "我查看行程规划器。", meaningEn: "I check the travel planner.", type: "scenario", phraseChunkUsed: "in de reisplanner kijken", scenarioTags: ["transport"] },
+    { dutch: "De reisplanner geeft een andere route.", meaningZh: "行程规划器给出另一条路线。", meaningEn: "The travel planner gives another route.", type: "scenario", phraseChunkUsed: "de reisplanner gebruiken", scenarioTags: ["transport", "digital"] },
   ],
   richting: [
     { dutch: "De trein gaat richting Amsterdam.", meaningZh: "火车开往阿姆斯特丹方向。", meaningEn: "The train goes towards Amsterdam.", type: "scenario", phraseChunkUsed: "richting Amsterdam", scenarioTags: ["transport"] },
@@ -1854,9 +2088,25 @@ const phraseExamples: Record<string, TemplateExample[]> = {
   "kom uit": [{ dutch: "Ik kom uit China.", meaningZh: "我来自中国。", meaningEn: "I come from China.", type: "minimal", phraseChunkUsed: "kom uit", scenarioTags: ["identity"] }],
   "woon in": [{ dutch: "Ik woon in Nederland.", meaningZh: "我住在荷兰。", meaningEn: "I live in the Netherlands.", type: "minimal", phraseChunkUsed: "woon in", scenarioTags: ["identity"] }],
   "ga naar": [{ dutch: "Ik ga naar school.", meaningZh: "我去学校。", meaningEn: "I go to school.", type: "minimal", phraseChunkUsed: "ga naar", scenarioTags: ["school"] }],
+  "elke week": [{ dutch: "Ik oefen elke week.", meaningZh: "我每周练习。", meaningEn: "I practise every week.", type: "scenario", phraseChunkUsed: "elke week", scenarioTags: ["time", "routine"] }],
+  "per maand": [{ dutch: "Ik betaal per maand.", meaningZh: "我按月付款。", meaningEn: "I pay per month.", type: "scenario", phraseChunkUsed: "per maand", scenarioTags: ["time", "payment"] }],
   "nederlandse les": [{ dutch: "Ik heb Nederlandse les.", meaningZh: "我有荷兰语课。", meaningEn: "I have Dutch lessons.", type: "scenario", phraseChunkUsed: "Nederlandse les", scenarioTags: ["school", "languages"] }],
   "den haag": [{ dutch: "Ik ga naar Den Haag.", meaningZh: "我去海牙。", meaningEn: "I go to The Hague.", type: "scenario", phraseChunkUsed: "naar Den Haag gaan", scenarioTags: ["transport", "identity"] }],
   "bericht inspreken": [{ dutch: "Ik spreek een bericht in.", meaningZh: "我留一段语音留言。", meaningEn: "I leave a voice message.", type: "scenario", phraseChunkUsed: "een bericht inspreken", scenarioTags: ["phone-call"] }],
+  "ik bel over": [{ dutch: "Ik bel over mijn afspraak.", meaningZh: "我打电话是关于我的预约。", meaningEn: "I am calling about my appointment.", type: "output", phraseChunkUsed: "ik bel over", scenarioTags: ["phone-call", "appointment"] }],
+  "ik heb een vraag over": [{ dutch: "Ik heb een vraag over de rekening.", meaningZh: "我有一个关于账单的问题。", meaningEn: "I have a question about the bill.", type: "output", phraseChunkUsed: "ik heb een vraag over", scenarioTags: ["help", "bill"] }],
+  "kunt u uitleggen": [{ dutch: "Kunt u dat uitleggen?", meaningZh: "您能解释一下吗？", meaningEn: "Can you explain that?", type: "output", phraseChunkUsed: "kunt u uitleggen", scenarioTags: ["help"] }],
+  "welke documenten": [{ dutch: "Welke documenten heb ik nodig?", meaningZh: "我需要哪些文件？", meaningEn: "Which documents do I need?", type: "output", phraseChunkUsed: "welke documenten", scenarioTags: ["form"] }],
+  "hoe lang duurt het": [{ dutch: "Hoe lang duurt het?", meaningZh: "这需要多久？", meaningEn: "How long does it take?", type: "output", phraseChunkUsed: "hoe lang duurt het", scenarioTags: ["appointment"] }],
+  "ik wil graag": [{ dutch: "Ik wil graag koffie.", meaningZh: "我想要咖啡。", meaningEn: "I would like coffee.", type: "output", phraseChunkUsed: "ik wil graag", scenarioTags: ["food", "speaking"] }],
+  "ik kan helaas niet": [{ dutch: "Ik kan helaas niet komen.", meaningZh: "很遗憾我不能来。", meaningEn: "Unfortunately I cannot come.", type: "output", phraseChunkUsed: "ik kan helaas niet", scenarioTags: ["appointment"] }],
+  "ik stel voor": [{ dutch: "Ik stel voor dat we morgen bellen.", meaningZh: "我建议我们明天打电话。", meaningEn: "I suggest that we call tomorrow.", type: "output", phraseChunkUsed: "ik stel voor", scenarioTags: ["work", "speaking"] }],
+  "de reden is dat": [{ dutch: "De reden is dat ik ziek ben.", meaningZh: "原因是我生病了。", meaningEn: "The reason is that I am sick.", type: "output", phraseChunkUsed: "de reden is dat", scenarioTags: ["writing", "health"] }],
+  "mijn voorstel is": [{ dutch: "Mijn voorstel is om morgen te bellen.", meaningZh: "我的建议是明天打电话。", meaningEn: "My proposal is to call tomorrow.", type: "output", phraseChunkUsed: "mijn voorstel is", scenarioTags: ["work", "writing"] }],
+  "kunt u mij laten weten": [{ dutch: "Kunt u mij laten weten wat ik moet doen?", meaningZh: "您能告诉我该怎么做吗？", meaningEn: "Can you let me know what I should do?", type: "output", phraseChunkUsed: "kunt u mij laten weten", scenarioTags: ["email", "help"] }],
+  "ik heb een klacht over": [{ dutch: "Ik heb een klacht over de levering.", meaningZh: "我对配送有投诉。", meaningEn: "I have a complaint about the delivery.", type: "output", phraseChunkUsed: "ik heb een klacht over", scenarioTags: ["complaint"] }],
+  "uit de informatie blijkt": [{ dutch: "Uit de informatie blijkt dat de trein later komt.", meaningZh: "从信息可看出火车晚点到。", meaningEn: "The information shows that the train comes later.", type: "scenario", phraseChunkUsed: "uit de informatie blijkt", scenarioTags: ["reading", "transport"] }],
+  "in vergelijking met": [{ dutch: "In vergelijking met vorig jaar is het duurder.", meaningZh: "与去年相比，这更贵。", meaningEn: "Compared with last year, it is more expensive.", type: "contrast", phraseChunkUsed: "in vergelijking met", scenarioTags: ["comparison"] }],
 };
 
 const phraseAsSentence = (value: string) => {
@@ -1866,7 +2116,122 @@ const phraseAsSentence = (value: string) => {
   return sentence.charAt(0).toUpperCase() + sentence.slice(1);
 };
 
-const verbFallbackSentences: Record<string, { dutch: string; phraseChunk: string }> = {
+const phraseFallbackExamplesFor = (word: WordItem): TemplateExample[] => {
+  const phrase = word.dutch.trim();
+  const key = norm(phrase);
+  const tokens = key.split(/\s+/).filter(Boolean);
+  const meaningZh = meaningZhFor(word);
+  const meaningEn = meaningEnFor(word);
+  const scenarioTags = word.scenarioTags;
+  const natural = hasNaturalMeaning(word);
+
+  if (/^(ik|wij|we|hij|zij|ze|u)\s+/i.test(phrase) && /[.!?]$/.test(phrase)) {
+    return [{
+      dutch: phraseAsSentence(phrase),
+      meaningZh,
+      meaningEn,
+      type: "output",
+      phraseChunkUsed: phrase,
+      scenarioTags,
+      confidence: natural ? "medium" : "low",
+      needsHumanReview: !natural,
+    }];
+  }
+
+  const phrasePatterns: Array<[RegExp, TemplateExample]> = [
+    [/^contact opnemen met$/i, { dutch: "Ik neem contact op met de gemeente.", meaningZh: "我联系市政厅。", meaningEn: "I contact the municipality.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["gemeente", "phone-call"] }],
+    [/^rekening houden met$/i, { dutch: "Ik houd rekening met de afspraak.", meaningZh: "我会考虑这个预约。", meaningEn: "I take the appointment into account.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["appointment", "planning"] }],
+    [/^volgens mij$/i, { dutch: "Volgens mij is dit een goede oplossing.", meaningZh: "我觉得这是一个好解决方案。", meaningEn: "In my opinion, this is a good solution.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "speaking"] }],
+    [/^ten eerste$/i, { dutch: "Ten eerste wil ik de reden uitleggen.", meaningZh: "首先，我想解释原因。", meaningEn: "First, I want to explain the reason.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^ten tweede$/i, { dutch: "Ten tweede kost het minder geld.", meaningZh: "第二，这花的钱更少。", meaningEn: "Second, it costs less money.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^kortom$/i, { dutch: "Kortom, ik ben het ermee eens.", meaningZh: "总之，我同意这件事。", meaningEn: "In short, I agree with it.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^aan de ene kant$/i, { dutch: "Aan de ene kant is het handig.", meaningZh: "一方面，这很方便。", meaningEn: "On the one hand, it is convenient.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^aan de andere kant$/i, { dutch: "Aan de andere kant kost het veel tijd.", meaningZh: "另一方面，这要花很多时间。", meaningEn: "On the other hand, it takes a lot of time.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^in vergelijking met$/i, { dutch: "In vergelijking met vorig jaar gaat het beter.", meaningZh: "和去年相比，情况更好了。", meaningEn: "Compared with last year, it is going better.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "writing"] }],
+    [/^bewijs sturen$/i, { dutch: "Ik stuur het bewijs mee.", meaningZh: "我把证明一起发过去。", meaningEn: "I send the proof along.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["form", "digital"] }],
+    [/^foto meesturen$/i, { dutch: "Ik stuur een foto mee.", meaningZh: "我附上一张照片。", meaningEn: "I send a photo along.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "form"] }],
+    [/^uitleg vragen$/i, { dutch: "Ik vraag om uitleg.", meaningZh: "我请求解释。", meaningEn: "I ask for an explanation.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["help"] }],
+    [/^oplossing zoeken$/i, { dutch: "Ik zoek samen met u naar een oplossing.", meaningZh: "我和您一起找解决方案。", meaningEn: "I look for a solution together with you.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["complaint", "help"] }],
+    [/^klacht indienen$/i, { dutch: "Ik wil een klacht indienen.", meaningZh: "我想提交投诉。", meaningEn: "I want to submit a complaint.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["complaint"] }],
+    [/^niet akkoord$/i, { dutch: "Ik ben niet akkoord met dit besluit.", meaningZh: "我不同意这个决定。", meaningEn: "I do not agree with this decision.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "admin"] }],
+    [/^akkoord gaan$/i, { dutch: "Ik ga akkoord met het voorstel.", meaningZh: "我同意这个提议。", meaningEn: "I agree with the proposal.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "work"] }],
+    [/^fout herstellen$/i, { dutch: "Ik wil de fout herstellen.", meaningZh: "我想改正这个错误。", meaningEn: "I want to correct the mistake.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["form", "digital"] }],
+    [/^online aanvragen$/i, { dutch: "Ik vraag het online aan.", meaningZh: "我在线申请这个。", meaningEn: "I apply for it online.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "form"] }],
+    [/^digitaal ondertekenen$/i, { dutch: "Ik onderteken het document digitaal.", meaningZh: "我用数字方式签署文件。", meaningEn: "I sign the document digitally.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "form"] }],
+    [/^account aanmaken$/i, { dutch: "Ik maak een account aan.", meaningZh: "我创建一个账号。", meaningEn: "I create an account.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital"] }],
+    [/^status bekijken$/i, { dutch: "Ik bekijk de status van mijn aanvraag.", meaningZh: "我查看我的申请状态。", meaningEn: "I check the status of my application.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "form"] }],
+    [/^inloggen met digid$/i, { dutch: "Ik log in met DigiD.", meaningZh: "我用 DigiD 登录。", meaningEn: "I log in with DigiD.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "gemeente"] }],
+    [/^wijziging doorgeven$/i, { dutch: "Ik geef de wijziging door.", meaningZh: "我上报这个变更。", meaningEn: "I report the change.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["form", "admin"] }],
+    [/^dienst ruilen$/i, { dutch: "Ik wil mijn dienst ruilen.", meaningZh: "我想换班。", meaningEn: "I want to swap my shift.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["work"] }],
+    [/^uren doorgeven$/i, { dutch: "Ik geef mijn uren door.", meaningZh: "我上报我的工时。", meaningEn: "I report my hours.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work"] }],
+    [/^te laat melden$/i, { dutch: "Ik meld dat ik te laat ben.", meaningZh: "我告知对方我迟到了。", meaningEn: "I report that I am late.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "appointment"] }],
+    [/^veilig werken$/i, { dutch: "Ik werk veilig met deze machine.", meaningZh: "我安全地使用这台机器工作。", meaningEn: "I work safely with this machine.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "safety"] }],
+    [/^afspraak bevestigen$/i, { dutch: "Ik bevestig de afspraak per e-mail.", meaningZh: "我通过邮件确认预约。", meaningEn: "I confirm the appointment by email.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["appointment", "email"] }],
+    [/^afspraak verzetten$/i, { dutch: "Ik wil de afspraak verzetten.", meaningZh: "我想改约。", meaningEn: "I want to reschedule the appointment.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["appointment"] }],
+    [/^rustig blijven$/i, { dutch: "Ik probeer rustig te blijven.", meaningZh: "我努力保持冷静。", meaningEn: "I try to stay calm.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["speaking", "work"] }],
+    [/^samen beslissen$/i, { dutch: "We beslissen samen over de oplossing.", meaningZh: "我们一起决定解决方案。", meaningEn: "We decide on the solution together.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "opinion"] }],
+    [/^stage lopen$/i, { dutch: "Ik loop stage in een zorgcentrum.", meaningZh: "我在护理中心实习。", meaningEn: "I do an internship at a care center.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "school"] }],
+    [/^sterke kant$/i, { dutch: "Mijn sterke kant is rustig luisteren.", meaningZh: "我的强项是平静地倾听。", meaningEn: "My strong point is listening calmly.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["identity", "work"] }],
+    [/^ervaring delen$/i, { dutch: "Ik wil mijn ervaring delen met de groep.", meaningZh: "我想和小组分享我的经验。", meaningEn: "I want to share my experience with the group.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["speaking", "school"] }],
+    [/^in het weekend$/i, { dutch: "In het weekend leer ik nieuwe woorden.", meaningZh: "周末我学新单词。", meaningEn: "At the weekend, I learn new words.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["time", "school"] }],
+    [/^graag doen$/i, { dutch: "Ik doe graag vrijwilligerswerk.", meaningZh: "我喜欢做志愿工作。", meaningEn: "I like doing volunteer work.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["identity", "work"] }],
+    [/^belangrijke informatie zoeken$/i, { dutch: "Ik zoek belangrijke informatie op de website.", meaningZh: "我在网站上查找重要信息。", meaningEn: "I look for important information on the website.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["digital", "admin"] }],
+    [/^nieuwe woorden leren$/i, { dutch: "Ik leer elke dag nieuwe woorden.", meaningZh: "我每天学习新单词。", meaningEn: "I learn new words every day.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["school"] }],
+    [/^persoonlijke mening$/i, { dutch: "Ik geef mijn persoonlijke mening in de les.", meaningZh: "我在课堂上表达个人意见。", meaningEn: "I give my personal opinion in class.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["opinion", "school"] }],
+    [/^contact houden$/i, { dutch: "Ik houd contact met mijn collega.", meaningZh: "我和同事保持联系。", meaningEn: "I keep in contact with my colleague.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "communication"] }],
+    [/^contact leggen$/i, { dutch: "Ik leg contact met de contactpersoon.", meaningZh: "我和联系人建立联系。", meaningEn: "I make contact with the contact person.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "communication"] }],
+    [/^advies geven$/i, { dutch: "De huisarts geeft advies over de behandeling.", meaningZh: "家庭医生给出治疗建议。", meaningEn: "The GP gives advice about the treatment.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["health"] }],
+    [/^advies vragen$/i, { dutch: "Ik vraag advies aan mijn leidinggevende.", meaningZh: "我向主管寻求建议。", meaningEn: "I ask my supervisor for advice.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work"] }],
+    [/^iemand steunen$/i, { dutch: "Ik steun mijn collega bij het probleem.", meaningZh: "我在这个问题上支持我的同事。", meaningEn: "I support my colleague with the problem.", type: "scenario", phraseChunkUsed: phrase, scenarioTags: ["work", "communication"] }],
+    [/^afspraak nakomen$/i, { dutch: "Ik kom mijn afspraak na.", meaningZh: "我遵守约定。", meaningEn: "I keep my appointment.", type: "output", phraseChunkUsed: phrase, scenarioTags: ["appointment", "communication"] }],
+  ];
+  const matchedPattern = phrasePatterns.find(([pattern]) => pattern.test(key))?.[1];
+  if (matchedPattern) return [matchedPattern];
+
+  const lastToken = tokens[tokens.length - 1];
+  const lastVerbForms = lastToken ? verbFormsForWord(lastToken) : undefined;
+  if (lastVerbForms && tokens.length >= 2) {
+    const object = phrase.split(/\s+/).slice(0, -1).join(" ");
+    return [{
+      dutch: `Ik ${lastVerbForms.ik} ${object}.`,
+      meaningZh: `我${meaningZh}。`,
+      meaningEn: `I ${meaningEn}.`,
+      type: "output",
+      phraseChunkUsed: phrase,
+      scenarioTags,
+      confidence: "low",
+      needsHumanReview: true,
+    }];
+  }
+
+  const firstVerbForms = tokens[0] ? verbFormsForWord(tokens[0]) : undefined;
+  if (firstVerbForms && tokens.length >= 2) {
+    const rest = phrase.split(/\s+/).slice(1).join(" ");
+    return [{
+      dutch: `Ik ${firstVerbForms.ik} ${rest}.`,
+      meaningZh: `我${meaningZh}。`,
+      meaningEn: `I ${meaningEn}.`,
+      type: "output",
+      phraseChunkUsed: phrase,
+      scenarioTags,
+      confidence: "low",
+      needsHumanReview: true,
+    }];
+  }
+
+  return [{
+    dutch: phraseAsSentence(phrase),
+    meaningZh,
+    meaningEn,
+    type: "minimal",
+    phraseChunkUsed: phrase,
+    scenarioTags,
+    needsHumanReview: true,
+    confidence: "low",
+  }];
+};
+
+const verbFallbackSentences: Record<string, { dutch: string; phraseChunk: string; meaningZh?: string; meaningEn?: string }> = {
   opstaan: { dutch: "Ik sta vroeg op.", phraseChunk: "vroeg opstaan" },
   aanmelden: { dutch: "Ik meld mij aan.", phraseChunk: "zich aanmelden" },
   afmelden: { dutch: "Ik meld mij af.", phraseChunk: "zich afmelden" },
@@ -1915,6 +2280,8 @@ const verbFallbackSentences: Record<string, { dutch: string; phraseChunk: string
   lunchen: { dutch: "Ik lunch om twaalf uur.", phraseChunk: "om twaalf uur lunchen" },
   fietsen: { dutch: "Ik fiets naar school.", phraseChunk: "naar school fietsen" },
   wandelen: { dutch: "Ik wandel in het park.", phraseChunk: "in het park wandelen" },
+  duwen: { dutch: "Duw tegen de deur.", phraseChunk: "tegen de deur duwen" },
+  trekken: { dutch: "Trek aan de deur.", phraseChunk: "aan de deur trekken" },
   eindigen: { dutch: "De les eindigt om drie uur.", phraseChunk: "de les eindigt" },
   antwoorden: { dutch: "Ik antwoord op de vraag.", phraseChunk: "op de vraag antwoorden" },
   vliegen: { dutch: "Ik vlieg naar Spanje.", phraseChunk: "naar Spanje vliegen" },
@@ -1929,6 +2296,99 @@ const verbFallbackSentences: Record<string, { dutch: string; phraseChunk: string
   blijven: { dutch: "Ik blijf vandaag thuis.", phraseChunk: "thuis blijven" },
   spelen: { dutch: "Het kind speelt.", phraseChunk: "spelen" },
   horen: { dutch: "Ik hoor de telefoon.", phraseChunk: "de telefoon horen" },
+  pinnen: { dutch: "Kan ik hier pinnen?", phraseChunk: "hier pinnen", meaningZh: "我可以在这里刷卡吗？", meaningEn: "Can I pay by card here?" },
+  ruilen: { dutch: "Ik wil deze jas ruilen.", phraseChunk: "een jas ruilen", meaningZh: "我想换这件外套。", meaningEn: "I want to exchange this coat." },
+  bewaren: { dutch: "Ik bewaar de bon.", phraseChunk: "de bon bewaren", meaningZh: "我保存收据。", meaningEn: "I keep the receipt." },
+  logeren: { dutch: "Ik logeer bij mijn vriend.", phraseChunk: "bij iemand logeren", meaningZh: "我住在朋友家。", meaningEn: "I stay over at my friend's place." },
+  samenwonen: { dutch: "Wij willen samenwonen.", phraseChunk: "willen samenwonen", meaningZh: "我们想一起住。", meaningEn: "We want to live together." },
+  scheiden: { dutch: "Mijn ouders scheiden.", phraseChunk: "ouders scheiden", meaningZh: "我的父母离婚。", meaningEn: "My parents are divorcing." },
+  snijden: { dutch: "Ik snijd brood.", phraseChunk: "brood snijden", meaningZh: "我切面包。", meaningEn: "I cut bread." },
+  branden: { dutch: "Mijn hand brandt.", phraseChunk: "mijn hand brandt", meaningZh: "我的手有灼烧感。", meaningEn: "My hand burns." },
+  jeuken: { dutch: "Mijn arm jeukt.", phraseChunk: "mijn arm jeukt", meaningZh: "我的手臂发痒。", meaningEn: "My arm itches." },
+  vinden: { dutch: "Ik vind het goed.", phraseChunk: "het goed vinden", meaningZh: "我觉得可以。", meaningEn: "I think it is good." },
+  oefenen: { dutch: "Ik oefen de zin.", phraseChunk: "de zin oefenen", meaningZh: "我练习这个句子。", meaningEn: "I practise the sentence." },
+  vertellen: { dutch: "Ik vertel mijn naam.", phraseChunk: "mijn naam vertellen", meaningZh: "我说出我的名字。", meaningEn: "I tell my name." },
+  weten: { dutch: "Ik weet het niet.", phraseChunk: "het niet weten", meaningZh: "我不知道。", meaningEn: "I do not know." },
+  denken: { dutch: "Ik denk aan morgen.", phraseChunk: "aan morgen denken", meaningZh: "我想到明天。", meaningEn: "I think about tomorrow." },
+  meenemen: { dutch: "Ik neem mijn paspoort mee.", phraseChunk: "paspoort meenemen", meaningZh: "我带上我的护照。", meaningEn: "I take my passport with me." },
+  zwemmen: { dutch: "Ik zwem in het zwembad.", phraseChunk: "in het zwembad zwemmen", meaningZh: "我在游泳池游泳。", meaningEn: "I swim in the swimming pool." },
+  hardlopen: { dutch: "Ik loop hard in het park.", phraseChunk: "in het park hardlopen", meaningZh: "我在公园跑步。", meaningEn: "I run in the park." },
+  dansen: { dutch: "Ik dans op muziek.", phraseChunk: "op muziek dansen", meaningZh: "我跟着音乐跳舞。", meaningEn: "I dance to music." },
+  zingen: { dutch: "Ik zing een lied.", phraseChunk: "een lied zingen", meaningZh: "我唱一首歌。", meaningEn: "I sing a song." },
+  tekenen: { dutch: "Ik teken een huis.", phraseChunk: "een huis tekenen", meaningZh: "我画一栋房子。", meaningEn: "I draw a house." },
+  vegen: { dutch: "Ik veeg de vloer.", phraseChunk: "de vloer vegen", meaningZh: "我扫地。", meaningEn: "I sweep the floor." },
+  dweilen: { dutch: "Ik dweil de vloer.", phraseChunk: "de vloer dweilen", meaningZh: "我拖地。", meaningEn: "I mop the floor." },
+  strijken: { dutch: "Ik strijk mijn shirt.", phraseChunk: "een shirt strijken", meaningZh: "我熨衬衫。", meaningEn: "I iron my shirt." },
+  vouwen: { dutch: "Ik vouw de was.", phraseChunk: "de was vouwen", meaningZh: "我叠洗好的衣物。", meaningEn: "I fold the laundry." },
+  proeven: { dutch: "Ik proef de soep.", phraseChunk: "de soep proeven", meaningZh: "我尝汤。", meaningEn: "I taste the soup." },
+  slikken: { dutch: "Ik slik de tablet.", phraseChunk: "een tablet slikken", meaningZh: "我吞下一片药片。", meaningEn: "I swallow the tablet." },
+  ademen: { dutch: "Ik adem rustig.", phraseChunk: "rustig ademen", meaningZh: "我平静地呼吸。", meaningEn: "I breathe calmly." },
+  vallen: { dutch: "Ik val bijna.", phraseChunk: "bijna vallen", meaningZh: "我差点摔倒。", meaningEn: "I almost fall." },
+  bloeden: { dutch: "Mijn vinger bloedt.", phraseChunk: "mijn vinger bloedt", meaningZh: "我的手指在流血。", meaningEn: "My finger is bleeding." },
+  ondertekenen: { dutch: "Ik onderteken het formulier.", phraseChunk: "het formulier ondertekenen", meaningZh: "我签署表格。", meaningEn: "I sign the form." },
+  uploaden: { dutch: "Ik upload het bestand.", phraseChunk: "een bestand uploaden", meaningZh: "我上传文件。", meaningEn: "I upload the file." },
+  downloaden: { dutch: "Ik download het bestand.", phraseChunk: "een bestand downloaden", meaningZh: "我下载文件。", meaningEn: "I download the file." },
+  toevoegen: { dutch: "Ik voeg het bestand toe.", phraseChunk: "een bestand toevoegen", meaningZh: "我添加文件。", meaningEn: "I add the file." },
+  verwijderen: { dutch: "Ik verwijder het bestand.", phraseChunk: "een bestand verwijderen", meaningZh: "我删除文件。", meaningEn: "I remove the file." },
+  versturen: { dutch: "Ik verstuur de e-mail.", phraseChunk: "een e-mail versturen", meaningZh: "我发送电子邮件。", meaningEn: "I send the email." },
+  nakijken: { dutch: "Ik kijk het formulier na.", phraseChunk: "een formulier nakijken", meaningZh: "我检查表格。", meaningEn: "I check the form." },
+  declareren: { dutch: "Ik declareer de kosten.", phraseChunk: "kosten declareren", meaningZh: "我申报费用。", meaningEn: "I claim the costs." },
+  vergoeden: { dutch: "De verzekering vergoedt de kosten.", phraseChunk: "kosten vergoeden", meaningZh: "保险报销费用。", meaningEn: "The insurance reimburses the costs." },
+  wijzigen: { dutch: "Ik wijzig mijn afspraak.", phraseChunk: "een afspraak wijzigen", meaningZh: "我更改预约。", meaningEn: "I change my appointment." },
+  beantwoorden: { dutch: "Ik beantwoord de e-mail.", phraseChunk: "een e-mail beantwoorden", meaningZh: "我回复电子邮件。", meaningEn: "I answer the email." },
+  retourneren: { dutch: "Ik retourneer het product.", phraseChunk: "een product retourneren", meaningZh: "我退回这个产品。", meaningEn: "I return the product." },
+  bezorgen: { dutch: "De bezorger bezorgt het pakket.", phraseChunk: "een pakket bezorgen", meaningZh: "快递员配送包裹。", meaningEn: "The delivery person delivers the package." },
+  sturen: { dutch: "Ik stuur een e-mail.", phraseChunk: "een e-mail sturen", meaningZh: "我发送一封电子邮件。", meaningEn: "I send an email." },
+  langskomen: { dutch: "Kan ik morgen langskomen?", phraseChunk: "morgen langskomen", meaningZh: "我明天可以过来吗？", meaningEn: "Can I come by tomorrow?" },
+  aanvragen: { dutch: "Ik vraag huurtoeslag aan.", phraseChunk: "huurtoeslag aanvragen", meaningZh: "我申请房租补贴。", meaningEn: "I apply for housing benefit." },
+  verplaatsen: { dutch: "Ik verplaats de afspraak.", phraseChunk: "een afspraak verplaatsen", meaningZh: "我改预约时间。", meaningEn: "I move the appointment." },
+  trakteren: { dutch: "Ik trakteer op taart.", phraseChunk: "op taart trakteren", meaningZh: "我请大家吃蛋糕。", meaningEn: "I treat people to cake." },
+  bezoeken: { dutch: "Ik bezoek mijn buurvrouw.", phraseChunk: "iemand bezoeken", meaningZh: "我拜访我的邻居。", meaningEn: "I visit my neighbour." },
+  verlengen: { dutch: "Ik verleng mijn contract.", phraseChunk: "een contract verlengen", meaningZh: "我延长合同。", meaningEn: "I extend my contract." },
+  verkorten: { dutch: "Ik verkort de tekst.", phraseChunk: "een tekst verkorten", meaningZh: "我缩短文本。", meaningEn: "I shorten the text." },
+  bereiken: { dutch: "Ik bereik de klantenservice.", phraseChunk: "de klantenservice bereiken", meaningZh: "我联系到了客服。", meaningEn: "I reach customer service." },
+  besparen: { dutch: "Ik bespaar energie.", phraseChunk: "energie besparen", meaningZh: "我节省能源。", meaningEn: "I save energy." },
+  vergelijken: { dutch: "Ik vergelijk de prijzen.", phraseChunk: "prijzen vergelijken", meaningZh: "我比较价格。", meaningEn: "I compare prices." },
+  inschrijven: { dutch: "Ik schrijf mij in.", phraseChunk: "zich inschrijven", meaningZh: "我报名/登记。", meaningEn: "I register." },
+  ziekmelden: { dutch: "Ik meld mij ziek.", phraseChunk: "zich ziekmelden", meaningZh: "我请病假。", meaningEn: "I call in sick." },
+  vertrekken: { dutch: "De trein vertrekt om acht uur.", phraseChunk: "de trein vertrekt", meaningZh: "火车八点出发。", meaningEn: "The train leaves at eight o'clock." },
+  aankomen: { dutch: "De trein komt om negen uur aan.", phraseChunk: "om negen uur aankomen", meaningZh: "火车九点到达。", meaningEn: "The train arrives at nine o'clock." },
+  overgeven: { dutch: "Ik moet overgeven.", phraseChunk: "moeten overgeven", meaningZh: "我想吐/需要呕吐。", meaningEn: "I need to vomit." },
+  terugkomen: { dutch: "Ik kom morgen terug.", phraseChunk: "morgen terugkomen", meaningZh: "我明天回来。", meaningEn: "I come back tomorrow." },
+  vervangen: { dutch: "Ik vervang mijn pas.", phraseChunk: "een pas vervangen", meaningZh: "我更换我的卡。", meaningEn: "I replace my card." },
+  overleggen: { dutch: "Ik overleg met mijn collega.", phraseChunk: "met een collega overleggen", meaningZh: "我和同事商量。", meaningEn: "I consult with my colleague." },
+  doorgeven: { dutch: "Ik geef mijn adres door.", phraseChunk: "een adres doorgeven", meaningZh: "我告知我的地址。", meaningEn: "I pass on my address." },
+  overstappen: { dutch: "Ik stap over op de trein.", phraseChunk: "op de trein overstappen", meaningZh: "我换乘火车。", meaningEn: "I transfer to the train." },
+  uitvallen: { dutch: "De trein valt uit.", phraseChunk: "de trein valt uit", meaningZh: "火车停运。", meaningEn: "The train is cancelled." },
+  annuleren: { dutch: "Ik annuleer de afspraak.", phraseChunk: "een afspraak annuleren", meaningZh: "我取消预约。", meaningEn: "I cancel the appointment." },
+  inchecken: { dutch: "Ik check in met mijn kaart.", phraseChunk: "met mijn kaart inchecken", meaningZh: "我用卡刷卡进站。", meaningEn: "I check in with my card." },
+  uitchecken: { dutch: "Ik check uit met mijn kaart.", phraseChunk: "met mijn kaart uitchecken", meaningZh: "我用卡刷卡出站。", meaningEn: "I check out with my card." },
+  vergeten: { dutch: "Ik vergeet mijn pas.", phraseChunk: "een pas vergeten", meaningZh: "我忘带我的卡。", meaningEn: "I forget my card." },
+  terugbetalen: { dutch: "Ik betaal het bedrag terug.", phraseChunk: "een bedrag terugbetalen", meaningZh: "我退还这笔金额。", meaningEn: "I pay the amount back." },
+  kloppen: { dutch: "De gegevens kloppen.", phraseChunk: "gegevens kloppen", meaningZh: "信息是正确的。", meaningEn: "The details are correct." },
+  reageren: { dutch: "Ik reageer op de e-mail.", phraseChunk: "op een e-mail reageren", meaningZh: "我回复这封邮件。", meaningEn: "I respond to the email." },
+  klagen: { dutch: "Ik klaag over de levering.", phraseChunk: "over de levering klagen", meaningZh: "我投诉配送问题。", meaningEn: "I complain about the delivery." },
+  ontbreken: { dutch: "Mijn handtekening ontbreekt.", phraseChunk: "handtekening ontbreekt", meaningZh: "我的签名缺失。", meaningEn: "My signature is missing." },
+  meedenken: { dutch: "Ik denk graag mee.", phraseChunk: "meedenken", meaningZh: "我愿意一起想办法。", meaningEn: "I am happy to think along." },
+  inloggen: { dutch: "Ik log in met mijn DigiD.", phraseChunk: "inloggen met DigiD", meaningZh: "我用 DigiD 登录。", meaningEn: "I log in with my DigiD." },
+  stemmen: { dutch: "Ik stem bij de verkiezingen.", phraseChunk: "bij verkiezingen stemmen", meaningZh: "我在选举中投票。", meaningEn: "I vote in the elections." },
+  reserveren: { dutch: "Ik reserveer een tafel.", phraseChunk: "een tafel reserveren", meaningZh: "我预订一张桌子。", meaningEn: "I reserve a table." },
+  hergebruiken: { dutch: "Ik hergebruik de tas.", phraseChunk: "een tas hergebruiken", meaningZh: "我重复使用这个袋子。", meaningEn: "I reuse the bag." },
+  samenvatten: { dutch: "Ik vat de tekst samen.", phraseChunk: "een tekst samenvatten", meaningZh: "我总结这段文本。", meaningEn: "I summarize the text." },
+  waarderen: { dutch: "Ik waardeer uw hulp.", phraseChunk: "hulp waarderen", meaningZh: "我感谢您的帮助。", meaningEn: "I appreciate your help." },
+  toelichten: { dutch: "Ik licht mijn antwoord toe.", phraseChunk: "een antwoord toelichten", meaningZh: "我说明我的答案。", meaningEn: "I explain my answer." },
+  doorvragen: { dutch: "Ik vraag door over het probleem.", phraseChunk: "doorvragen over", meaningZh: "我继续追问这个问题。", meaningEn: "I ask follow-up questions about the problem." },
+  sparen: { dutch: "Ik spaar elke maand geld.", phraseChunk: "geld sparen", meaningZh: "我每个月存钱。", meaningEn: "I save money every month." },
+  lenen: { dutch: "Ik leen geld bij de bank.", phraseChunk: "geld lenen", meaningZh: "我从银行借钱。", meaningEn: "I borrow money from the bank." },
+  samenwerken: { dutch: "Wij willen samenwerken aan de opdracht.", phraseChunk: "samenwerken aan", meaningZh: "我们想一起做这项任务。", meaningEn: "We want to work together on the assignment." },
+  reflecteren: { dutch: "Ik reflecteer op mijn werk.", phraseChunk: "reflecteren op", meaningZh: "我反思我的工作。", meaningEn: "I reflect on my work." },
+  beschrijven: { dutch: "Ik beschrijf mijn ervaring.", phraseChunk: "ervaring beschrijven", meaningZh: "我描述我的经历。", meaningEn: "I describe my experience." },
+  aankleden: { dutch: "Ik kleed mij aan.", phraseChunk: "zich aankleden", meaningZh: "我穿衣服。", meaningEn: "I get dressed." },
+  glimlachen: { dutch: "Ik glimlach naar de buurvrouw.", phraseChunk: "naar iemand glimlachen", meaningZh: "我对邻居微笑。", meaningEn: "I smile at the neighbour." },
+  herinneren: { dutch: "Ik herinner mij de afspraak.", phraseChunk: "zich iets herinneren", meaningZh: "我记得这个预约。", meaningEn: "I remember the appointment." },
+  inwerken: { dutch: "Mijn collega werkt mij in.", phraseChunk: "iemand inwerken", meaningZh: "我的同事带我熟悉工作。", meaningEn: "My colleague trains me in." },
+  verzekeren: { dutch: "Ik verzeker mijn fiets.", phraseChunk: "een fiets verzekeren", meaningZh: "我给自行车上保险。", meaningEn: "I insure my bike." },
+  identificeren: { dutch: "Ik identificeer mij met mijn paspoort.", phraseChunk: "zich identificeren", meaningZh: "我用护照证明身份。", meaningEn: "I identify myself with my passport." },
 };
 
 const sentenceCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -1953,11 +2413,84 @@ const dictionaryStyleNounFallbacksFor = (
   const zh = meaningZhFor(word);
   const en = meaningEnFor(word);
 
+  const b1TaskNouns: Record<string, TemplateExample> = {
+    diploma: { dutch: "Ik stuur mijn diploma mee.", meaningZh: "我把我的文凭一起发过去。", meaningEn: "I send my diploma along.", type: "scenario", phraseChunkUsed: "mijn diploma meesturen", scenarioTags: ["work", "school", "digital"] },
+    personeel: { dutch: "Het personeel helpt de klanten rustig.", meaningZh: "工作人员耐心帮助顾客。", meaningEn: "The staff help the customers calmly.", type: "scenario", phraseChunkUsed: "het personeel helpt", scenarioTags: ["work"] },
+    uitzendkracht: { dutch: "Ik werk deze maand als uitzendkracht.", meaningZh: "我这个月做临时派遣工。", meaningEn: "I work as a temporary worker this month.", type: "scenario", phraseChunkUsed: "als uitzendkracht werken", scenarioTags: ["work"] },
+    stagiair: { dutch: "De stagiair leert het werk stap voor stap.", meaningZh: "实习生一步一步学习工作。", meaningEn: "The intern learns the work step by step.", type: "scenario", phraseChunkUsed: "de stagiair leert", scenarioTags: ["work", "school"] },
+    kandidaat: { dutch: "De kandidaat komt morgen op gesprek.", meaningZh: "候选人明天来面试。", meaningEn: "The candidate comes for an interview tomorrow.", type: "scenario", phraseChunkUsed: "de kandidaat komt op gesprek", scenarioTags: ["work"] },
+    karakter: { dutch: "Mijn karakter past bij werken met mensen.", meaningZh: "我的性格适合和人打交道的工作。", meaningEn: "My character fits working with people.", type: "output", phraseChunkUsed: "mijn karakter past", scenarioTags: ["identity", "work"] },
+    eigenschap: { dutch: "Geduld is een belangrijke eigenschap.", meaningZh: "耐心是一项重要品质。", meaningEn: "Patience is an important quality.", type: "output", phraseChunkUsed: "een belangrijke eigenschap", scenarioTags: ["identity", "work"] },
+    gewoonte: { dutch: "Ik heb de gewoonte om op tijd te komen.", meaningZh: "我有准时到的习惯。", meaningEn: "I have the habit of arriving on time.", type: "scenario", phraseChunkUsed: "de gewoonte hebben", scenarioTags: ["identity", "work"] },
+    interesse: { dutch: "Ik heb interesse in deze opleiding.", meaningZh: "我对这个培训/课程感兴趣。", meaningEn: "I am interested in this program.", type: "output", phraseChunkUsed: "interesse hebben in", scenarioTags: ["school", "work"] },
+    zelfvertrouwen: { dutch: "Door de cursus krijg ik meer zelfvertrouwen.", meaningZh: "通过课程我获得更多自信。", meaningEn: "Through the course, I gain more self-confidence.", type: "scenario", phraseChunkUsed: "meer zelfvertrouwen krijgen", scenarioTags: ["school", "identity"] },
+    verbeterpunt: { dutch: "Mijn verbeterpunt is duidelijker spreken.", meaningZh: "我的改进点是说得更清楚。", meaningEn: "My improvement point is speaking more clearly.", type: "output", phraseChunkUsed: "mijn verbeterpunt", scenarioTags: ["school", "work"] },
+    toekomstplan: { dutch: "Mijn toekomstplan is een baan in de zorg.", meaningZh: "我的未来计划是在护理行业工作。", meaningEn: "My future plan is a job in care.", type: "output", phraseChunkUsed: "mijn toekomstplan", scenarioTags: ["work", "school"] },
+    leerdoel: { dutch: "Mijn leerdoel is beter Nederlands spreken.", meaningZh: "我的学习目标是把荷兰语说得更好。", meaningEn: "My learning goal is speaking Dutch better.", type: "output", phraseChunkUsed: "mijn leerdoel", scenarioTags: ["school"] },
+    relatie: { dutch: "Een goede relatie vraagt om vertrouwen.", meaningZh: "良好的关系需要信任。", meaningEn: "A good relationship requires trust.", type: "scenario", phraseChunkUsed: "een goede relatie", scenarioTags: ["communication"] },
+    vriendschap: { dutch: "Vriendschap is belangrijk voor mij.", meaningZh: "友谊对我很重要。", meaningEn: "Friendship is important to me.", type: "output", phraseChunkUsed: "vriendschap is belangrijk", scenarioTags: ["communication"] },
+    kennismaking: { dutch: "De kennismaking begint met een korte uitleg.", meaningZh: "初次认识从简短介绍开始。", meaningEn: "The introduction starts with a short explanation.", type: "scenario", phraseChunkUsed: "de kennismaking begint", scenarioTags: ["communication"] },
+    vertrouwen: { dutch: "Ik heb vertrouwen in mijn team.", meaningZh: "我信任我的团队。", meaningEn: "I have confidence in my team.", type: "output", phraseChunkUsed: "vertrouwen hebben in", scenarioTags: ["work", "communication"] },
+    respect: { dutch: "We tonen respect voor elkaar.", meaningZh: "我们彼此表示尊重。", meaningEn: "We show respect for each other.", type: "output", phraseChunkUsed: "respect tonen", scenarioTags: ["communication"] },
+    misverstand: { dutch: "Ik wil het misverstand rustig uitleggen.", meaningZh: "我想平静地解释这个误会。", meaningEn: "I want to calmly explain the misunderstanding.", type: "output", phraseChunkUsed: "het misverstand uitleggen", scenarioTags: ["communication"] },
+    ruzie: { dutch: "Na de ruzie praten we rustig verder.", meaningZh: "争吵之后，我们继续平静地谈。", meaningEn: "After the argument, we continue talking calmly.", type: "scenario", phraseChunkUsed: "na de ruzie", scenarioTags: ["communication"] },
+    vaardigheid: { dutch: "Deze vaardigheid is belangrijk voor mijn werk.", meaningZh: "这项技能对我的工作很重要。", meaningEn: "This skill is important for my work.", type: "scenario", phraseChunkUsed: "een vaardigheid is belangrijk", scenarioTags: ["work", "school"] },
+    team: { dutch: "Ik werk in een team.", meaningZh: "我在一个团队里工作。", meaningEn: "I work in a team.", type: "scenario", phraseChunkUsed: "in een team werken", scenarioTags: ["work"] },
+    werkplek: { dutch: "Mijn werkplek is rustig.", meaningZh: "我的工作地点很安静。", meaningEn: "My workplace is quiet.", type: "scenario", phraseChunkUsed: "mijn werkplek", scenarioTags: ["work"] },
+    contactpersoon: { dutch: "Mijn contactpersoon belt mij morgen terug.", meaningZh: "我的联系人明天给我回电话。", meaningEn: "My contact person will call me back tomorrow.", type: "scenario", phraseChunkUsed: "mijn contactpersoon", scenarioTags: ["work", "phone-call"] },
+    functie: { dutch: "Ik solliciteer naar deze functie.", meaningZh: "我申请这个职位。", meaningEn: "I apply for this position.", type: "scenario", phraseChunkUsed: "naar een functie solliciteren", scenarioTags: ["work"] },
+    leidinggevende: { dutch: "Ik overleg met mijn leidinggevende.", meaningZh: "我和我的主管商量。", meaningEn: "I consult my supervisor.", type: "scenario", phraseChunkUsed: "met mijn leidinggevende overleggen", scenarioTags: ["work"] },
+    proeftijd: { dutch: "Mijn proeftijd duurt een maand.", meaningZh: "我的试用期持续一个月。", meaningEn: "My probation period lasts one month.", type: "scenario", phraseChunkUsed: "mijn proeftijd duurt", scenarioTags: ["work"] },
+    mening: { dutch: "Ik geef mijn mening in de vergadering.", meaningZh: "我在会议上表达我的意见。", meaningEn: "I give my opinion in the meeting.", type: "output", phraseChunkUsed: "mijn mening geven", scenarioTags: ["opinion", "work"] },
+    standpunt: { dutch: "Ik leg mijn standpunt rustig uit.", meaningZh: "我平静地解释我的立场。", meaningEn: "I calmly explain my point of view.", type: "output", phraseChunkUsed: "mijn standpunt uitleggen", scenarioTags: ["opinion", "speaking"] },
+    reden: { dutch: "Ik geef een duidelijke reden.", meaningZh: "我给出一个清楚的理由。", meaningEn: "I give a clear reason.", type: "output", phraseChunkUsed: "een reden geven", scenarioTags: ["opinion", "writing"] },
+    voordeel: { dutch: "Dit voordeel vind ik belangrijk.", meaningZh: "我觉得这个优点很重要。", meaningEn: "I find this advantage important.", type: "output", phraseChunkUsed: "een voordeel belangrijk vinden", scenarioTags: ["opinion"] },
+    nadeel: { dutch: "Een nadeel is dat het veel tijd kost.", meaningZh: "一个缺点是它花很多时间。", meaningEn: "A disadvantage is that it takes a lot of time.", type: "output", phraseChunkUsed: "een nadeel is dat", scenarioTags: ["opinion"] },
+    oplossing: { dutch: "Ik zoek samen met u naar een oplossing.", meaningZh: "我和您一起找解决方案。", meaningEn: "I look for a solution together with you.", type: "output", phraseChunkUsed: "naar een oplossing zoeken", scenarioTags: ["help", "complaint"] },
+    voorstel: { dutch: "Ik doe een voorstel.", meaningZh: "我提出一个建议。", meaningEn: "I make a proposal.", type: "output", phraseChunkUsed: "een voorstel doen", scenarioTags: ["opinion", "work"] },
+    verandering: { dutch: "Deze verandering heeft gevolgen voor mijn werk.", meaningZh: "这个变化会影响我的工作。", meaningEn: "This change has consequences for my work.", type: "scenario", phraseChunkUsed: "een verandering heeft gevolgen", scenarioTags: ["work", "society"] },
+    discussie: { dutch: "We voeren een discussie over de oplossing.", meaningZh: "我们就解决方案进行讨论。", meaningEn: "We have a discussion about the solution.", type: "scenario", phraseChunkUsed: "een discussie voeren", scenarioTags: ["opinion", "work"] },
+    argument: { dutch: "Ik geef een argument voor mijn mening.", meaningZh: "我给出一个支持我意见的论点。", meaningEn: "I give an argument for my opinion.", type: "output", phraseChunkUsed: "een argument geven", scenarioTags: ["opinion", "writing"] },
+    aanhef: { dutch: "Ik begin de brief met een nette aanhef.", meaningZh: "我用得体的称呼开始这封信。", meaningEn: "I start the letter with a proper salutation.", type: "scenario", phraseChunkUsed: "een nette aanhef", scenarioTags: ["email", "writing"] },
+    afsluiting: { dutch: "Ik schrijf een vriendelijke afsluiting.", meaningZh: "我写一个友好的结尾。", meaningEn: "I write a friendly closing.", type: "scenario", phraseChunkUsed: "een afsluiting schrijven", scenarioTags: ["email", "writing"] },
+    betreft: { dutch: "Betreft: mijn aanvraag voor huurtoeslag.", meaningZh: "主题：我的房租补贴申请。", meaningEn: "Subject: my application for rent benefit.", type: "output", phraseChunkUsed: "betreft mijn aanvraag", scenarioTags: ["email", "writing", "admin"] },
+    groet: { dutch: "Ik sluit de e-mail af met een groet.", meaningZh: "我用问候语结束邮件。", meaningEn: "I close the email with a greeting.", type: "scenario", phraseChunkUsed: "met een groet afsluiten", scenarioTags: ["email", "writing"] },
+    uitnodiging: { dutch: "Ik krijg een uitnodiging voor het gesprek.", meaningZh: "我收到面试/谈话邀请。", meaningEn: "I receive an invitation for the interview.", type: "scenario", phraseChunkUsed: "een uitnodiging krijgen", scenarioTags: ["work", "email"] },
+    verklaring: { dutch: "Ik stuur de verklaring naar de gemeente.", meaningZh: "我把声明/证明发给市政厅。", meaningEn: "I send the statement to the municipality.", type: "scenario", phraseChunkUsed: "de verklaring sturen", scenarioTags: ["admin", "gemeente"] },
+    verzoek: { dutch: "Ik stuur u een verzoek om informatie.", meaningZh: "我向您发送一个索取信息的请求。", meaningEn: "I send you a request for information.", type: "output", phraseChunkUsed: "een verzoek om informatie", scenarioTags: ["email", "writing"] },
+    onderwerp: { dutch: "Het onderwerp van mijn e-mail is duidelijk.", meaningZh: "我的邮件主题很清楚。", meaningEn: "The subject of my email is clear.", type: "scenario", phraseChunkUsed: "het onderwerp van mijn e-mail", scenarioTags: ["email", "writing"] },
+    reactie: { dutch: "Ik wacht op uw reactie.", meaningZh: "我等待您的回复。", meaningEn: "I wait for your response.", type: "output", phraseChunkUsed: "op uw reactie wachten", scenarioTags: ["email", "writing"] },
+    gebeurtenis: { dutch: "Ik beschrijf de gebeurtenis in mijn brief.", meaningZh: "我在信里描述这件事。", meaningEn: "I describe the event in my letter.", type: "scenario", phraseChunkUsed: "een gebeurtenis beschrijven", scenarioTags: ["writing"] },
+    regel: { dutch: "Ik lees de regel goed.", meaningZh: "我仔细读这条规则。", meaningEn: "I read the rule carefully.", type: "scenario", phraseChunkUsed: "de regel lezen", scenarioTags: ["admin", "safety"] },
+    voorkeur: { dutch: "Mijn voorkeur is een afspraak in de ochtend.", meaningZh: "我更希望预约在上午。", meaningEn: "My preference is an appointment in the morning.", type: "output", phraseChunkUsed: "mijn voorkeur is", scenarioTags: ["appointment", "opinion"] },
+    uitgaven: { dutch: "Ik houd mijn uitgaven per maand bij.", meaningZh: "我记录每月支出。", meaningEn: "I keep track of my monthly expenses.", type: "scenario", phraseChunkUsed: "uitgaven bijhouden", scenarioTags: ["payment", "budget"] },
+    account: { dutch: "Ik maak een account aan op de website.", meaningZh: "我在网站上创建账号。", meaningEn: "I create an account on the website.", type: "scenario", phraseChunkUsed: "een account aanmaken", scenarioTags: ["digital"] },
+    belasting: { dutch: "Ik betaal belasting over mijn inkomen.", meaningZh: "我为我的收入缴税。", meaningEn: "I pay tax on my income.", type: "scenario", phraseChunkUsed: "belasting betalen", scenarioTags: ["admin", "payment"] },
+    vergunning: { dutch: "Ik vraag een vergunning aan bij de gemeente.", meaningZh: "我向市政厅申请许可证。", meaningEn: "I apply for a permit at the municipality.", type: "scenario", phraseChunkUsed: "een vergunning aanvragen", scenarioTags: ["gemeente", "admin"] },
+    bedrijfsarts: { dutch: "Ik maak een afspraak met de bedrijfsarts.", meaningZh: "我和职业医生预约。", meaningEn: "I make an appointment with the occupational doctor.", type: "scenario", phraseChunkUsed: "afspraak met de bedrijfsarts", scenarioTags: ["work", "health"] },
+    maatschappij: { dutch: "De maatschappij verandert snel.", meaningZh: "社会变化很快。", meaningEn: "Society is changing quickly.", type: "scenario", phraseChunkUsed: "de maatschappij verandert", scenarioTags: ["society"] },
+    samenleving: { dutch: "In de samenleving helpen mensen elkaar.", meaningZh: "在社会中，人们互相帮助。", meaningEn: "In society, people help each other.", type: "scenario", phraseChunkUsed: "in de samenleving", scenarioTags: ["society"] },
+    nieuws: { dutch: "Ik lees het nieuws online.", meaningZh: "我在线读新闻。", meaningEn: "I read the news online.", type: "scenario", phraseChunkUsed: "het nieuws lezen", scenarioTags: ["society", "digital"] },
+    krant: { dutch: "Ik lees de krant in de ochtend.", meaningZh: "我早上读报纸。", meaningEn: "I read the newspaper in the morning.", type: "scenario", phraseChunkUsed: "de krant lezen", scenarioTags: ["society"] },
+    artikel: { dutch: "Ik lees een artikel over de gemeente.", meaningZh: "我读一篇关于市政厅的文章。", meaningEn: "I read an article about the municipality.", type: "scenario", phraseChunkUsed: "een artikel lezen", scenarioTags: ["society", "gemeente"] },
+    overheid: { dutch: "De overheid stuurt een brief.", meaningZh: "政府寄来一封信。", meaningEn: "The government sends a letter.", type: "scenario", phraseChunkUsed: "de overheid stuurt", scenarioTags: ["society", "admin"] },
+    burger: { dutch: "Elke burger heeft rechten en plichten.", meaningZh: "每个公民都有权利和义务。", meaningEn: "Every citizen has rights and duties.", type: "scenario", phraseChunkUsed: "rechten en plichten", scenarioTags: ["society"] },
+    verkiezing: { dutch: "De verkiezing is volgende week.", meaningZh: "选举在下周。", meaningEn: "The election is next week.", type: "scenario", phraseChunkUsed: "de verkiezing is", scenarioTags: ["society"] },
+    evenement: { dutch: "Het evenement begint om acht uur.", meaningZh: "活动八点开始。", meaningEn: "The event starts at eight o'clock.", type: "scenario", phraseChunkUsed: "het evenement begint", scenarioTags: ["society", "time"] },
+    verhaal: { dutch: "Ik vertel mijn verhaal rustig.", meaningZh: "我平静地讲述我的经历。", meaningEn: "I tell my story calmly.", type: "output", phraseChunkUsed: "mijn verhaal vertellen", scenarioTags: ["speaking"] },
+    ervaring: { dutch: "Ik heb ervaring met klantcontact.", meaningZh: "我有客户沟通经验。", meaningEn: "I have experience with customer contact.", type: "output", phraseChunkUsed: "ervaring met klantcontact", scenarioTags: ["work"] },
+    planning: { dutch: "Ik stem de planning af met mijn team.", meaningZh: "我和团队协调计划。", meaningEn: "I coordinate the planning with my team.", type: "scenario", phraseChunkUsed: "de planning afstemmen", scenarioTags: ["work", "planning"] },
+  };
+
   const transportVehicles = new Set(["bus", "tram", "metro", "trein", "taxi", "boot", "vliegtuig"]);
   const privateTransport = new Set(["fiets", "auto"]);
   const transportTimeNouns = new Set(["aankomsttijd", "vertrektijd"]);
   const transportDurationNouns = new Set(["reis", "overstap"]);
-  const transportInfoNouns = new Set(["dienstregeling", "reisinformatie", "reisplanner"]);
+  const transportInfoNouns: Record<string, TemplateExample> = {
+    dienstregeling: { dutch: "De dienstregeling is vandaag aangepast.", meaningZh: "今天的时刻表调整了。", meaningEn: "The timetable has been changed today.", type: "scenario", phraseChunkUsed: "de dienstregeling is aangepast", scenarioTags: ["transport"] },
+    reisinformatie: { dutch: "Ik lees de reisinformatie in de app.", meaningZh: "我在应用里读出行信息。", meaningEn: "I read the travel information in the app.", type: "scenario", phraseChunkUsed: "reisinformatie lezen", scenarioTags: ["transport", "digital"] },
+    reisplanner: { dutch: "De reisplanner geeft een andere route.", meaningZh: "行程规划器给出另一条路线。", meaningEn: "The travel planner gives another route.", type: "scenario", phraseChunkUsed: "de reisplanner gebruiken", scenarioTags: ["transport", "digital"] },
+  };
   const transportProblemNouns: Record<string, TemplateExample> = {
     vertraging: { dutch: "De trein heeft vertraging.", meaningZh: "火车晚点。", meaningEn: "The train is delayed.", type: "scenario", phraseChunkUsed: "vertraging hebben", scenarioTags: ["transport"] },
     uitval: { dutch: "Er is uitval op deze lijn.", meaningZh: "这条线路有停运。", meaningEn: "There is a cancellation on this line.", type: "scenario", phraseChunkUsed: "uitval op deze lijn", scenarioTags: ["transport"] },
@@ -2162,6 +2695,7 @@ const dictionaryStyleNounFallbacksFor = (
     buurt: { dutch: "Ik woon in deze buurt.", meaningZh: "我住在这个社区。", meaningEn: "I live in this neighborhood.", type: "scenario", phraseChunkUsed: "in deze buurt wonen", scenarioTags: ["housing"] },
   };
 
+  if (b1TaskNouns[dutch]) return [nounFallback(word, b1TaskNouns[dutch], naturalNoun)];
   if (transportVehicles.has(dutch)) {
     return [nounFallback(word, { dutch: `Ik neem ${articlePhrase}.`, meaningZh: `我乘坐${zh}。`, meaningEn: `I take the ${en}.`, type: "scenario", phraseChunkUsed: `${articlePhrase} nemen`, scenarioTags: ["transport"] }, naturalNoun)];
   }
@@ -2174,9 +2708,7 @@ const dictionaryStyleNounFallbacksFor = (
   if (transportDurationNouns.has(dutch)) {
     return [nounFallback(word, { dutch: `${subject} duurt tien minuten.`, meaningZh: `${zh}需要十分钟。`, meaningEn: `The ${en} takes ten minutes.`, type: "scenario", phraseChunkUsed: `${articlePhrase} duurt`, scenarioTags: ["transport", "time"] }, naturalNoun)];
   }
-  if (transportInfoNouns.has(dutch)) {
-    return [nounFallback(word, { dutch: `Ik kijk naar ${articlePhrase}.`, meaningZh: `我查看${zh}。`, meaningEn: `I look at the ${en}.`, type: "scenario", phraseChunkUsed: `naar ${articlePhrase} kijken`, scenarioTags: ["transport"] }, naturalNoun)];
-  }
+  if (transportInfoNouns[dutch]) return [nounFallback(word, transportInfoNouns[dutch], naturalNoun)];
   if (transportProblemNouns[dutch]) return [nounFallback(word, transportProblemNouns[dutch], naturalNoun)];
   if (ticketNouns[dutch]) return [nounFallback(word, ticketNouns[dutch], naturalNoun)];
   if (routeNouns[dutch]) return [nounFallback(word, routeNouns[dutch], naturalNoun)];
@@ -2217,16 +2749,20 @@ const dictionaryStyleNounFallbacksFor = (
     const tags = word.scenarioTags.map((tag) => tag.toLowerCase());
     const theme = word.theme.toLowerCase();
     if (tags.includes("form") || tags.includes("gemeente") || theme.includes("document") || theme.includes("admin")) {
-      return [nounFallback(word, { dutch: `Ik heb een vraag over ${articlePhrase}.`, meaningZh: `我有一个关于${zh}的问题。`, meaningEn: `I have a question about the ${en}.`, type: "output", phraseChunkUsed: articlePhrase, scenarioTags: ["form", "gemeente", "help"] }, naturalNoun)];
+      return [];
     }
     if (tags.includes("health") || theme.includes("health") || theme.includes("pharmacy")) {
-      return [nounFallback(word, { dutch: `Ik bespreek ${articlePhrase} met de huisarts.`, meaningZh: `我和家庭医生讨论${zh}。`, meaningEn: `I discuss the ${en} with the GP.`, type: "scenario", phraseChunkUsed: `${articlePhrase} bespreken`, scenarioTags: ["health"] }, naturalNoun)];
+      const discussableHealthNouns = new Set(["klacht", "pijn", "symptoom", "koorts", "medicijn", "bijwerking", "allergie", "behandeling", "advies"]);
+      if (discussableHealthNouns.has(dutch)) {
+        return [nounFallback(word, { dutch: `Ik bespreek ${articlePhrase} met de huisarts.`, meaningZh: `我和家庭医生讨论${zh}。`, meaningEn: `I discuss the ${en} with the GP.`, type: "scenario", phraseChunkUsed: `${articlePhrase} bespreken`, scenarioTags: ["health"] }, naturalNoun)];
+      }
+      return [];
     }
     if (tags.includes("housing") || theme.includes("home") || theme.includes("housing") || theme.includes("rent")) {
-      return [nounFallback(word, { dutch: `Ik heb een vraag over ${articlePhrase}.`, meaningZh: `我有一个关于${zh}的问题。`, meaningEn: `I have a question about the ${en}.`, type: "output", phraseChunkUsed: articlePhrase, scenarioTags: ["housing", "help"] }, naturalNoun)];
+      return [];
     }
     if (tags.includes("work") || theme.includes("work") || theme.includes("school")) {
-      return [nounFallback(word, { dutch: `Ik bespreek ${articlePhrase} op het werk.`, meaningZh: `我在工作中讨论${zh}。`, meaningEn: `I discuss the ${en} at work.`, type: "scenario", phraseChunkUsed: `${articlePhrase} bespreken`, scenarioTags: ["work"] }, naturalNoun)];
+      return [];
     }
     if (tags.includes("transport") || theme.includes("transport")) {
       return [nounFallback(word, { dutch: `Ik vraag naar ${articlePhrase}.`, meaningZh: `我询问${zh}。`, meaningEn: `I ask about the ${en}.`, type: "output", phraseChunkUsed: `naar ${articlePhrase} vragen`, scenarioTags: ["transport"] }, naturalNoun)];
@@ -2234,7 +2770,7 @@ const dictionaryStyleNounFallbacksFor = (
     if (theme.includes("place") || theme.includes("service")) {
       return [nounFallback(word, { dutch: `Ik ga naar ${articlePhrase}.`, meaningZh: `我去${zh}。`, meaningEn: `I go to the ${en}.`, type: "scenario", phraseChunkUsed: `naar ${articlePhrase} gaan`, scenarioTags: ["directions"] }, naturalNoun)];
     }
-    return [nounFallback(word, { dutch: `Ik heb een vraag over ${articlePhrase}.`, meaningZh: `我有一个关于${zh}的问题。`, meaningEn: `I have a question about the ${en}.`, type: "output", phraseChunkUsed: articlePhrase, scenarioTags: word.scenarioTags }, naturalNoun)];
+    return [];
   }
 
   return [];
@@ -2280,25 +2816,22 @@ export const fallbackExamplesForWord = (word: WordItem, wordType: WordType): Tem
   }
   if (wordType === "function-word") return functionWordExamples[dutch] ?? [];
   if (wordType === "phrase") {
-    return phraseExamples[dutch] ?? [
-      {
-        dutch: phraseAsSentence(word.dutch),
-        meaningZh: word.meaning.zh,
-        meaningEn: word.meaning.en,
-        type: "minimal",
-        phraseChunkUsed: word.dutch,
-        scenarioTags: word.scenarioTags,
-        needsHumanReview: !hasNaturalMeaning(word),
-        confidence: hasNaturalMeaning(word) ? "medium" : "low",
-      },
-    ];
+    return phraseExamples[dutch] ?? phraseFallbackExamplesFor(word);
   }
   if (wordType === "verb") {
     const infinitive = infinitiveForWord(word) ?? dutch;
     if (verbExamples[infinitive]) return verbExamples[infinitive];
     const fallback = verbFallbackSentences[infinitive];
     if (fallback) {
-      return [{ dutch: fallback.dutch, meaningZh: `我${meaningZhFor(word)}。`, meaningEn: `I ${meaningEnFor(word)}.`, type: "scenario", phraseChunkUsed: fallback.phraseChunk, scenarioTags: word.scenarioTags, confidence: "medium" }];
+      return [{
+        dutch: fallback.dutch,
+        meaningZh: fallback.meaningZh ?? `我${meaningZhFor(word)}。`,
+        meaningEn: fallback.meaningEn ?? `I ${meaningEnFor(word)}.`,
+        type: "scenario",
+        phraseChunkUsed: fallback.phraseChunk,
+        scenarioTags: word.scenarioTags,
+        confidence: "medium",
+      }];
     }
     const forms = verbFormsForWord(word);
     if (forms) {
@@ -2314,7 +2847,7 @@ export const fallbackExamplesForWord = (word: WordItem, wordType: WordType): Tem
   const naturalNoun = hasNaturalMeaning(word);
   const personalInfoNouns = new Set(["adres", "naam", "voornaam", "achternaam", "geboortedatum", "nationaliteit", "postcode", "telefoonnummer", "email"]);
   const paymentNouns = new Set(["rekening", "factuur", "bedrag", "betaling", "prijs", "bon", "waterrekening"]);
-  const healthPlaceNouns = new Set(["huisarts", "apotheek", "ziekenhuis", "tandarts"]);
+  const healthPlaceNouns = new Set(["dokter", "huisarts", "apotheek", "ziekenhuis", "tandarts"]);
   const transportPlaceNouns = new Set(["station", "halte", "perron"]);
   const housingNouns = new Set(["woning", "kamer", "huur", "huurcontract", "reparatie"]);
 

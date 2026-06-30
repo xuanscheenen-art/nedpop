@@ -1,5 +1,6 @@
 import { verbUsageFor } from "@/lib/dutchVerbForms";
 import { generateExamplesForWord } from "@/lib/exampleSentenceGenerator";
+import { isBadGenericTargetTemplate, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import { memoryAssociationsFor } from "@/lib/wordAssociations";
 import type { WordItem } from "@/types/vocabulary";
 
@@ -42,16 +43,22 @@ function isBareWordSentence(word: WordItem, sentence: string) {
   return sentence === bare && !safeStandaloneWords.has(word.dutch.toLowerCase());
 }
 
+function isPhraseEchoSentence(word: WordItem, sentence: string) {
+  const key = word.dutch.trim().toLowerCase();
+  if (!key.includes(" ") || safeStandaloneWords.has(key)) return false;
+  return sentence.trim().replace(/[.!?]+$/, "").toLowerCase() === key;
+}
+
 function isWeakGenericSentence(word: WordItem, sentence: string) {
   const escaped = word.dutch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return [
+  return isKnownBadLearnerLine(sentence) ||
+    isBadGenericTargetTemplate(word, sentence) ||
+    [
     new RegExp(`^Dit is (de|het|een) ${escaped}\\.$`, "i"),
     new RegExp(`^Ik zie (de|het) ${escaped}\\.$`, "i"),
     new RegExp(`^Ik leer ${escaped}\\.$`, "i"),
     new RegExp(`^Ik zeg ${escaped}\\.$`, "i"),
     new RegExp(`^Ik gebruik (de|het) ${escaped}\\.$`, "i"),
-    new RegExp(`^Ik heb (de|het|een) ${escaped} nodig\\.$`, "i"),
-    new RegExp(`^Ik heb een vraag over (de|het) ${escaped}\\.$`, "i"),
     new RegExp(`^Dat is ${escaped}\\.$`, "i"),
   ].some((pattern) => pattern.test(sentence.trim()));
 }
@@ -109,13 +116,13 @@ export function validateVocabularyQuality(words: WordItem[]) {
     }
 
     const sentence = effectiveSentence;
-    if (isBareWordSentence(word, sentence)) {
+    if (isBareWordSentence(word, sentence) || isPhraseEchoSentence(word, sentence)) {
       issues.push({
         wordId: word.id,
         dutch: word.dutch,
         severity: "warning",
         code: "bare-word-sentence",
-        message: "Primary sentence is only the bare word, not a usable Dutch sentence.",
+        message: "Primary sentence is only the bare word/phrase, not a usable Dutch sentence.",
       });
     }
 

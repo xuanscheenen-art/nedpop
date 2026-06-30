@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { BookOpenCheck, Clock3, ListOrdered, Play, Puzzle, Search, TableProperties } from "lucide-react";
 import { ArticleDetector } from "@/components/ArticleDetector";
+import { NextStepCard } from "@/components/NextStepCard";
 import { PluralTrainer } from "@/components/PluralTrainer";
 import { RulePartNavigator } from "@/components/RulePartNavigator";
 import { SentenceOrderTrainer } from "@/components/SentenceOrderTrainer";
 import { nounEntries, pluralEntries, sentencePatterns } from "@/data/grammarRules";
 import { useLanguage } from "@/lib/i18n";
+import { getLearningProgress, updateLearningProgress } from "@/lib/learningProgress";
 import type { LocalizedText } from "@/types/course";
 
 type ToolId = "verbs" | "articles" | "plurals" | "order" | "adjectives" | "past";
@@ -1642,19 +1644,33 @@ export default function RulesPage() {
   const { language } = useLanguage();
   const [activeTool, setActiveTool] = useState<ToolId>("verbs");
   const [focus, setFocus] = useState<string | undefined>();
+  const [baseCompleted, setBaseCompleted] = useState(false);
   const concept = grammarConcepts[activeTool];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tool = params.get("tool");
+    const mode = params.get("mode");
     const focusParam = params.get("focus");
     if (tool === "verbs" || tool === "articles" || tool === "plurals" || tool === "order" || tool === "adjectives" || tool === "past") {
       setActiveTool(tool);
+    } else if (mode === "foundation") {
+      setActiveTool("verbs");
     }
     if (focusParam) {
       setFocus(focusParam);
     }
+    setBaseCompleted(getLearningProgress().grammarBaseCompleted);
   }, []);
+
+  const completeGrammarBase = () => {
+    updateLearningProgress({
+      grammarBaseCompleted: true,
+      currentStep: "lesson",
+      lastVisitedRoute: "/rules",
+    });
+    setBaseCompleted(true);
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -1663,8 +1679,8 @@ export default function RulesPage() {
         <h1 className="mt-3 text-5xl font-black text-ink">{language === "zh" ? "语法规则" : "Grammar Rules"}</h1>
         <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-ocean/70">
           {language === "zh"
-            ? "这里不是只给例子。每个语法点先讲清楚“它是什么、为什么这样、中文学习者容易错在哪里”，再进入练习工具。"
-            : "This page does not only show examples. Each grammar point explains what it is, why it works this way, common Chinese-speaker mistakes, then moves into practice."}
+            ? "先学 A0 生存句需要的最小规则，后面的 de/het、复数、完成时和可分动词都按每日内容遇到再补。"
+            : "Start with the tiny rule base needed for A0 survival sentences. Add de/het, plurals, perfect tense, and separable verbs when daily content needs them."}
         </p>
       </section>
 
@@ -1726,6 +1742,39 @@ export default function RulesPage() {
         {activeTool === "order" ? <SentenceOrderTrainer patterns={sentencePatterns} /> : null}
         {activeTool === "adjectives" ? <ComparisonOrdinalModule language={language} /> : null}
         {activeTool === "past" ? <PastTenseModule language={language} /> : null}
+      </section>
+
+      <section className="mt-7">
+        {baseCompleted ? (
+          <NextStepCard
+            eyebrow={language === "zh" ? "学习接力" : "Learning handoff"}
+            currentLabel={language === "zh" ? "最小语法已完成" : "Grammar base complete"}
+            title={language === "zh" ? "下一步：A0 Day 1" : "Next: A0 Day 1"}
+            reason={language === "zh" ? "你已经有生存词和最小规则了，现在可以开始每日课程和单词泡泡。" : "You have starter words and the tiny rule base. Now start the daily lesson and word bubbles."}
+            buttonLabel={language === "zh" ? "进入 A0 Day 1" : "Open A0 Day 1"}
+            route="/learn/a0-01"
+          />
+        ) : (
+          <div className="rounded-[28px] border border-blue-100 bg-white p-5 shadow-soft sm:flex sm:items-center sm:justify-between sm:gap-5">
+            <div>
+              <p className="text-sm font-black tracking-[0.16em] text-pop">
+                {language === "zh" ? "最小语法地基" : "Grammar Base 1"}
+              </p>
+              <p className="mt-2 font-bold leading-7 text-ocean/70">
+                {language === "zh"
+                  ? "先只补能马上用上的规则：ik ben、ik heb、简单词序和 Waar woon je 这类问题。其他规则遇到再学。"
+                  : "Only add the rules you can use right away: ik ben, ik heb, simple word order, and questions like Waar woon je. Learn the rest on demand."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={completeGrammarBase}
+              className="mt-4 inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean sm:mt-0"
+            >
+              {language === "zh" ? "完成最小语法" : "Mark Grammar Base 1 complete"}
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );

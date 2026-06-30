@@ -2,14 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock3, LockKeyhole, Play, Sparkles } from "lucide-react";
+import { NextStepCard } from "@/components/NextStepCard";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { vocabularyLevelPlans } from "@/data/vocabularyPlan";
 import { authChangedEvent, getCurrentUser } from "@/lib/auth";
-import { getBaseDayPacks, getBaseWords, getEffectiveDayPacks, getEffectiveWordBubble, getEffectiveWords, type EffectiveWordBubble } from "@/lib/contentStore";
+import { getBaseCourseLessons, getBaseDayPacks, getBaseWords, getEffectiveDayPacks, getEffectiveWordBubble, getEffectiveWords, type EffectiveWordBubble } from "@/lib/contentStore";
 import { verbUsageFor } from "@/lib/dutchVerbForms";
 import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import { isBadGenericTargetTemplate, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import { useLanguage } from "@/lib/i18n";
 import { fetchServerLearnedWords, readLearnedWords, syncLearnedWordToServer, writeLearnedWords } from "@/lib/learnerProgress";
+import { getDefaultLearningProgress, getLearningProgress, learningProgressChangedEvent, markStepComplete, setLearningRouteContext, updateLearningProgress, type LearningProgress } from "@/lib/learningProgress";
 import { memoryPathFor, shouldShowPluralInWordHeader, stepLabelsForStrategy, wordTypeFor } from "@/lib/memoryPath";
 import { memoryAssociationsFor, type WordAssociation } from "@/lib/wordAssociations";
 import type { CourseLevel, LocalizedText } from "@/types/course";
@@ -61,14 +64,14 @@ const levelSettings: Record<
     reviewLine: text("A2 要按场景多天推进，不是背一张词表。", "A2 moves through scenarios over many days. It is not one vocabulary sheet."),
   },
   B1: {
-    title: text("B1 工作学习任务", "B1 Work & Study Tasks"),
-    focus: text("面向工作、mbo 学习、官方文字、公共信息和较长表达。", "For work, mbo study, official texts, public information, and longer output."),
+    title: text("B1 独立任务表达", "B1 Independent Task Dutch"),
+    focus: text("按公开 B1 教材主题分页：自我表达、健康、社区、钱、工作、opleiding、旅行、环境、媒体、文化、观点和正式文字。", "Page through public B1 textbook themes: self-expression, health, neighborhood, money, work, education, travel, environment, media, culture, opinions, and formal texts."),
     dailyLoad: text("每天 12 个主动词 + 复习/识别词 / 30-40 分钟", "12 active words + review/recognition per day / 30-40 min"),
     daySize: 12,
     estimatedMinutes: 35,
     targetSentence: "Volgens de brief moet ik binnen twee weken reageren.",
-    outputTask: text("用今天这页词写或说一个 B1 工作学习句。", "Use today's page to write or say one B1 work/study sentence."),
-    reviewLine: text("B1 是累计词汇层：A0-A2 要继续复习，同时加入工作、学习和官方文字。", "B1 is cumulative: keep reviewing A0-A2 while adding work, study, and official-text language."),
+    outputTask: text("用今天这页词写或说一个 B1 独立表达句。", "Use today's page to write or say one B1 independent-task sentence."),
+    reviewLine: text("B1 是累计词汇层：A0-A2 继续复习，同时加入教材常见的长文本、观点、展示、工作学习和公共生活表达。", "B1 is cumulative: keep reviewing A0-A2 while adding textbook-style longer texts, opinions, presentations, work/study, and public-life language."),
   },
 };
 
@@ -77,9 +80,9 @@ const courseLevels: CourseLevel[] = ["A0", "A1", "A2", "B1"];
 const levelTargetValue = (level: CourseLevel, language: "zh" | "en") => {
   const copy: Record<CourseLevel, LocalizedText> = {
     A0: text("150-200 词", "150-200 words"),
-    A1: text("400-500 词", "400-500 words"),
-    A2: text("420-500 词", "420-500 words"),
-    B1: text("500-700 词", "500-700 words"),
+    A1: text("600-700 词", "600-700 words"),
+    A2: text("650-750 词", "650-750 words"),
+    B1: text("800-950 词", "800-950 words"),
   };
   return copy[level][language];
 };
@@ -88,7 +91,7 @@ const levelDailyValue = (level: CourseLevel, language: "zh" | "en", plan: (typeo
   const copy: Record<CourseLevel, LocalizedText> = {
     A0: text(`8-10 个新词 / 约 ${plan.totalDays} 天`, `8-10 new words / about ${plan.totalDays} days`),
     A1: text(`10 个主动词 + A0 复习 / 约 ${plan.totalDays} 天`, `10 active words + A0 review / about ${plan.totalDays} days`),
-    A2: text(`10 个主动词 + A0/A1 复习 / 约 ${plan.totalDays} 天`, `10 active words + A0/A1 review / about ${plan.totalDays} days`),
+    A2: text(`10 个生活任务词 + A0/A1 复习 / 约 ${plan.totalDays} 天`, `10 practical-task words + A0/A1 review / about ${plan.totalDays} days`),
     B1: text(`12 个主动词 + A0-A2 复习 / 约 ${plan.totalDays} 天`, `12 active words + A0-A2 review / about ${plan.totalDays} days`),
   };
   return copy[level][language];
@@ -120,28 +123,19 @@ const isLearnerVisibleText = (value?: string) => {
   return true;
 };
 
-const badBodyPartWords = "(arm|been|hoofd|buik|hand|voet|rug|keel|oor|neus|mond|tand|schouder|knie|nek)";
-const badSymptomWords = "(verkouden|hoesten|hoofdpijn|buikpijn|keelpijn|koorts|duizelig|misselijk|moe|benauwd)";
-const badAdminWords = "(salaris|loonstrook|proeftijd|afwezigheid|herinnering|waterrekening|herstel|verlof|uitzendbureau)";
-const badLearnerLinePatterns = [
-  /^Ik ga naar (uit|hier|daar)\.?$/i,
-  new RegExp(`^Ik ga naar ((de|het)\\s+)?${badBodyPartWords}\\.?$`, "i"),
-  new RegExp(`^Ik ga naar\\s+${badSymptomWords}\\.?$`, "i"),
-  new RegExp(`^Ik gebruik ((de|het)\\s+)?${badBodyPartWords}\\.?$`, "i"),
-  new RegExp(`^Waar is ((de|het)\\s+)?${badBodyPartWords}\\??$`, "i"),
-  new RegExp(`^Ik heb (de|het)\\s+${badBodyPartWords} nodig\\.?$`, "i"),
-  new RegExp(`^Ik zoek ((de|het|een)\\s+)?${badAdminWords}\\.?$`, "i"),
-  new RegExp(`^Ik ga naar\\s+${badAdminWords}\\.?$`, "i"),
-  /^Ik zeg (heet|heb|ben|wel|geen|wanneer|waar|wat|wie|hoe)\.?$/i,
-  /^Dit is (heet|ben|heb|wil|kan|dit|dat|dag)\.?$/i,
-  /^Dit is (de|het)\s+[a-zA-ZÀ-ÿ-]+\.?$/i,
-  /^Ik (ben|heb|wil|kan)\.?$/i,
-];
+const looksLikeAnalyticGloss = (value?: string) => {
+  const textValue = value?.trim() ?? "";
+  if (!textValue) return false;
+  return /(^|[\s，。])[^，。.!?]{1,12}\s[+＋]\s[^，。.!?]{1,12}/.test(textValue);
+};
+
+const isLearnerVisibleTranslation = (value?: string) =>
+  isLearnerVisibleText(value) && !looksLikeAnalyticGloss(value);
 
 const isSafeLearnerLine = (value?: string) => {
   const textValue = value?.trim() ?? "";
   if (!isLearnerVisibleText(textValue)) return false;
-  return !badLearnerLinePatterns.some((pattern) => pattern.test(textValue));
+  return !isKnownBadLearnerLine(textValue);
 };
 
 const containsDutchToken = (sentence: string, token: string) =>
@@ -156,6 +150,87 @@ const phraseCoreTokens = (value: string) =>
 const adjectiveEForm = (adjective: string) => {
   const irregular: Record<string, string> = { groot: "grote", oud: "oude", nieuw: "nieuwe", duur: "dure", goedkoop: "goedkope" };
   return irregular[adjective.toLowerCase()] ?? `${adjective}e`;
+};
+
+const verbStemOverrides: Record<string, string[]> = {
+  is: ["is", "ben", "bent", "zijn"],
+  weten: ["weet"],
+  nemen: ["neem"],
+  meenemen: ["neem"],
+  geven: ["geef"],
+  lezen: ["lees"],
+  spreken: ["spreek"],
+  komen: ["kom"],
+  gaan: ["ga"],
+  doen: ["doe"],
+  zien: ["zie"],
+  zijn: ["ben", "bent", "is", "zijn"],
+  hebben: ["heb", "hebt", "heeft", "hebben"],
+  douchen: ["douche", "doucht"],
+  eindigen: ["eindig", "eindigt"],
+  proberen: ["probeer", "probeert"],
+  dragen: ["draag", "draagt"],
+  halen: ["haal", "haalt"],
+  spelen: ["speel", "speelt"],
+  horen: ["hoor", "hoort"],
+  schoonmaken: ["maak", "maakt", "schoon"],
+  afdrogen: ["droog", "droogt", "af"],
+  aanraken: ["raak", "raakt", "aan"],
+  achterlaten: ["laat", "achter"],
+  klaarmaken: ["maak", "klaar"],
+  bijvoegen: ["voeg", "voegt", "bij"],
+  doorverwijzen: ["verwijs", "verwijst", "door"],
+  thuisblijven: ["blijf", "blijft", "thuis"],
+  omreizen: ["reis", "reist", "om"],
+  doorsturen: ["stuur", "stuurt", "door"],
+  afhalen: ["haal", "haalt", "af"],
+  uitschrijven: ["schrijf", "schrijft", "uit"],
+  repareren: ["repareer", "repareert"],
+};
+
+const separableVerbPrefixes = ["terug", "mee", "aan", "op", "uit", "in", "af", "door", "over", "weg"];
+
+const simpleDutchVerbStem = (infinitive: string) => {
+  const lower = infinitive.toLowerCase();
+  const override = verbStemOverrides[lower];
+  if (override?.length) return override;
+  if (!lower.endsWith("en") || lower.length <= 4) return [lower];
+  let stem = lower.slice(0, -2);
+  if (/([bcdfghjklmnpqrstvwxz])\1$/i.test(stem)) stem = stem.slice(0, -1);
+  const forms = new Set([stem]);
+  if (lower.endsWith("chen")) forms.add(`${stem}e`);
+  if (!stem.endsWith("t")) forms.add(`${stem}t`);
+  return Array.from(forms);
+};
+
+const verbDisplayForms = (dutch: string, usage?: ReturnType<typeof verbUsageFor>) => {
+  const lower = dutch.toLowerCase();
+  const forms = new Set<string>([dutch]);
+  if (usage) {
+    [usage.infinitive, usage.ikForm, usage.jijForm, usage.wijForm, ...usage.examples].forEach((form) => {
+      form.split("/").forEach((part) => {
+        const trimmed = part.trim().replace(/[.!?]+$/g, "");
+        if (!trimmed) return;
+        forms.add(trimmed);
+        const tokens = phraseCoreTokens(trimmed);
+        const lastToken = tokens[tokens.length - 1];
+        if (lastToken && lastToken.length >= 2) forms.add(lastToken);
+      });
+    });
+  }
+  simpleDutchVerbStem(lower).forEach((stem) => forms.add(stem));
+  return Array.from(forms).filter(Boolean);
+};
+
+const separableVerbParts = (dutch: string) => {
+  const lower = dutch.toLowerCase();
+  const prefix = separableVerbPrefixes.find((item) => lower.startsWith(item) && lower.length > item.length + 3);
+  if (!prefix) return undefined;
+  const base = lower.slice(prefix.length);
+  return {
+    prefix,
+    stems: simpleDutchVerbStem(base),
+  };
 };
 
 function AudioButton({ text: audioText, label = "听音" }: { text: string; label?: string }) {
@@ -353,19 +428,42 @@ const memoryBubbleTypeOrder = [
 
 function centerBubbleWordClass(word: string) {
   const compactLength = word.replace(/[\s-]/g, "").length;
+  const isPhrase = /\s/.test(word.trim());
+  if (isPhrase) {
+    if (compactLength <= 12) return "text-2xl leading-7 sm:text-3xl sm:leading-8";
+    if (compactLength <= 18) return "text-xl leading-6 sm:text-2xl sm:leading-7";
+    return "text-base leading-5 sm:text-xl sm:leading-6";
+  }
   if (compactLength <= 7) return "text-3xl leading-8 sm:text-4xl sm:leading-9";
-  if (compactLength <= 10) return "text-2xl leading-7 sm:text-3xl sm:leading-8";
-  if (compactLength <= 12) return "text-[18px] leading-6 sm:text-[20px] sm:leading-7";
-  if (compactLength <= 14) return "text-[16px] leading-5 sm:text-[19px] sm:leading-6";
-  if (compactLength <= 17) return "text-[14px] leading-4 sm:text-[16px] sm:leading-5";
-  return "text-[11px] leading-4 sm:text-[14px] sm:leading-4";
+  if (compactLength <= 9) return "text-2xl leading-7 sm:text-3xl sm:leading-8";
+  if (compactLength <= 11) return "text-[20px] leading-6 sm:text-[26px] sm:leading-7";
+  if (compactLength <= 13) return "text-[16px] leading-5 sm:text-[22px] sm:leading-6";
+  if (compactLength <= 16) return "text-[13px] leading-4 sm:text-[18px] sm:leading-5";
+  if (compactLength <= 20) return "text-[10px] leading-4 sm:text-[15px] sm:leading-4";
+  return "text-[8px] leading-3 sm:text-[12px] sm:leading-4";
 }
 
 function centerBubbleWordWrapClass(word: string) {
   const compactLength = word.replace(/[\s-]/g, "").length;
-  if (compactLength <= 10) return "max-w-[7.75rem] whitespace-nowrap sm:max-w-[9.25rem]";
-  if (compactLength <= 12) return "max-w-[7rem] whitespace-normal break-words [overflow-wrap:anywhere] sm:max-w-[9.5rem] sm:whitespace-nowrap";
-  return "max-w-[7rem] whitespace-normal break-words [overflow-wrap:anywhere] sm:max-w-[8.25rem]";
+  const isPhrase = /\s/.test(word.trim());
+  if (isPhrase) return "max-w-[7.75rem] whitespace-normal break-normal sm:max-w-[9.25rem]";
+  if (compactLength <= 11) return "max-w-[8rem] whitespace-nowrap sm:max-w-[9.75rem]";
+  if (compactLength <= 16) return "max-w-[8.25rem] whitespace-nowrap sm:max-w-[10rem]";
+  return "max-w-[8.5rem] whitespace-nowrap sm:max-w-[10.5rem]";
+}
+
+function outerBubbleWordClass(word: string) {
+  const compactLength = word.replace(/[\s-]/g, "").length;
+  const isPhrase = /\s/.test(word.trim());
+  if (isPhrase) {
+    if (compactLength <= 16) return "whitespace-normal break-normal text-sm leading-5 sm:text-[15px]";
+    return "whitespace-normal break-normal text-xs leading-4 sm:text-sm";
+  }
+  if (compactLength <= 10) return "whitespace-nowrap text-base leading-5 sm:text-lg";
+  if (compactLength <= 14) return "whitespace-nowrap text-sm leading-5 sm:text-[15px]";
+  if (compactLength <= 18) return "whitespace-nowrap text-[11px] leading-4 sm:text-[13px]";
+  if (compactLength <= 22) return "whitespace-nowrap text-[9px] leading-3 sm:text-[11px]";
+  return "whitespace-nowrap text-[8px] leading-3 sm:text-[10px]";
 }
 
 function MemoryLinkConstellation({
@@ -428,7 +526,7 @@ function MemoryLinkConstellation({
       <div data-testid="memory-center-bubble" className="absolute left-1/2 top-[50%] z-10 grid size-36 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-ink text-center text-white shadow-[0_24px_70px_rgba(13,43,83,0.24)] ring-[10px] ring-white/90 sm:size-44 sm:ring-[12px]">
         <div className="w-full px-2">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-peach">{language === "zh" ? "当前词" : "Center"}</p>
-          <p data-testid="memory-center-word" className={`mx-auto mt-1 font-black ${centerWordWrapClass} ${centerWordClass}`}>
+          <p data-testid="memory-center-word" className={`mx-auto mt-1 overflow-hidden font-black ${centerWordWrapClass} ${centerWordClass}`}>
             {centerWord}
           </p>
         </div>
@@ -436,7 +534,7 @@ function MemoryLinkConstellation({
 
       {visibleLinks.map((link, index) => {
         const point = constellationPositions[index % constellationPositions.length];
-        const longWord = link.dutch.length > 10;
+        const outerWordClass = outerBubbleWordClass(link.dutch);
         const tone = memoryBubbleStyleByType[link.type] ?? memoryBubbleStyleByType["scenario-word"];
         const typeLabel = link.kind[language];
         const reason = link.reason[language];
@@ -453,11 +551,11 @@ function MemoryLinkConstellation({
             <span className={`mb-1 inline-flex max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-black shadow-sm ${tone.pill}`}>
               {typeLabel}
             </span>
-            <span className={`block max-w-full font-black leading-5 text-ink ${longWord ? "text-sm sm:text-[15px]" : "text-base sm:text-lg"}`}>
+            <span className={`block max-w-full overflow-hidden font-black text-ink ${outerWordClass}`}>
               {link.dutch}
             </span>
             {link.meaning?.[language] ? (
-              <span className="mt-0.5 block max-w-full truncate text-xs font-black text-ocean/60">{link.meaning[language]}</span>
+              <span className="mt-0.5 block max-w-full break-words text-xs font-black leading-4 text-ocean/60 [overflow-wrap:anywhere]">{link.meaning[language]}</span>
             ) : null}
             {isExtension ? (
               <span className="mt-1 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black text-ocean">
@@ -649,10 +747,10 @@ function strategyBadgeLabel(strategy: string, wordType: string, language: "zh" |
   if (strategy === "fixed-expression") return language === "zh" ? "固定表达" : "Fixed Expression";
   if (strategy === "meaning-contrast") return language === "zh" ? "词义对比" : "Meaning Contrast";
   if (strategy === "word-formation") return language === "zh" ? "词形联想" : "Word Formation";
-  if (strategy === "phrase-based") return language === "zh" ? "搭配记忆" : "Phrase Based";
+  if (strategy === "phrase-based") return language === "zh" ? "联想词块" : "Hooked Phrase";
   if (strategy === "sentence-based") return language === "zh" ? "句子记忆" : "Sentence Based";
   if (strategy === "category-rule") return language === "zh" ? "类别规则" : "Category Rule";
-  return language === "zh" ? "无自然联想" : "No Strong Link";
+  return language === "zh" ? "场景联想" : "Scene Hook";
 }
 
 function normalizeDutchLine(line: string) {
@@ -673,14 +771,22 @@ const matchesWordQuery = (word: { id?: string; wordId?: string; dutch: string },
 
 function WordLinkContent() {
   const { language } = useLanguage();
-  const [queryParams, setQueryParams] = useState<{ word: string | null; debugContent: string | null }>({ word: null, debugContent: null });
+  const [queryParams, setQueryParams] = useState<{ word: string | null; debugContent: string | null; level: string | null; day: string | null }>({
+    word: null,
+    debugContent: null,
+    level: null,
+    day: null,
+  });
   const wordParam = queryParams.word;
   const debugContentParam = queryParams.debugContent;
+  const levelParam = queryParams.level;
+  const dayParam = queryParams.day;
   const [effectivePacks, setEffectivePacks] = useState<DailyWordPack[]>(() => initialPacks);
   const [effectiveWords, setEffectiveWords] = useState<WordItem[]>(() => initialWords);
   const [activePackId, setActivePackId] = useState(initialFirstPack.id);
   const [selectedId, setSelectedId] = useState(initialFirstWordId);
   const [learnedWords, setLearnedWords] = useState<Record<string, boolean>>({});
+  const [learningProgress, setLearningProgress] = useState<LearningProgress>(() => getDefaultLearningProgress());
   const [debugContent, setDebugContent] = useState(false);
   const [contentReady, setContentReady] = useState(false);
   const [extensionPanel, setExtensionPanel] = useState<WordAssociation | null>(null);
@@ -725,6 +831,8 @@ function WordLinkContent() {
       setQueryParams({
         word: params.get("word"),
         debugContent: params.get("debugContent"),
+        level: params.get("level"),
+        day: params.get("day"),
       });
     };
     syncQueryParams();
@@ -735,6 +843,16 @@ function WordLinkContent() {
       window.clearInterval(interval);
       window.removeEventListener("popstate", syncQueryParams);
       window.removeEventListener("focus", syncQueryParams);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncLearningProgress = () => setLearningProgress(getLearningProgress());
+    window.addEventListener(learningProgressChangedEvent, syncLearningProgress);
+    window.addEventListener("storage", syncLearningProgress);
+    return () => {
+      window.removeEventListener(learningProgressChangedEvent, syncLearningProgress);
+      window.removeEventListener("storage", syncLearningProgress);
     };
   }, []);
 
@@ -755,6 +873,24 @@ function WordLinkContent() {
     setContentReady(true);
 
     setDebugContent(debugContentParam === "true");
+    const requestedLevel = courseLevels.find((level) => level === levelParam);
+    const requestedDay = Number(dayParam);
+    const requestedPack = requestedLevel
+      ? nextPacks.find((item) =>
+          item.level === requestedLevel &&
+          item.dayNumber === (Number.isFinite(requestedDay) && requestedDay > 0 ? Math.floor(requestedDay) : 1)
+        )
+      : undefined;
+    if (requestedPack && !wordParam) {
+      if (!canAccessLevel(requestedPack.level, accessLevel, signedIn)) {
+        setUpgradeLevel(requestedPack.level);
+        return;
+      }
+      setActivePackId(requestedPack.id);
+      setSelectedId(packWordsFor(requestedPack)[0]?.wordId ?? initialFirstWordId);
+      return;
+    }
+
     const baseTarget = initialWords.find((item) => matchesWordQuery(item, wordParam));
     const target = nextWords.find((item) =>
       matchesWordQuery(item, wordParam) ||
@@ -782,13 +918,25 @@ function WordLinkContent() {
       setActivePackId(pack.id);
     }
     setSelectedId(target?.id ?? dailyTarget?.wordId ?? initialFirstWordId);
-  }, [accessLevel, debugContentParam, signedIn, wordParam]);
+  }, [accessLevel, dayParam, debugContentParam, levelParam, signedIn, wordParam]);
 
   const firstPack = effectivePacks[0] ?? initialFirstPack;
   const activePack = effectivePacks.find((pack) => pack.id === activePackId) ?? firstPack;
   const activePlan = vocabularyLevelPlans.find((plan) => plan.level === activePack.level) ?? vocabularyLevelPlans[0];
   const levelPacks = effectivePacks.filter((pack) => pack.level === activePack.level);
   const activeDayIndex = Math.max(levelPacks.findIndex((pack) => pack.id === activePack.id), 0);
+  const matchingLessonId = useMemo(
+    () => getBaseCourseLessons().find((lesson) => lesson.level === activePack.level && lesson.order === activePack.dayNumber)?.id,
+    [activePack.dayNumber, activePack.level],
+  );
+
+  useEffect(() => {
+    setLearningRouteContext({
+      page: "word-link",
+      level: activePack.level,
+      day: activePack.dayNumber,
+    });
+  }, [activePack.dayNumber, activePack.level]);
   const packWords = packWordsFor(activePack);
   const selectedDailyInPack = packWords.find((word) => word.wordId === selectedId || word.dutch === selectedId);
   const selectedFromState = effectiveWords.find((word) => word.id === selectedId) ?? effectiveWords.find((word) => word.dutch === selectedId);
@@ -813,23 +961,34 @@ function WordLinkContent() {
   const progress = getPackProgress(activePack, learnedWords);
   const selectedWordType = wordTypeFor(selected);
   const memoryPath = useMemo(
-    () => memoryPathFor(selected, {
+    () => selectedBubble?.memoryPath ?? memoryPathFor(selected, {
       allWords: effectiveWords,
       phraseChunks: activePack.phraseChunks,
       examples: selectedBubble?.exampleSentences,
     }),
-    [activePack.phraseChunks, effectiveWords, selected, selectedBubble?.exampleSentences],
+    [activePack.phraseChunks, effectiveWords, selected, selectedBubble?.exampleSentences, selectedBubble?.memoryPath],
   );
   const selectedVerb = useMemo(() => verbUsageFor(selected), [selected]);
   const selectedSentenceMatchesWord = (dutch: string) => {
+    if (memoryPath.outputSentences.some((sentence) => isSameDutchLine(sentence.dutch, dutch))) return true;
     if (selectedWordType === "phrase") {
       if (containsDutchToken(dutch, selected.dutch)) return true;
       const tokens = phraseCoreTokens(selected.dutch);
       return tokens.length > 0 && tokens.every((token) => containsDutchToken(dutch, token));
     }
     if (["number", "function-word", "language-name", "country-name", "day-month"].includes(selectedWordType)) return true;
-    if (selectedWordType === "verb" && selectedVerb) {
-      return [selectedVerb.infinitive, selectedVerb.ikForm, selectedVerb.jijForm, selectedVerb.wijForm].some((form) => containsDutchToken(dutch, form));
+    const selectedLooksLikeVerb = selectedWordType === "verb" || (!selected.article && selected.dutch.toLowerCase().endsWith("en"));
+    if (selectedLooksLikeVerb && selectedVerb) {
+      const forms = verbDisplayForms(selected.dutch, selectedVerb);
+      const parts = separableVerbParts(selected.dutch);
+      return forms.some((form) => containsDutchToken(dutch, form)) ||
+        Boolean(parts && containsDutchToken(dutch, parts.prefix) && parts.stems.some((stem) => containsDutchToken(dutch, stem)));
+    }
+    if (selectedLooksLikeVerb) {
+      const forms = verbDisplayForms(selected.dutch);
+      const parts = separableVerbParts(selected.dutch);
+      return forms.some((form) => containsDutchToken(dutch, form)) ||
+        Boolean(parts && containsDutchToken(dutch, parts.prefix) && parts.stems.some((stem) => containsDutchToken(dutch, stem)));
     }
     if (selectedWordType === "adjective") {
       return [selected.dutch, adjectiveEForm(selected.dutch)].some((form) => containsDutchToken(dutch, form));
@@ -840,6 +999,7 @@ function WordLinkContent() {
     const target = selected.dutch.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (!target) return false;
     const text = dutch.trim();
+    if (isBadGenericTargetTemplate(selected, text)) return true;
     if (selectedWordType === "adjective" && new RegExp(`^Dat is ${target}\\.?$`, "i").test(text)) return true;
     return new RegExp(`^Dit is (de|het)\\s+${target}\\.?$`, "i").test(text);
   };
@@ -855,14 +1015,14 @@ function WordLinkContent() {
   const visibleMemoryOutputSentences = memoryPath.outputSentences.filter((sentence) =>
     isSafeLearnerLine(sentence.dutch) &&
     selectedSentenceMatchesWord(sentence.dutch) &&
-    isLearnerVisibleText(language === "zh" ? sentence.meaningZh : sentence.meaningEn)
+    isLearnerVisibleTranslation(language === "zh" ? sentence.meaningZh : sentence.meaningEn)
   );
   const visibleExampleSentences = (selectedBubble?.exampleSentences ?? []).filter((example) =>
     example.qualityStatus !== "reject" &&
     isSafeLearnerLine(example.dutch) &&
     !isWeakGenericExampleForSelected(example.dutch) &&
     selectedSentenceMatchesWord(example.dutch) &&
-    isLearnerVisibleText(example.meaning[language])
+    isLearnerVisibleTranslation(example.meaning[language])
   );
   const visiblePhraseChunkDetails = (selectedBubble?.phraseChunkDetails ?? []).filter((chunk) =>
     isDisplayPhraseChunk(chunk.dutch)
@@ -936,6 +1096,31 @@ function WordLinkContent() {
   const isLastWordInPack = selectedIndex >= packWords.length - 1;
   const hasNextDay = activeDayIndex < levelPacks.length - 1;
   const isDayComplete = packWords.length > 0 && packWords.every((word) => learnedWords[word.wordId]);
+  const isStarterWordsPack = activePack.level === "A0" && activePack.dayNumber === 1;
+  const dayCompleteRoute = isStarterWordsPack && !learningProgress.grammarBaseCompleted
+    ? "/rules?mode=foundation"
+    : matchingLessonId
+      ? `/learn/${matchingLessonId}?step=patterns`
+      : "/dashboard";
+
+  useEffect(() => {
+    if (!isDayComplete) return;
+    const currentProgress = getLearningProgress();
+    if (activePack.level === "A0" && activePack.dayNumber === 1 && !currentProgress.starterWordsCompleted) {
+      markStepComplete(activePack.level, activePack.dayNumber, "starter-words");
+      updateLearningProgress({
+        starterWordsCompleted: true,
+        currentLevel: "A0",
+        currentDay: 1,
+        currentStep: currentProgress.grammarBaseCompleted ? "lesson" : "grammar",
+        lastVisitedRoute: "/word-link?level=A0&day=1",
+      });
+      return;
+    }
+    markStepComplete(activePack.level, activePack.dayNumber, "word-bubbles", {
+      advanceCurrent: currentProgress.currentLevel === activePack.level && currentProgress.currentDay === activePack.dayNumber,
+    });
+  }, [activePack.dayNumber, activePack.level, isDayComplete]);
 
   const toggleLearnedWord = (wordId: string) => {
     setLearnedWords((current) => {
@@ -1202,11 +1387,6 @@ function WordLinkContent() {
                       {selectedDaily.learningRole === "review" ? ` · ${language === "zh" ? "原始等级" : "original"} ${selectedDaily.originalLevel}` : ""}
                     </span>
                   ) : null}
-                  {debugContent && selectedBubble ? (
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-800">
-                      data: {selectedBubble.dataSource} · override: {selectedBubble.dataSource === "base" ? "no" : "yes"} · {selectedBubble.lastUpdated ?? "no timestamp"}
-                    </span>
-                  ) : null}
                 </div>
               </div>
               <AudioButton text={selected.audioText} label={language === "zh" ? "听单词" : "Hear Word"} />
@@ -1248,7 +1428,7 @@ function WordLinkContent() {
                       {selected.meaning.en}
                     </h3>
                   </div>
-                  <div className="rounded-2xl bg-white px-4 py-3 text-sm font-black leading-6 text-ocean shadow-sm">
+                  <div className="shrink-0 whitespace-nowrap rounded-2xl bg-white px-4 py-3 text-sm font-black leading-6 text-ocean shadow-sm">
                     {strategyBadgeLabel(memoryPath.strategy, memoryPath.wordType, language)}
                   </div>
                 </div>
@@ -1385,7 +1565,7 @@ function WordLinkContent() {
                   {language === "zh" ? "下一个" : "Next"}
                   <ArrowRight size={18} />
                 </button>
-                {hasNextDay && (isLastWordInPack || isDayComplete) ? (
+                {hasNextDay && isLastWordInPack && !isDayComplete ? (
                   <button
                     type="button"
                     onClick={() => moveDay(1)}
@@ -1407,25 +1587,40 @@ function WordLinkContent() {
                 {learnedWords[selectedDaily?.wordId ?? selected.id] ? (language === "zh" ? "已记住" : "Learned") : language === "zh" ? "我记住了" : "Mark Learned"}
               </button>
             </div>
-            {hasNextDay && isDayComplete ? (
-              <div className="mt-4 rounded-2xl bg-peach p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-black text-pop">{language === "zh" ? "今天这包词已完成" : "Today's pack is complete"}</p>
-                    <p className="mt-1 font-bold text-ocean/70">
-                      {language === "zh" ? "可以继续进入下一天。": "You can continue to the next day."}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => moveDay(1)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean"
-                  >
-                    {language === "zh" ? "进入 Day " : "Start Day "}
-                    {levelPacks[activeDayIndex + 1]?.dayNumber}
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
+            {isDayComplete ? (
+              <div className="mt-5">
+                <NextStepCard
+                  eyebrow={language === "zh" ? "学习接力" : "Learning handoff"}
+                  currentLabel={language === "zh" ? "今日单词已完成" : "Today's words complete"}
+                  title={
+                    isStarterWordsPack && !learningProgress.grammarBaseCompleted
+                      ? language === "zh"
+                        ? "下一步：最小语法地基"
+                        : "Next: Grammar Base 1"
+                      : language === "zh"
+                        ? "下一步：今日小规则"
+                        : "Next: today's rule"
+                  }
+                  reason={
+                    isStarterWordsPack && !learningProgress.grammarBaseCompleted
+                      ? language === "zh"
+                        ? "你已经用一小包生存词开口了，现在补 ik ben、jij bent、Waar woon je 这些最小规则。"
+                        : "You have used a tiny starter pack. Now add ik ben, jij bent, and Waar woon je."
+                      : language === "zh"
+                        ? "遇到今天需要的规则再补，不用一口气学完整本语法。"
+                        : "Add the rule needed today instead of studying all grammar upfront."
+                  }
+                  buttonLabel={
+                    isStarterWordsPack && !learningProgress.grammarBaseCompleted
+                      ? language === "zh"
+                        ? "去最小语法"
+                        : "Open Grammar Base 1"
+                      : language === "zh"
+                        ? "看今日小规则"
+                        : "Open today's rule"
+                  }
+                  route={dayCompleteRoute}
+                />
               </div>
             ) : null}
           </section>

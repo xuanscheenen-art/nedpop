@@ -254,9 +254,7 @@ export function InteractiveWordDecoder({
             <Volume2 size={18} className="text-pop" />
             {language === "zh" ? "听这个词" : "Hear this word"}
           </button>
-          <span className="text-xs font-bold text-blue-100">
-            {voiceStatus || (language === "zh" ? "浏览器内置荷兰语朗读" : "Built-in browser Dutch voice")}
-          </span>
+          {voiceStatus ? <span className="text-xs font-bold text-blue-100">{voiceStatus}</span> : null}
         </div>
       </div>
 

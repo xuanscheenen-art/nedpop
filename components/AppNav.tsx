@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookOpen, ChevronDown, LayoutDashboard, Menu, Sparkles, X } from "lucide-react";
+import { BookOpen, ChevronDown, Menu, Sparkles, X } from "lucide-react";
+import { ContinueLearningButton } from "@/components/ContinueLearningButton";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LoginButton } from "@/components/LoginButton";
 import { useLanguage } from "@/lib/i18n";
@@ -16,6 +17,7 @@ const mainNavItems = [
 ] as const;
 
 const moreNavItems = [
+  { href: "/special-forms", labelKey: "nav.specialForms" },
   { href: "/scenarios", labelKey: "nav.scenarios" },
   { href: "/exam-practice", labelKey: "nav.examPractice" },
 ] as const;
@@ -25,6 +27,7 @@ const mobileNavItems = [
   { href: "/pronunciation", labelKey: "nav.pronunciation" },
   { href: "/word-link", labelKey: "nav.wordLink" },
   { href: "/rules", labelKey: "nav.rules" },
+  { href: "/special-forms", labelKey: "nav.specialForms" },
   { href: "/scenarios", labelKey: "nav.scenarios" },
   { href: "/exam-practice", labelKey: "nav.examPractice" },
   { href: "/word-review", labelKey: "nav.reviewPool" },
@@ -100,24 +103,11 @@ export function AppNav() {
             </span>
             {t("nav.reviewPool")}
           </Link>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-ink px-5 py-2.5 text-sm font-black text-white shadow-soft transition hover:bg-ocean"
-          >
-            <LayoutDashboard size={16} />
-            {t("nav.start")}
-          </Link>
+          <ContinueLearningButton />
         </div>
 
         <div className="flex shrink-0 items-center gap-2 xl:hidden">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-ink px-4 py-2 text-sm font-black text-white shadow-soft transition hover:bg-ocean"
-            onClick={() => setMobileOpen(false)}
-          >
-            <LayoutDashboard size={16} />
-            {t("nav.start")}
-          </Link>
+          <ContinueLearningButton className="px-4 py-2" onClick={() => setMobileOpen(false)} />
           <button
             type="button"
             onClick={() => setMobileOpen((value) => !value)}

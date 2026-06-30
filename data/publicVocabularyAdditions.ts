@@ -328,6 +328,24 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     ],
   },
   {
+    level: "A1",
+    theme: "a1-core-daily-refinement",
+    titleZh: "A1 核心日常补强",
+    titleEn: "A1 core daily refinement",
+    entries: [
+      ["dinsdag", "星期二", "Tuesday", "de"], ["woensdag", "星期三", "Wednesday", "de"], ["donderdag", "星期四", "Thursday", "de"], ["zaterdag", "星期六", "Saturday", "de"], ["zondag", "星期日", "Sunday", "de"], ["water", "水", "water", "het"], ["ontbijt", "早餐", "breakfast", "het"], ["lunch", "午餐", "lunch", "de"], ["avondeten", "晚饭", "dinner", "het"], ["diner", "晚餐", "dinner", "het"], ["boodschappen", "日用品/采购", "groceries"], ["boodschappen doen", "买菜/采购", "do groceries"], ["kopen", "买", "buy"], ["betalen", "付款", "pay"], ["pinnen", "刷卡/用借记卡付款", "pay by debit card"], ["zoeken", "找", "look for"], ["vinden", "找到/觉得", "find"], ["maken", "做/制作", "make"], ["doen", "做", "do"], ["begrijpen", "理解", "understand"], ["spreken", "说/讲话", "speak"], ["wonen", "住", "live"],
+    ],
+  },
+  {
+    level: "A1",
+    theme: "a1-basic-transport-refinement",
+    titleZh: "A1 基础交通补强",
+    titleEn: "A1 basic transport refinement",
+    entries: [
+      ["lopen", "走路", "walk"], ["tram", "电车", "tram", "de"], ["metro", "地铁", "metro", "de"],
+    ],
+  },
+  {
     level: "A2",
     theme: "official-admin-expanded",
     titleZh: "官方行政扩展",
@@ -568,6 +586,15 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleEn: "expanded service desk",
     entries: [
       ["volgnummer", "排队号码", "queue number", "het"], ["nummertje trekken", "取号", "take a number"], ["aan de beurt", "轮到", "one's turn"], ["wachtrij", "队列", "queue", "de"], ["medewerker spreken", "和工作人员交谈", "speak to an employee"], ["vraag stellen", "提问", "ask a question"], ["document laten zien", "出示文件", "show a document"], ["gegevens controleren", "核对资料", "check data"], ["formulier ophalen", "领取表格", "pick up a form"], ["formulier inleveren", "提交表格", "hand in a form"], ["kopie meenemen", "带复印件", "bring a copy"], ["bewijs ontvangen", "收到证明", "receive proof"], ["afspraak nodig", "需要预约", "appointment needed"], ["zonder afspraak", "无需预约", "without appointment"], ["openingstijd", "开放时间", "opening time", "de"], ["sluitingstijd", "关闭时间", "closing time", "de"], ["informatiebalie", "信息柜台", "information desk", "de"], ["servicepunt", "服务点", "service point", "het"],
+    ],
+  },
+  {
+    level: "A2",
+    theme: "a2-life-task-refinement",
+    titleZh: "A2 生活任务补强",
+    titleEn: "A2 practical life-task refinement",
+    entries: [
+      ["verhuizing", "搬家/迁址", "move / relocation", "de"], ["verhuisdatum", "搬家日期", "moving date", "de"], ["nieuw adres", "新地址", "new address"], ["oude adres", "旧地址", "old address"], ["postadres", "通讯地址", "mailing address", "het"], ["inschrijving bevestigen", "确认登记", "confirm registration"], ["afspraak verplaatsen", "改约", "reschedule an appointment"], ["afspraak annuleren", "取消预约", "cancel an appointment"], ["terugbellen", "回电话", "call back"], ["bereikbaar zijn", "联系得到/可接通", "be reachable"], ["klantnummer", "客户号码", "customer number", "het"], ["kenmerk vermelden", "注明编号", "mention the reference"], ["betalingsbewijs", "付款证明", "proof of payment", "het"], ["huur betalen", "付房租", "pay rent"], ["medicijnen ophalen", "取药", "pick up medicine"], ["pijn aangeven", "说明疼痛", "describe pain"], ["klacht uitleggen", "说明问题/投诉", "explain the complaint"], ["formulier opsturen", "寄送表格", "send the form"], ["bijlage toevoegen", "添加附件", "add an attachment"], ["hulp vragen", "求助", "ask for help"],
     ],
   },
   {

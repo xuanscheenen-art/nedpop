@@ -60,6 +60,17 @@ export type FunctionWordSeed = {
   usageEn: string;
 };
 
+export type MemoryPhraseSeed = {
+  dutch: string;
+  meaningZh: string;
+  meaningEn: string;
+};
+
+export type FunMemorySeed = {
+  hookZh: string;
+  hookEn: string;
+};
+
 export const languageNames = new Set(["engels", "nederlands", "chinees", "duits", "frans", "spaans", "arabisch", "pools", "turks"]);
 export const countryNames = new Set([
   "china",
@@ -430,6 +441,16 @@ export const compoundBreakdowns: Record<string, SeededBreakdown> = {
     usageZh: "医疗保险、账单、注册。",
     usageEn: "health insurance, bills, registration.",
   },
+  betalingsbewijs: {
+    parts: [
+      { dutch: "betaling", meaningZh: "付款", meaningEn: "payment" },
+      { dutch: "bewijs", meaningZh: "证明", meaningEn: "proof" },
+    ],
+    noteZh: "betaling 是付款，bewijs 是证明；把银行回执或付款截图想成“付款留下的证据”，就是 betalingsbewijs。",
+    noteEn: "betaling is payment and bewijs is proof; picture the bank receipt or screenshot as the proof left after paying: betalingsbewijs.",
+    usageZh: "账单、报销、邮件或办事时提交付款证明。",
+    usageEn: "submitting proof of payment for bills, reimbursement, emails, or admin tasks.",
+  },
 };
 
 export const englishBridgeSeeds: Record<string, EnglishBridgeSeed> = {
@@ -636,6 +657,12 @@ export const englishBridgeSeeds: Record<string, EnglishBridgeSeed> = {
 };
 
 export const wordFormationSeeds: Record<string, WordFormationSeed> = {
+  planning: {
+    base: { dutch: "plan / plannen", meaningZh: "计划 / 安排", meaningEn: "plan / schedule" },
+    formed: { dutch: "planning", meaningZh: "排好的计划/排班", meaningEn: "planned schedule" },
+    noteZh: "planning 不要只当英文词背：先抓 plan，再接动词 plannen；安排完留下来的那张表，就是 planning。",
+    noteEn: "Do not learn planning only as English. Start from plan, add the verb plannen; the schedule left after planning is the planning.",
+  },
   vrouwelijk: {
     base: { dutch: "vrouw", meaningZh: "女人", meaningEn: "woman" },
     formed: { dutch: "vrouwelijk", meaningZh: "女性的/女性化的", meaningEn: "female/feminine" },
@@ -713,6 +740,135 @@ export const fixedOutputSentences: Record<string, { dutch: string; meaningZh: st
   "oké": { dutch: "Oké.", meaningZh: "好的。", meaningEn: "Okay." },
   oke: { dutch: "Oké.", meaningZh: "好的。", meaningEn: "Okay." },
   "een beetje": { dutch: "Ik spreek een beetje Nederlands.", meaningZh: "我会说一点荷兰语。", meaningEn: "I speak a little Dutch." },
+  vakantie: { dutch: "Ik heb vakantie.", meaningZh: "我放假。", meaningEn: "I am on holiday." },
+  duwen: { dutch: "Duw tegen de deur.", meaningZh: "推这扇门。", meaningEn: "Push against the door." },
+  trekken: { dutch: "Trek aan de deur.", meaningZh: "拉这扇门。", meaningEn: "Pull the door." },
+  ingang: { dutch: "Waar is de ingang?", meaningZh: "入口在哪里？", meaningEn: "Where is the entrance?" },
+  uitgang: { dutch: "Waar is de uitgang?", meaningZh: "出口在哪里？", meaningEn: "Where is the exit?" },
+  nooduitgang: { dutch: "Gebruik de nooduitgang.", meaningZh: "请使用紧急出口。", meaningEn: "Use the emergency exit." },
+  verboden: { dutch: "Roken is verboden.", meaningZh: "禁止吸烟。", meaningEn: "Smoking is forbidden." },
+  toegestaan: { dutch: "Parkeren is toegestaan.", meaningZh: "允许停车。", meaningEn: "Parking is allowed." },
+};
+
+export const memoryPhraseSeeds: Record<string, MemoryPhraseSeed[]> = {
+  vakantie: [
+    { dutch: "op vakantie gaan", meaningZh: "去度假", meaningEn: "go on holiday" },
+    { dutch: "vakantie hebben", meaningZh: "放假", meaningEn: "be on holiday / have time off" },
+    { dutch: "de vakantie begint maandag", meaningZh: "假期周一开始", meaningEn: "the holiday starts on Monday" },
+  ],
+  duwen: [
+    { dutch: "tegen de deur duwen", meaningZh: "推门", meaningEn: "push against the door" },
+    { dutch: "Duw tegen de deur.", meaningZh: "推这扇门。", meaningEn: "Push against the door." },
+    { dutch: "duwen en trekken", meaningZh: "推和拉", meaningEn: "push and pull" },
+  ],
+  trekken: [
+    { dutch: "aan de deur trekken", meaningZh: "拉门", meaningEn: "pull the door" },
+    { dutch: "Trek aan de deur.", meaningZh: "拉这扇门。", meaningEn: "Pull the door." },
+    { dutch: "duwen en trekken", meaningZh: "推和拉", meaningEn: "push and pull" },
+  ],
+  ingang: [
+    { dutch: "waar is de ingang", meaningZh: "入口在哪里", meaningEn: "where is the entrance" },
+    { dutch: "bij de ingang", meaningZh: "在入口处", meaningEn: "at the entrance" },
+  ],
+  uitgang: [
+    { dutch: "waar is de uitgang", meaningZh: "出口在哪里", meaningEn: "where is the exit" },
+    { dutch: "naar de uitgang", meaningZh: "去出口", meaningEn: "to the exit" },
+  ],
+  nooduitgang: [
+    { dutch: "de nooduitgang", meaningZh: "紧急出口", meaningEn: "the emergency exit" },
+    { dutch: "naar de nooduitgang", meaningZh: "去紧急出口", meaningEn: "to the emergency exit" },
+  ],
+  verboden: [
+    { dutch: "roken is verboden", meaningZh: "禁止吸烟", meaningEn: "smoking is forbidden" },
+    { dutch: "parkeren is verboden", meaningZh: "禁止停车", meaningEn: "parking is forbidden" },
+  ],
+  toegestaan: [
+    { dutch: "parkeren is toegestaan", meaningZh: "允许停车", meaningEn: "parking is allowed" },
+    { dutch: "is toegestaan", meaningZh: "是允许的", meaningEn: "is allowed" },
+  ],
+};
+
+export const funMemorySeeds: Record<string, FunMemorySeed> = {
+  vandaag: {
+    hookZh: "vandaag 先抓 dag：把时间轴想成三格，gisteren 在左、vandaag 站中间、morgen 在右；手指按住中间这一格，就是今天。",
+    hookEn: "For vandaag, notice dag. Picture a three-slot timeline: gisteren on the left, vandaag in the middle, morgen on the right; your finger on the middle slot is today.",
+  },
+  gisteren: {
+    hookZh: "gisteren 放在时间轴左边：今天往回退一格，就是昨天；和 vandaag / morgen 成一排记。",
+    hookEn: "Put gisteren on the left side of the timeline: one step back from today is yesterday; learn it with vandaag and morgen.",
+  },
+  morgen: {
+    hookZh: "morgen 有两个常见画面：早上的 morgen，和时间轴右边的“明天”。看到 goedemorgen 先想早上，单独用 morgen 常是明天。",
+    hookEn: "morgen has two common pictures: morning, and the next slot on the timeline. In goedemorgen think morning; alone, morgen often means tomorrow.",
+  },
+  overmorgen: {
+    hookZh: "overmorgen = 跨过 morgen 再往前一格：今天、明天、后天，像在日历上跳两步。",
+    hookEn: "overmorgen is one step over morgen: today, tomorrow, then the day after tomorrow, like jumping two calendar squares.",
+  },
+  straks: {
+    hookZh: "straks 像把事情放到眼前不远处：不是现在这秒，是一会儿就到的那个小时间点。",
+    hookEn: "straks puts an action just a little ahead of now: not this second, but soon.",
+  },
+  meteen: {
+    hookZh: "meteen 是没有缓冲的“马上”：听到它，就想手刚碰到按钮，事情立刻开始。",
+    hookEn: "meteen means immediately: picture pressing a button and the action starting right away.",
+  },
+  daarna: {
+    hookZh: "daarna = daar + na：先有前一件事，手指再往后挪一格，就是之后。",
+    hookEn: "daarna is daar + na: after one thing happens, move your finger to the next slot.",
+  },
+  eerst: {
+    hookZh: "eerst 像队伍里的第一个人：先做它，后面的事才排队跟上。",
+    hookEn: "eerst is like the first person in line: do this first, then the rest can follow.",
+  },
+  laatst: {
+    hookZh: "laatst 不是“最后一个”那么死板；把它想成最近刚发生过、还在脑子边上的一件事。",
+    hookEn: "laatst is not only the last item; picture something that happened recently and is still nearby in your memory.",
+  },
+  vakantie: {
+    hookZh: "vakantie 和 English vacation 是一类“把日常暂停一下”的假期词；荷兰语这里用 k，不用 c。",
+    hookEn: "vakantie sits near English vacation: a word for pausing normal routine. In Dutch it uses k, not c.",
+  },
+  kantoor: {
+    hookZh: "kantoor 的画面应该是办公桌、电脑、同事和文件，不是家里的 kamer。先把它钉在“去办公室/在办公室工作”的画面上。",
+    hookEn: "The picture for kantoor is a desk, computer, colleagues, and documents, not a room at home. Anchor it in going to or working in an office.",
+  },
+  dienstregeling: {
+    hookZh: "dienstregeling 可以拆成 dienst（班次/服务）+ regeling（安排）：站牌上把一班班车排成时间表，就是 dienstregeling。",
+    hookEn: "dienstregeling is dienst (service/run) + regeling (arrangement): the timetable that lines up transport runs.",
+  },
+  toekomstplan: {
+    hookZh: "toekomst 是未来，plan 是计划；脑子里翻到未来那一页，上面写着的计划就是 toekomstplan。",
+    hookEn: "toekomst means future and plan means plan; picture a future calendar page with a plan written on it.",
+  },
+  duwen: {
+    hookZh: "把 duwen 想成门口标识上的一个短动作：Duw. 手往前推；旁边常见反动作 trekken。",
+    hookEn: "Think of duwen as the short action on a door sign: Duw. Your hand pushes forward; the opposite is trekken.",
+  },
+  trekken: {
+    hookZh: "trekken 是 duwen 的反方向：手抓住门把往自己这边拉。门口标识常成对出现 Duwen / Trekken。",
+    hookEn: "trekken goes the opposite way from duwen: your hand pulls the handle toward you. Door signs often pair Duwen / Trekken.",
+  },
+  ingang: {
+    hookZh: "ingang 里先抓 in：往里面走的口，就是入口。",
+    hookEn: "In ingang, notice in: the way to go in, so entrance.",
+  },
+  uitgang: {
+    hookZh: "uitgang 里先抓 uit：往外走的口，就是出口。",
+    hookEn: "In uitgang, notice uit: the way to go out, so exit.",
+  },
+  nooduitgang: {
+    hookZh: "nood 是紧急情况，uitgang 是出口；nooduitgang 就是紧急时用的出口。",
+    hookEn: "nood means emergency and uitgang means exit; nooduitgang is the exit used in an emergency.",
+  },
+  verboden: {
+    hookZh: "verboden 是公共标识里的“红灯词”：看到它，先理解为这件事不可以做。",
+    hookEn: "verboden is a red-light sign word: when you see it, understand that the action is not allowed.",
+  },
+  toegestaan: {
+    hookZh: "toegestaan 是 verboden 的反面：公共规则里表示这件事可以做、被允许。",
+    hookEn: "toegestaan is the opposite of verboden: in public rules it means the action is allowed.",
+  },
 };
 
 export const phraseMeaningSeeds: Record<string, LocalizedText> = {
@@ -730,6 +886,24 @@ export const phraseMeaningSeeds: Record<string, LocalizedText> = {
   "de bus nemen": { zh: "坐公交", en: "take the bus" },
   "de trein nemen": { zh: "坐火车", en: "take the train" },
   "met de fiets": { zh: "骑自行车/用自行车", en: "by bike" },
+  "op vakantie gaan": { zh: "去度假", en: "go on holiday" },
+  "vakantie hebben": { zh: "放假", en: "be on holiday / have time off" },
+  "de vakantie begint maandag": { zh: "假期周一开始", en: "the holiday starts on Monday" },
+  "tegen de deur duwen": { zh: "推门", en: "push against the door" },
+  "Duw tegen de deur.": { zh: "推这扇门。", en: "Push against the door." },
+  "duwen en trekken": { zh: "推和拉", en: "push and pull" },
+  "aan de deur trekken": { zh: "拉门", en: "pull the door" },
+  "Trek aan de deur.": { zh: "拉这扇门。", en: "Pull the door." },
+  "waar is de ingang": { zh: "入口在哪里", en: "where is the entrance" },
+  "bij de ingang": { zh: "在入口处", en: "at the entrance" },
+  "waar is de uitgang": { zh: "出口在哪里", en: "where is the exit" },
+  "naar de uitgang": { zh: "去出口", en: "to the exit" },
+  "de nooduitgang": { zh: "紧急出口", en: "the emergency exit" },
+  "naar de nooduitgang": { zh: "去紧急出口", en: "to the emergency exit" },
+  "roken is verboden": { zh: "禁止吸烟", en: "smoking is forbidden" },
+  "parkeren is verboden": { zh: "禁止停车", en: "parking is forbidden" },
+  "parkeren is toegestaan": { zh: "允许停车", en: "parking is allowed" },
+  "is toegestaan": { zh: "是允许的", en: "is allowed" },
 };
 
 export function classifyMemoryPathWord(word: WordItem): MemoryPathWordType {
@@ -794,13 +968,79 @@ const usageAnchorOverrides: Record<string, LocalizedText> = {
   auto: { zh: "交通、出行、说怎么去一个地方。", en: "transport, travel, and saying how you go somewhere." },
   halte: { zh: "公交/电车站点、问路、出行。", en: "bus/tram stops, directions, and travel." },
   station: { zh: "车站、问路、坐火车或换乘。", en: "stations, directions, taking trains, and transfers." },
+  vakantie: { zh: "假期、休闲计划、学校或工作休假。", en: "holidays, leisure plans, and school or work time off." },
+  duwen: { zh: "公共标识、门口提示、推/拉动作。", en: "public signs, doors, and push/pull actions." },
+  trekken: { zh: "公共标识、门口提示、推/拉动作。", en: "public signs, doors, and push/pull actions." },
+  ingang: { zh: "公共场所、找入口、问路。", en: "public places, finding entrances, and directions." },
+  uitgang: { zh: "公共场所、找出口、离开建筑。", en: "public places, finding exits, and leaving buildings." },
+  nooduitgang: { zh: "公共标识、安全提示、紧急出口。", en: "public signs, safety notices, and emergency exits." },
+  verboden: { zh: "公共标识、规则、禁止事项。", en: "public signs, rules, and things that are not allowed." },
+  toegestaan: { zh: "公共标识、规则、允许事项。", en: "public signs, rules, and what is allowed." },
 };
 
+const usageByTag: Record<string, LocalizedText> = {
+  "public-signs": { zh: "公共标识、规则、入口出口、推拉提示。", en: "public signs, rules, entrances/exits, and push/pull notices." },
+  "leisure-expanded": { zh: "休闲、爱好、假期和日常活动。", en: "leisure, hobbies, holidays, and daily activities." },
+  leisure: { zh: "休闲、爱好、假期和日常活动。", en: "leisure, hobbies, holidays, and daily activities." },
+  travel: { zh: "旅行、订票、路线和出行计划。", en: "travel, tickets, routes, and travel plans." },
+  transport: { zh: "交通、车站、买票或出行场景。", en: "transport, station, ticket, or travel contexts." },
+  directions: { zh: "问路、找地点、入口出口。", en: "directions, finding places, entrances, and exits." },
+  supermarket: { zh: "购物、超市、付款场景。", en: "shopping, supermarket, or payment contexts." },
+  shopping: { zh: "购物、超市、付款场景。", en: "shopping, supermarket, or payment contexts." },
+  "food-drinks": { zh: "吃喝、点餐、说饮食习惯。", en: "food, drinks, ordering, and eating habits." },
+  food: { zh: "吃喝、点餐、说饮食习惯。", en: "food, drinks, ordering, and eating habits." },
+  routine: { zh: "日常作息、每天做什么。", en: "daily routine and what you do each day." },
+  health: { zh: "看病、预约、药房或身体不舒服场景。", en: "doctor, appointment, pharmacy, or illness contexts." },
+  "personal-info": { zh: "自我介绍、填表、个人信息场景。", en: "introductions, forms, and personal information." },
+  identity: { zh: "自我介绍、个人身份和基本信息。", en: "introductions, identity, and basic personal details." },
+  form: { zh: "表格、文件、填写和提交材料。", en: "forms, documents, filling in, and submitting materials." },
+  gemeente: { zh: "市政厅、表格、文件办理场景。", en: "municipality, forms, and document handling." },
+  language: { zh: "语言能力、学习、翻译或沟通场景。", en: "language ability, learning, translation, or communication." },
+  languages: { zh: "语言能力、学习、翻译或沟通场景。", en: "language ability, learning, translation, or communication." },
+  work: { zh: "工作、同事、请假或合同场景。", en: "work, colleagues, sick leave, or contracts." },
+  education: { zh: "学校、课程、培训和学习安排。", en: "school, lessons, training, and study plans." },
+  school: { zh: "学校、课堂、作业和学习安排。", en: "school, class, homework, and study plans." },
+  housing: { zh: "住房、租房、搬家和维修。", en: "housing, renting, moving, and repairs." },
+  appointment: { zh: "预约、改时间、取消或确认安排。", en: "appointments, rescheduling, cancelling, or confirming plans." },
+  bill: { zh: "账单、付款、金额和费用。", en: "bills, payments, amounts, and costs." },
+  payment: { zh: "付款、价格、账单和收据。", en: "payment, prices, bills, and receipts." },
+  insurance: { zh: "保险、账单、报销或保障范围。", en: "insurance, bills, reimbursement, or coverage." },
+  email: { zh: "邮件、附件、回复和书面沟通。", en: "email, attachments, replies, and written communication." },
+  "phone-call": { zh: "电话、留言、回电和口头沟通。", en: "phone calls, messages, call-backs, and spoken contact." },
+  complaint: { zh: "投诉、说明问题、维修或求助。", en: "complaints, explaining problems, repairs, or asking for help." },
+  help: { zh: "求助、说明问题、请别人帮忙。", en: "asking for help, explaining problems, and getting assistance." },
+  digital: { zh: "网站、应用、账号、上传下载和在线办理。", en: "websites, apps, accounts, uploads/downloads, and online tasks." },
+  safety: { zh: "安全规则、紧急情况和公共提示。", en: "safety rules, emergencies, and public notices." },
+  time: { zh: "约时间、填日期、说日程。", en: "appointments, dates, and schedules." },
+  family: { zh: "家庭、亲属、孩子和日常照顾。", en: "family, relatives, children, and daily care." },
+  media: { zh: "新闻、媒体、信息和阅读。", en: "news, media, information, and reading." },
+  society: { zh: "社区、公共生活、邻里和社会话题。", en: "community, public life, neighborhoods, and social topics." },
+  neighborhood: { zh: "邻里、社区活动和公共生活。", en: "neighborhoods, community activities, and public life." },
+};
+
+function usageFromTags(word: WordItem) {
+  const tags = [word.dutch, word.theme, ...word.scenarioTags].map(normalizeWordText).filter(Boolean);
+  const byExactTag = tags.map((tag) => usageByTag[tag]).find(Boolean);
+  if (byExactTag) return byExactTag;
+  if (tags.some((tag) => tag.includes("leisure") || tag.includes("hobby"))) return usageByTag.leisure;
+  if (tags.some((tag) => tag.includes("public") || tag.includes("sign"))) return usageByTag["public-signs"];
+  if (tags.some((tag) => tag.includes("transport") || tag.includes("train"))) return usageByTag.transport;
+  if (tags.some((tag) => tag.includes("shopping") || tag.includes("supermarket") || tag.includes("food"))) return usageByTag.shopping;
+  if (tags.some((tag) => tag.includes("health") || tag.includes("pharmacy") || tag.includes("body"))) return usageByTag.health;
+  if (tags.some((tag) => tag.includes("form") || tag.includes("document"))) return usageByTag.form;
+  if (tags.some((tag) => tag.includes("work") || tag.includes("job"))) return usageByTag.work;
+  if (tags.some((tag) => tag.includes("housing") || tag.includes("rent"))) return usageByTag.housing;
+  if (tags.some((tag) => tag.includes("email") || tag.includes("letter"))) return usageByTag.email;
+  if (tags.some((tag) => tag.includes("phone"))) return usageByTag["phone-call"];
+  return { zh: "日常生活、办事或真实对话里的高频用法。", en: "high-frequency use in daily life, practical tasks, or real conversations." };
+}
+
 export function usageAnchorFor(word: WordItem, strategyUsage?: { zh?: string; en?: string }) {
+  const fallbackUsage = usageAnchorOverrides[normalizeWordText(word.dutch)] ?? usageFromTags(word);
   if (strategyUsage?.zh || strategyUsage?.en) {
     return {
-      zh: strategyUsage.zh ?? word.theme,
-      en: strategyUsage.en ?? word.theme,
+      zh: strategyUsage.zh?.trim() || fallbackUsage.zh,
+      en: strategyUsage.en?.trim() || fallbackUsage.en,
     };
   }
   const key = normalizeWordText(word.dutch);
@@ -819,5 +1059,5 @@ export function usageAnchorFor(word: WordItem, strategyUsage?: { zh?: string; en
   if (["prima", "goed", "fijn", "oké", "oke"].includes(key)) {
     return { zh: "回应别人、评价情况、确认安排。", en: "responding, evaluating a situation, or confirming plans." };
   }
-  return { zh: word.theme, en: word.theme };
+  return fallbackUsage;
 }

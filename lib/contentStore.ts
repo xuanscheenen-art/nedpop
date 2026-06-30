@@ -3,8 +3,9 @@
 import { dailyWordPacks as baseDayPacks } from "@/data/dailyWordPacks";
 import { courseLessons as baseCourseLessons } from "@/data/courseLessons";
 import { wordItems as baseWords } from "@/data/vocabularyPlan";
-import { generateExamplesForWord } from "@/lib/exampleSentenceGenerator";
-import { inferWordType, phraseChunkMeaningFor, verbFormsForWord } from "@/lib/exampleTemplates";
+import { generateExamplesForWord, type GeneratedExample } from "@/lib/exampleSentenceGenerator";
+import { articlePhraseFor, inferWordType, phraseChunkMeaningFor, verbFormsForWord } from "@/lib/exampleTemplates";
+import { isBadGenericTargetTemplate, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import { memoryPathFor, validateMemoryPath } from "@/lib/memoryPath";
 import type { LocalizedText } from "@/types/course";
 import type { CourseLesson } from "@/types/lesson";
@@ -313,7 +314,13 @@ const safeStandaloneWords = new Set([
 ]);
 
 const learnerInternalCopyPattern =
-  /缺少可用|缺少可输出|内容后台|后台设置|后台例句|后台|人工|手动|不要硬|暂时没有|placeholder|manual|missing|creator|请补充|暂无|先补一条|还需要|词：|word:|自动扩充|generated expansion/i;
+  /缺少可用|缺少可输出|内容后台|后台设置|后台例句|后台|人工|手动|不要硬|暂时没有|placeholder|manual[- ]review|needs[- ]review|missing (example|phrase|meaning|content|audio)|creator|请补充|暂无|先补一条|还需要|词：|word:|自动扩充|generated expansion/i;
+
+const looksLikeAnalyticGloss = (value?: string) => {
+  const text = value?.trim() ?? "";
+  if (!text) return false;
+  return /(^|[\s，。])[^，。.!?]{1,12}\s[+＋]\s[^，。.!?]{1,12}/.test(text);
+};
 
 const looksLikeInternalContentId = (value: string) => {
   const text = value.trim().toLowerCase();
@@ -334,6 +341,7 @@ const isUsablePhraseText = (value: string) => {
   const text = value.trim();
   if (!text) return false;
   if (looksLikeInternalContentId(text)) return false;
+  if (/(?:\.\.\.|…)/.test(text)) return false;
   if (learnerInternalCopyPattern.test(text)) return false;
   if (/\bIk ga naar (uit|hier|daar)\b/i.test(text)) return false;
   if (/\bIk zoek (de|het)\s+(salaris|loonstrook|proeftijd|afwezigheid|herinnering|waterrekening|herstel|verlof|uitzendbureau)\b/i.test(text)) return false;
@@ -349,6 +357,7 @@ const isUsablePhraseText = (value: string) => {
 
 const isUsableMemoryPhraseChunk = (chunk: MemoryPath["phraseChunks"][number]) =>
   isUsablePhraseText(chunk.dutch) &&
+  !looksLikeAnalyticGloss(`${chunk.meaningZh} ${chunk.meaningEn}`) &&
   !learnerInternalCopyPattern.test(`${chunk.meaningZh} ${chunk.meaningEn}`);
 
 const isTargetedMemoryPhraseChunk = (word: WordItem, chunk: MemoryPath["phraseChunks"][number]) =>
@@ -356,6 +365,9 @@ const isTargetedMemoryPhraseChunk = (word: WordItem, chunk: MemoryPath["phraseCh
 
 const isUsablePhraseDetail = (phrase: EditablePhraseChunk) =>
   isUsablePhraseText(phrase.dutch) &&
+  phrase.meaning.zh.trim() &&
+  phrase.meaning.en.trim() &&
+  !looksLikeAnalyticGloss(`${phrase.meaning.zh} ${phrase.meaning.en}`) &&
   !learnerInternalCopyPattern.test(`${phrase.meaning.zh} ${phrase.meaning.en} ${phrase.usageScene.zh} ${phrase.usageScene.en}`);
 
 const phraseStringsFromOverride = (override?: WordContentOverride, base?: WordItem) =>
@@ -370,22 +382,14 @@ const isBadLearnerExample = (word: WordItem, example: EditableExampleSentence) =
   const text = `${example.meaning.zh} ${example.meaning.en}`;
   const type = inferWordType(word);
   if (!dutch || !example.meaning.zh.trim() || !example.meaning.en.trim()) return true;
+  if (looksLikeAnalyticGloss(`${example.meaning.zh} ${example.meaning.en}`)) return true;
   if (learnerInternalCopyPattern.test(`${dutch} ${text}`)) return true;
   if (!sentenceContainsTargetUse(word, dutch)) return true;
+  if (isKnownBadLearnerLine(dutch)) return true;
   if (isBadGenericTargetTemplate(word, dutch)) return true;
-  if (bare === lowerWord && !safeStandaloneWords.has(lowerWord)) return true;
+  if (bare === lowerWord && type !== "phrase" && !safeStandaloneWords.has(lowerWord)) return true;
   if (/^Dit is\s+\w+\.?$/i.test(dutch) && type !== "noun") return true;
-  if (/^Dit is (heet|ben|heb|wil|kan|dit|dat)\.?$/i.test(dutch)) return true;
-  if (/^Dit is (de|het)\s+\w+\.?$/i.test(dutch)) return true;
-  if (/^Ik (ben|heb|wil|kan)\.?$/i.test(dutch)) return true;
   if (/^Dit is dag\.?$/i.test(dutch)) return true;
-  if (/^Ik ga naar (uit|hier|daar)\.?$/i.test(dutch)) return true;
-  if (new RegExp(`^Ik ga naar (de|het)\\s+${bodyPartWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik ga naar\\s+${symptomWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik gebruik (de|het)\\s+${bodyPartWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik heb (de|het)\\s+${bodyPartWordsPattern} nodig\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Waar is (de|het)\\s+${bodyPartWordsPattern}\\??$`, "i").test(dutch)) return true;
-  if (/^Ik zeg (heet|heb|ben|wel|geen|wanneer|waar|wat|wie|hoe)\.$/i.test(dutch)) return true;
   if (/^Ik\s+(werken|zijn|hebben|kunnen|willen|moeten|gaan|komen|wonen|leren|kijken|helpen|begrijpen)\b/i.test(dutch)) return true;
   if (/^Dit is (de|het|een)\s+\w+\.?$/i.test(dutch) && word.level !== "A0") return true;
   if (word.dutch.toLowerCase() === "engels" && /\bengelsen\b/i.test(dutch)) return true;
@@ -410,6 +414,7 @@ const editableBaseExampleFor = (word: WordItem): EditableExampleSentence => ({
 
 const generatedEditableExamplesFor = (word: WordItem): EditableExampleSentence[] =>
   generateExamplesForWord(word)
+    .filter((example) => !example.needsHumanReview && !(example.qualityIssues?.length) && example.confidence !== "low")
     .filter((example) => example.dutch.trim() && example.meaningZh.trim() && example.meaningEn.trim())
     .filter((example) => !isBadLearnerExample(word, {
       id: example.id,
@@ -436,6 +441,23 @@ const generatedEditableExamplesFor = (word: WordItem): EditableExampleSentence[]
       qualityStatus: "usable",
     }));
 
+const isUsableGeneratedExampleForWord = (word: WordItem, example: GeneratedExample) =>
+  !example.needsHumanReview &&
+  !(example.qualityIssues?.length) &&
+  example.confidence !== "low" &&
+  !isBadLearnerExample(word, {
+    id: example.id,
+    dutch: example.dutch,
+    meaning: { zh: example.meaningZh, en: example.meaningEn },
+    level: example.level,
+    type: example.type,
+    targetWord: example.targetWord,
+    grammarFocus: example.grammarFocus ?? "",
+    scenarioTags: example.scenarioTags,
+    audioText: example.audioText,
+    qualityStatus: "usable",
+  });
+
 const fillExampleMeaningFromGenerated = (word: WordItem, example: EditableExampleSentence): EditableExampleSentence => {
   if (example.meaning.zh.trim() && example.meaning.en.trim()) return example;
   const normalizedDutch = example.dutch.trim().toLowerCase().replace(/[.!?]+$/, "");
@@ -450,6 +472,85 @@ const fillExampleMeaningFromGenerated = (word: WordItem, example: EditableExampl
       en: example.meaning.en.trim() || generated.meaning.en,
     },
     qualityStatus: "usable",
+  };
+};
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const trimLearnerMeaning = (value: string) => value.trim().replace(/[。.!?]+$/g, "");
+
+const isArticleOnlyPhraseForWord = (word: WordItem, phrase: string) =>
+  Boolean(word.article) && new RegExp(`^(de|het|een)\\s+${escapeRegExp(word.dutch)}$`, "i").test(phrase.trim());
+
+const isBareTargetPhraseForWord = (word: WordItem, phrase: string) => {
+  if (inferWordType(word) === "phrase") return false;
+  const normalizedPhrase = phrase.trim().toLowerCase();
+  const forms = [word.dutch, word.plural ?? ""].filter(Boolean).map((value) => value.toLowerCase());
+  return forms.some((form) =>
+    normalizedPhrase === form ||
+    normalizedPhrase === `de ${form}` ||
+    normalizedPhrase === `het ${form}` ||
+    normalizedPhrase === `een ${form}` ||
+    normalizedPhrase === `mijn ${form}` ||
+    normalizedPhrase === `uw ${form}`,
+  );
+};
+
+const phraseDisplayPriority = (word: WordItem, phrase: string) => {
+  const normalizedPhrase = phrase.trim().toLowerCase();
+  if (isBareTargetPhraseForWord(word, normalizedPhrase)) return 8;
+  if (/^(een )?vraag over\b/i.test(normalizedPhrase)) return 6;
+  if (/^(de|het|een|mijn|uw)\s+\S+$/i.test(normalizedPhrase)) return 5;
+  if (/\b(maken|betalen|lezen|krijgen|gaan|komen|oefenen|inleveren|aanvragen|doorgeven|invullen|ondertekenen|verplaatsen|gebruiken|controleren|bellen|sturen|halen|nemen|zetten|staan|zijn|hebben|worden|doen|vragen)\b/i.test(normalizedPhrase)) return 0;
+  if (/\b(op|in|naar|bij|met|voor|over|van)\b/i.test(normalizedPhrase)) return 1;
+  return 3;
+};
+
+const lowerFirst = (value: string) => value.charAt(0).toLowerCase() + value.slice(1);
+
+const displayPhraseFromGeneratedExample = (word: WordItem, phrase: string, example: GeneratedExample) => {
+  const trimmedPhrase = phrase.trim();
+  if (!isArticleOnlyPhraseForWord(word, trimmedPhrase)) return trimmedPhrase;
+
+  const sentence = example.dutch.trim().replace(/[.!?]+$/g, "");
+  const articlePhrase = articlePhraseFor(word);
+  const target = escapeRegExp(articlePhrase);
+  const patterns: Array<[RegExp, string]> = [
+    [new RegExp(`^Ik heb een vraag over ${target}$`, "i"), `een vraag over ${articlePhrase}`],
+    [new RegExp(`^Ik bespreek ${target} met de huisarts$`, "i"), `${articlePhrase} bespreken`],
+    [new RegExp(`^Ik bespreek ${target} op het werk$`, "i"), `${articlePhrase} bespreken`],
+    [new RegExp(`^Ik vraag naar ${target}$`, "i"), `naar ${articlePhrase} vragen`],
+    [new RegExp(`^Ik ga naar ${target}$`, "i"), `naar ${articlePhrase} gaan`],
+    [new RegExp(`^Ik moet ${target} betalen$`, "i"), `${articlePhrase} betalen`],
+  ];
+  const directMatch = patterns.find(([pattern]) => pattern.test(sentence));
+  if (directMatch) return directMatch[1];
+
+  const stateMatch = sentence.match(new RegExp(`^${target}\\s+(is|duurt|werkt|staat|begint|komt|vertrekt|stopt|heet|speelt)\\b(.+)?$`, "i"));
+  if (stateMatch) return lowerFirst(sentence);
+
+  return trimmedPhrase;
+};
+
+const phraseMeaningFromExample = (word: WordItem, phrase: string, example?: GeneratedExample): LocalizedText => {
+  const configured = phraseChunkMeaningFor(phrase);
+  if (configured?.zh.trim() && configured.en.trim()) return configured;
+
+  const normalizedPhrase = phrase.trim().toLowerCase();
+  const normalizedWord = word.dutch.trim().toLowerCase();
+  if (normalizedPhrase === normalizedWord && word.meaning.zh.trim() && word.meaning.en.trim()) {
+    return word.meaning;
+  }
+
+  if (example?.meaningZh.trim() && example.meaningEn.trim()) {
+    return {
+      zh: trimLearnerMeaning(example.meaningZh),
+      en: trimLearnerMeaning(example.meaningEn),
+    };
+  }
+
+  return {
+    zh: `${word.meaning.zh || word.dutch} 的常用短语`,
+    en: `common phrase with ${word.meaning.en || word.dutch}`,
   };
 };
 
@@ -491,17 +592,22 @@ const phraseDetailsFor = (word: WordItem, override?: WordContentOverride): Edita
   const generatedPhrases = generateExamplesForWord(word)
     .filter((example) => example.phraseChunkUsed?.trim())
     .filter((example) => example.dutch.trim() && example.meaningZh.trim() && example.meaningEn.trim())
-    .map((example, index) => ({
-      id: `${word.id}-generated-phrase-${index + 1}`,
-      dutch: example.phraseChunkUsed ?? "",
-      meaning: phraseChunkMeaningFor(example.phraseChunkUsed ?? "") ?? { zh: "", en: "" },
-      usageScene: {
-        zh: example.scenarioTags.join(", ") || word.theme,
-        en: example.scenarioTags.join(", ") || word.theme,
-      },
-      audioText: example.phraseChunkUsed ?? example.dutch,
-    }))
-    .filter(isUsablePhraseDetail);
+    .filter((example) => isUsableGeneratedExampleForWord(word, example))
+    .map((example, index) => {
+      const phrase = displayPhraseFromGeneratedExample(word, example.phraseChunkUsed ?? "", example);
+      return {
+        id: `${word.id}-generated-phrase-${index + 1}`,
+        dutch: phrase,
+        meaning: phraseMeaningFromExample(word, phrase, example),
+        usageScene: {
+          zh: example.scenarioTags.join(", ") || word.theme,
+          en: example.scenarioTags.join(", ") || word.theme,
+        },
+        audioText: phrase,
+      };
+    })
+    .filter(isUsablePhraseDetail)
+    .sort((a, b) => phraseDisplayPriority(word, a.dutch) - phraseDisplayPriority(word, b.dutch));
   const weakArticleOnlyOverride = Boolean(
     overridePhrases?.length &&
     overridePhrases.every((phrase) => new RegExp(`^(de|het|een)\\s+${word.dutch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i").test(phrase.dutch.trim())),
@@ -539,15 +645,21 @@ const generatedMemoryPhraseChunksFor = (word: WordItem): MemoryPath["phraseChunk
   return generateExamplesForWord(word)
     .filter((example) => example.phraseChunkUsed?.trim())
     .filter((example) => example.dutch.trim() && example.meaningZh.trim() && example.meaningEn.trim())
-    .map((example) => example.phraseChunkUsed?.trim() ?? "")
-    .filter((chunk) => {
+    .filter((example) => isUsableGeneratedExampleForWord(word, example))
+    .filter((example) => {
+      const chunk = displayPhraseFromGeneratedExample(word, example.phraseChunkUsed ?? "", example);
       const key = chunk.toLowerCase();
       if (!isUsablePhraseText(chunk) || seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .slice(0, 4)
-    .map((chunk) => ({ dutch: chunk, meaningZh: "", meaningEn: "" }));
+    .map((example) => {
+      const chunk = displayPhraseFromGeneratedExample(word, example.phraseChunkUsed ?? "", example);
+      const meaning = phraseMeaningFromExample(word, chunk, example);
+      return { dutch: chunk, meaningZh: meaning.zh, meaningEn: meaning.en };
+    })
+    .sort((a, b) => phraseDisplayPriority(word, a.dutch) - phraseDisplayPriority(word, b.dutch))
+    .slice(0, 4);
 };
 
 const memoryOutputSentencesFromExamples = (word: WordItem, examples: EditableExampleSentence[]): MemoryPath["outputSentences"] =>
@@ -603,34 +715,6 @@ const sentenceContainsTargetUse = (word: WordItem, sentence: string) => {
   return [word.dutch, word.plural ?? ""].filter(Boolean).some((token) => containsDutchToken(sentence, token));
 };
 
-const allowedNaarPlaces = new Set([
-  "school",
-  "werk",
-  "huis",
-  "supermarkt",
-  "station",
-  "halte",
-  "perron",
-  "gemeente",
-  "huisarts",
-  "ziekenhuis",
-  "tandarts",
-  "apotheek",
-  "balie",
-  "winkel",
-]);
-
-const isBadGenericTargetTemplate = (word: WordItem, sentence: string) => {
-  const target = word.dutch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const lowerWord = word.dutch.toLowerCase();
-  if (new RegExp(`^Ik zoek\\s+(de|het|een)?\\s*${target}\\.?$`, "i").test(sentence)) {
-    return !["station", "halte", "perron", "uitgang", "balie"].includes(lowerWord);
-  }
-  if (new RegExp(`^Ik heb\\s+(de|het)\\s+${target}\\s+nodig\\.?$`, "i").test(sentence)) return true;
-  if (new RegExp(`^Ik ga naar\\s+(de|het)?\\s*${target}\\.?$`, "i").test(sentence)) return !allowedNaarPlaces.has(lowerWord);
-  return false;
-};
-
 const isBadMemoryOutputSentence = (word: WordItem, sentence: MemoryPath["outputSentences"][number]) => {
   const dutch = sentence.dutch.trim();
   const zh = sentence.meaningZh.trim();
@@ -640,22 +724,14 @@ const isBadMemoryOutputSentence = (word: WordItem, sentence: MemoryPath["outputS
   const combinedMeaning = `${zh} ${en}`;
 
   if (!dutch || !zh || !en) return true;
+  if (looksLikeAnalyticGloss(`${zh} ${en}`)) return true;
   if (learnerInternalCopyPattern.test(`${dutch} ${combinedMeaning}`)) return true;
   if (!sentenceContainsTargetUse(word, dutch)) return true;
+  if (isKnownBadLearnerLine(dutch)) return true;
   if (isBadGenericTargetTemplate(word, dutch)) return true;
-  if (normalizedDutch === normalizedWord && !standaloneOutputWords.has(normalizedWord)) return true;
+  if (normalizedDutch === normalizedWord && inferWordType(word) !== "phrase" && !standaloneOutputWords.has(normalizedWord)) return true;
   if (word.article && !containsDutchToken(dutch, word.dutch) && !(word.plural && containsDutchToken(dutch, word.plural))) return true;
-  if (/^Dit is (heet|ben|heb|wil|kan|dit|dat|dag)\.?$/i.test(dutch)) return true;
-  if (/^Dit is (de|het)\s+\w+\.?$/i.test(dutch)) return true;
-  if (/^Ik (ben|heb|wil|kan)\.?$/i.test(dutch)) return true;
-  if (/^Ik ga naar (uit|hier|daar)\.?$/i.test(dutch)) return true;
-  if (new RegExp(`^Ik ga naar (de|het)\\s+${bodyPartWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik ga naar\\s+${symptomWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik gebruik (de|het)\\s+${bodyPartWordsPattern}\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Ik heb (de|het)\\s+${bodyPartWordsPattern} nodig\\.?$`, "i").test(dutch)) return true;
-  if (new RegExp(`^Waar is (de|het)\\s+${bodyPartWordsPattern}\\??$`, "i").test(dutch)) return true;
   if (/^Ik\s+(werken|zijn|hebben|kunnen|willen|moeten|gaan|komen|wonen|leren|kijken|helpen|begrijpen)\b/i.test(dutch)) return true;
-  if (/^Kunt u mij hulp\??$/i.test(dutch)) return true;
   if (word.dutch.toLowerCase() === "engels" && /\bengelsen\b/i.test(dutch)) return true;
   return false;
 };
@@ -860,20 +936,21 @@ export const saveCreatorWordOverride = (wordId: string, patch: WordContentOverri
   return next[id];
 };
 
+const effectiveWordFromBase = (baseWord: WordItem, override?: WordContentOverride): WordItem => {
+  if (!override) return normalizeEffectiveWord({ ...baseWord, exampleSentence: safeExampleFor(baseWord) });
+  const exampleSentence = safeExampleFor(baseWord, override);
+  return normalizeEffectiveWord({
+    ...baseWord,
+    ...override,
+    id: baseWord.id,
+    phraseChunks: phraseStringsFromOverride(override, baseWord),
+    exampleSentence,
+  });
+};
+
 export const getEffectiveWords = (): WordItem[] => {
   const overrides = getCreatorWordOverrides();
-  return baseWords.map((baseWord) => {
-    const override = overrides[baseWord.id] ?? overrides[baseWord.dutch];
-    if (!override) return normalizeEffectiveWord({ ...baseWord, exampleSentence: safeExampleFor(baseWord) });
-    const exampleSentence = safeExampleFor(baseWord, override);
-    return normalizeEffectiveWord({
-      ...baseWord,
-      ...override,
-      id: baseWord.id,
-      phraseChunks: phraseStringsFromOverride(override, baseWord),
-      exampleSentence,
-    });
-  });
+  return baseWords.map((baseWord) => effectiveWordFromBase(baseWord, overrides[baseWord.id] ?? overrides[baseWord.dutch]));
 };
 
 export const getEffectiveWordById = (wordId: string) =>
@@ -884,7 +961,7 @@ export const getEffectiveWordBubble = (wordId: string): EffectiveWordBubble | un
   const baseWord = baseWords.find((word) => word.id === wordId || word.dutch === wordId);
   if (!baseWord) return undefined;
   const override = overrides[baseWord.id] ?? overrides[baseWord.dutch];
-  const effectiveWord = getEffectiveWordById(baseWord.id) ?? baseWord;
+  const effectiveWord = effectiveWordFromBase(baseWord, override);
   const lastUpdated = hasLocalStorage() ? window.localStorage.getItem(LAST_UPDATED_KEY) ?? undefined : undefined;
   const phraseChunkDetails = phraseDetailsFor(effectiveWord, override);
   const exampleSentences = exampleDetailsFor(effectiveWord, override);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppNav } from "@/components/AppNav";
 import { AppFooter } from "@/components/AppFooter";
+import { LearningProgressDock } from "@/components/LearningProgressDock";
 import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
           <AppNav />
           {children}
           <AppFooter />
+          <LearningProgressDock />
         </LanguageProvider>
       </body>
     </html>

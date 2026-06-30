@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Ear, LockKeyhole, MessageCircle, Pencil, Play, Puzzle, Sparkles, Target } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
@@ -9,6 +9,7 @@ import { authChangedEvent, getCurrentUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
 import { accessLevelChangedEvent, canAccessLesson, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
+import { getLearningProgress, learningProgressChangedEvent, markStepComplete, updateLearningProgress, type LearningLevel } from "@/lib/learningProgress";
 import type { CourseLevel } from "@/types/course";
 import type { CourseLessonPracticeItem } from "@/types/lesson";
 
@@ -64,10 +65,17 @@ const displayBuiltSentence = (parts: string[]) => parts.join(" ").replace(/\s+([
 
 export default function LearnLessonPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
   const { language } = useLanguage();
   const [lessons, setLessons] = useState(() => getBaseCourseLessons());
   const lesson = lessons.find((item) => item.id === lessonId);
   const [stepIndex, setStepIndex] = useState(0);
+  const [lessonComplete, setLessonComplete] = useState(false);
+  const [starterBaseCompleted, setStarterBaseCompleted] = useState(false);
+  const [foundationGrammarCompleted, setFoundationGrammarCompleted] = useState(false);
+  const [grammarOnDemandComplete, setGrammarOnDemandComplete] = useState(false);
+  const [practiceComplete, setPracticeComplete] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [typedAnswers, setTypedAnswers] = useState<Record<string, string>>({});
   const [builtAnswers, setBuiltAnswers] = useState<Record<string, string[]>>({});
@@ -112,6 +120,42 @@ export default function LearnLessonPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const requestedStep = new URLSearchParams(queryString).get("step");
+    if (requestedStep === "practice") {
+      const targetIndex = lessonSteps.findIndex((step) => step.id === "practice");
+      if (targetIndex >= 0) setStepIndex(targetIndex);
+    }
+    if (requestedStep === "patterns") {
+      const targetIndex = lessonSteps.findIndex((step) => step.id === "patterns");
+      if (targetIndex >= 0) setStepIndex(targetIndex);
+    }
+    if (requestedStep === "output") {
+      const targetIndex = lessonSteps.findIndex((step) => step.id === "output");
+      if (targetIndex >= 0) setStepIndex(targetIndex);
+    }
+  }, [queryString]);
+
+  useEffect(() => {
+    const syncLearningProgress = () => {
+      if (!lesson) return;
+      const progress = getLearningProgress();
+      const daySteps = progress.completedStepsByDay[lesson.level as LearningLevel]?.[String(lesson.order)] ?? [];
+      setLessonComplete(daySteps.includes("lesson"));
+      setStarterBaseCompleted(progress.starterWordsCompleted);
+      setFoundationGrammarCompleted(progress.grammarBaseCompleted);
+      setGrammarOnDemandComplete(daySteps.includes("grammar-on-demand"));
+      setPracticeComplete(daySteps.includes("practice"));
+    };
+    syncLearningProgress();
+    window.addEventListener(learningProgressChangedEvent, syncLearningProgress);
+    window.addEventListener("storage", syncLearningProgress);
+    return () => {
+      window.removeEventListener(learningProgressChangedEvent, syncLearningProgress);
+      window.removeEventListener("storage", syncLearningProgress);
+    };
+  }, [lesson]);
 
   if (!lesson) {
     notFound();
@@ -289,6 +333,36 @@ export default function LearnLessonPage() {
   const activePracticeGroup =
     practiceGroups.find((group) => group.type === activePracticeType) ?? practiceGroups[0];
   const lessonPurpose = lesson.lessonGoal.purpose?.[language] ?? goalPurposeText(lesson.lessonGoal.canSayAfter[language]);
+  const lessonFlowComplete = lessonComplete && grammarOnDemandComplete && practiceComplete;
+  const isStarterLesson = lesson.level === "A0" && lesson.order === 1;
+  const wordBubbleRoute = `/word-link?level=${lesson.level}&day=${lesson.order}`;
+  const nextRouteAfterLesson = isStarterLesson && !foundationGrammarCompleted ? "/rules?mode=foundation" : wordBubbleRoute;
+  const nextLabelAfterLesson =
+    isStarterLesson && !foundationGrammarCompleted
+      ? language === "zh"
+        ? "去最小语法地基"
+        : "Open Grammar Base 1"
+      : language === "zh"
+        ? "去今日单词泡泡"
+        : "Open today's word bubbles";
+  const completeLessonFlow = () => {
+    markStepComplete(lesson.level, lesson.order, "lesson");
+    markStepComplete(lesson.level, lesson.order, "grammar-on-demand");
+    markStepComplete(lesson.level, lesson.order, "practice");
+    if (isStarterLesson && !starterBaseCompleted) {
+      updateLearningProgress({
+        starterWordsCompleted: true,
+        currentLevel: "A0",
+        currentDay: 1,
+        currentStep: foundationGrammarCompleted ? "word-bubbles" : "grammar",
+        lastVisitedRoute: "/learn/a0-01",
+      });
+      setStarterBaseCompleted(true);
+    }
+    setLessonComplete(true);
+    setGrammarOnDemandComplete(true);
+    setPracticeComplete(true);
+  };
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
@@ -462,76 +536,80 @@ export default function LearnLessonPage() {
         ) : null}
 
         {currentStep.id === "patterns" ? (
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "只学一口能说出来的句型" : "Learn speakable patterns"}</p>
-              <h2 className="mt-3 text-4xl font-black text-ink">{language === "zh" ? "句型" : "Sentence patterns"}</h2>
-              <div className="mt-6 grid gap-4">
-                {lesson.sentencePatterns.map((pattern) => (
-                  <article key={pattern.dutchPattern} className="rounded-[26px] bg-skywash p-5">
-                    <h3 className="text-2xl font-black text-ink">{pattern.dutchPattern}</h3>
-                    <p className="mt-2 font-bold leading-7 text-ocean/70">{pattern.explanation[language]}</p>
-                    <div className="mt-4 grid gap-2">
-                      {pattern.examples.map((example) => (
-                        <div key={example.dutch} className="rounded-2xl bg-white p-3">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="font-black text-ink">{example.dutch}</p>
-                            <AudioButton text={example.audioText} label={language === "zh" ? "听" : "Play"} />
+          <div>
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div>
+                <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "只学今天用得到的句型" : "Only today's useful pattern"}</p>
+                <h2 className="mt-3 text-4xl font-black text-ink">{language === "zh" ? "今日小规则" : "Today's rule"}</h2>
+                <div className="mt-6 grid gap-4">
+                  {lesson.sentencePatterns.map((pattern) => (
+                    <article key={pattern.dutchPattern} className="rounded-[26px] bg-skywash p-5">
+                      <h3 className="text-2xl font-black text-ink">{pattern.dutchPattern}</h3>
+                      <p className="mt-2 font-bold leading-7 text-ocean/70">{pattern.explanation[language]}</p>
+                      <div className="mt-4 grid gap-2">
+                        {pattern.examples.map((example) => (
+                          <div key={example.dutch} className="rounded-2xl bg-white p-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <p className="font-black text-ink">{example.dutch}</p>
+                              <AudioButton text={example.audioText} label={language === "zh" ? "听" : "Play"} />
+                            </div>
+                            <p className="text-sm font-bold text-ocean/60">{example.meaning[language]}</p>
                           </div>
-                          <p className="text-sm font-bold text-ocean/60">{example.meaning[language]}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-3 text-sm font-black leading-6 text-pop">{pattern.commonMistake[language]}</p>
-                  </article>
-                ))}
+                        ))}
+                      </div>
+                      <p className="mt-3 text-sm font-black leading-6 text-pop">{pattern.commonMistake[language]}</p>
+                    </article>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="rounded-[30px] bg-ink p-6 text-white">
-              <p className="text-sm font-black tracking-[0.16em] text-orange-200">{language === "zh" ? "迷你语法" : "Mini grammar"}</p>
-              <h3 className="mt-3 text-3xl font-black leading-tight">{lesson.miniGrammar.title[language]}</h3>
-              <p className="mt-4 rounded-[22px] bg-white p-4 text-2xl font-black text-ink">{lesson.miniGrammar.pattern}</p>
-              <p className="mt-4 font-bold leading-8 text-blue-50">{lesson.miniGrammar.explanation[language]}</p>
-              <div className="mt-5 grid gap-2">
-                {lesson.miniGrammar.examples.map((example) => (
-                  <div key={example.dutch} className="flex flex-col gap-2 rounded-2xl bg-white/10 p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-black text-blue-50">{example.dutch}</p>
-                    <AudioButton text={example.audioText} label={language === "zh" ? "听" : "Play"} />
-                  </div>
-                ))}
+              <div className="rounded-[30px] bg-ink p-6 text-white">
+                <p className="text-sm font-black tracking-[0.16em] text-orange-200">{language === "zh" ? "迷你语法" : "Mini grammar"}</p>
+                <h3 className="mt-3 text-3xl font-black leading-tight">{lesson.miniGrammar.title[language]}</h3>
+                <p className="mt-4 rounded-[22px] bg-white p-4 text-2xl font-black text-ink">{lesson.miniGrammar.pattern}</p>
+                <p className="mt-4 font-bold leading-8 text-blue-50">{lesson.miniGrammar.explanation[language]}</p>
+                <div className="mt-5 grid gap-2">
+                  {lesson.miniGrammar.examples.map((example) => (
+                    <div key={example.dutch} className="flex flex-col gap-2 rounded-2xl bg-white/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="font-black text-blue-50">{example.dutch}</p>
+                      <AudioButton text={example.audioText} label={language === "zh" ? "听" : "Play"} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         ) : null}
 
         {currentStep.id === "repeat" ? (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[28px] bg-slate-50 p-5 ring-1 ring-blue-100">
-              <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "跟读" : "Listen and repeat"}</p>
-              <h2 className="mt-3 text-3xl font-black text-ink">{language === "zh" ? "一句一句点，一句一句读" : "Tap one line, repeat one line"}</h2>
-              <div className="mt-5 grid gap-3">
-                {lesson.listenAndRepeat.map((item) => (
-                  <div key={item.dutch} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4">
-                    <p className="text-lg font-black text-ink">{item.dutch}</p>
-                    <AudioButton text={item.audioText} label={language === "zh" ? "跟读" : "Repeat"} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[28px] bg-slate-50 p-5 ring-1 ring-blue-100">
-              <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "微对话" : "Micro dialogue"}</p>
-              <h2 className="mt-3 text-3xl font-black text-ink">{language === "zh" ? "短到可以马上模仿" : "Short enough to copy now"}</h2>
-              <div className="mt-5 grid gap-3">
-                {lesson.microDialogue.map((line, index) => (
-                  <div key={`${line.speaker}-${index}`} className="rounded-2xl bg-white p-4">
-                    <p className="text-xs font-black text-pop">{line.speaker}</p>
-                    <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-lg font-black text-ink">{line.dutch}</p>
-                      <AudioButton text={line.audioText} label={language === "zh" ? "听" : "Play"} />
+          <div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="rounded-[28px] bg-slate-50 p-5 ring-1 ring-blue-100">
+                <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "跟读" : "Listen and repeat"}</p>
+                <h2 className="mt-3 text-3xl font-black text-ink">{language === "zh" ? "一句一句点，一句一句读" : "Tap one line, repeat one line"}</h2>
+                <div className="mt-5 grid gap-3">
+                  {lesson.listenAndRepeat.map((item) => (
+                    <div key={item.dutch} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4">
+                      <p className="text-lg font-black text-ink">{item.dutch}</p>
+                      <AudioButton text={item.audioText} label={language === "zh" ? "跟读" : "Repeat"} />
                     </div>
-                    <p className="text-sm font-bold text-ocean/60">{line.meaning[language]}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[28px] bg-slate-50 p-5 ring-1 ring-blue-100">
+                <p className="text-sm font-black tracking-[0.18em] text-pop">{language === "zh" ? "微对话" : "Micro dialogue"}</p>
+                <h2 className="mt-3 text-3xl font-black text-ink">{language === "zh" ? "短到可以马上模仿" : "Short enough to copy now"}</h2>
+                <div className="mt-5 grid gap-3">
+                  {lesson.microDialogue.map((line, index) => (
+                    <div key={`${line.speaker}-${index}`} className="rounded-2xl bg-white p-4">
+                      <p className="text-xs font-black text-pop">{line.speaker}</p>
+                      <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-lg font-black text-ink">{line.dutch}</p>
+                        <AudioButton text={line.audioText} label={language === "zh" ? "听" : "Play"} />
+                      </div>
+                      <p className="text-sm font-bold text-ocean/60">{line.meaning[language]}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -820,7 +898,7 @@ export default function LearnLessonPage() {
             className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-5 py-3 font-black text-ocean disabled:opacity-40"
           >
             <ArrowLeft size={18} />
-            {language === "zh" ? "上一步" : "Previous"}
+            {language === "zh" ? "本课上一步" : "Previous in lesson"}
           </button>
           <p className="text-center text-sm font-black text-pop">{audioStatus}</p>
           {stepIndex < lessonSteps.length - 1 ? (
@@ -829,30 +907,23 @@ export default function LearnLessonPage() {
               onClick={goNext}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-pop px-5 py-3 font-black text-ink"
             >
-              {language === "zh" ? "下一步" : "Next step"}
+              {language === "zh" ? "继续本课" : "Continue lesson"}
               <ArrowRight size={18} />
             </button>
-          ) : nextLesson ? (
-            canAccessLesson(nextLesson, accessLevel, signedIn) ? (
-              <Link href={`/learn/${nextLesson.id}`} className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white">
-                {language === "zh" ? "下一课" : "Next lesson"}: {nextLesson.title[language]}
-                <ArrowRight size={18} />
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openUpgrade(nextLesson.level)}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-peach px-5 py-3 font-black text-ocean ring-1 ring-orange-100"
-              >
-                <LockKeyhole size={18} />
-                {language === "zh" ? "解锁下一课" : "Unlock next lesson"}
-              </button>
-            )
-          ) : (
-            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-full bg-mint px-5 py-3 font-black text-ocean">
-              <CheckCircle2 size={18} />
-              {language === "zh" ? "完成当前课程模块" : "Finish current modules"}
+          ) : lessonFlowComplete ? (
+            <Link href={nextRouteAfterLesson} className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white">
+              {nextLabelAfterLesson}
+              <ArrowRight size={18} />
             </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={completeLessonFlow}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white"
+            >
+              <CheckCircle2 size={18} />
+              {language === "zh" ? "完成输出" : "Finish output"}
+            </button>
           )}
         </div>
       </nav>
@@ -929,9 +1000,12 @@ export default function LearnLessonPage() {
           )}
         </div>
 
-        <details className="mt-5 rounded-[24px] bg-slate-50 p-4 ring-1 ring-blue-100">
-          <summary className="cursor-pointer list-none font-black text-ocean">
-            {language === "zh" ? "A0-B1 课程目录" : "A0-B1 lesson index"}
+        <details className="group mt-5 rounded-[24px] bg-slate-50 p-4 ring-1 ring-blue-100">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-2 py-2 font-black text-ocean outline-none transition hover:bg-white focus-visible:ring-2 focus-visible:ring-pop/35 [&::-webkit-details-marker]:hidden">
+            <span>{language === "zh" ? "A0-B1 课程目录" : "A0-B1 lesson index"}</span>
+            <span className="inline-flex items-center rounded-full bg-pop px-3 py-1 text-xs font-black text-white shadow-sm">
+              {language === "zh" ? "可点击展开" : "Tap to open"}
+            </span>
           </summary>
           <div className="mt-5 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
             {lessonsByLevel.map((group) => (

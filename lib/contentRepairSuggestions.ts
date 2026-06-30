@@ -9,6 +9,7 @@ import {
   isWeakText,
 } from "@/lib/creatorCompletionPipeline";
 import { generateExamplesForWord, generatedExampleToExampleSentence } from "@/lib/exampleSentenceGenerator";
+import { isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import type { CreatorExampleSentence, CreatorPhraseChunk, CreatorWord } from "@/lib/creatorStore";
 import { memoryPathFor, validateMemoryPath, wordTypeFor } from "@/lib/memoryPath";
 import { generateWordBubbleCompletionDraft } from "@/lib/wordBubbleCompletion";
@@ -46,17 +47,13 @@ const oneWordSentence = (sentence: string) =>
   sentence.trim().replace(/[.!?]+$/, "").split(/\s+/).filter(Boolean).length <= 1;
 
 const knownBadDutchSentence = (sentence: string) =>
+  isKnownBadLearnerLine(sentence) ||
   [
     /^Ik zie de minuut\.$/i,
     /^Ik zeg heet\.$/i,
     /^Heb\.$/i,
     /^Wanneer\.$/i,
     /^Kijken\.$/i,
-    /^Spreek jij de supermarkt\?$/i,
-    /^Ik spreek geen water\.$/i,
-    /^Het is tegenover een afspraak\.$/i,
-    /^Ik heb een afspraak\.$/i,
-    /^Ik ben een afspraak\.$/i,
   ].some((pattern) => pattern.test(sentence.trim()));
 
 const isBadExample = (word: CreatorWord, example: CreatorExampleSentence) => {

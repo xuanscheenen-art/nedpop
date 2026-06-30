@@ -64,7 +64,7 @@ const maxExamplesFor = (level: GeneratedExample["level"], wordType: WordType) =>
 const typePriorityFor = (level: GeneratedExample["level"], wordType: WordType) => {
   if (wordType === "number") return ["minimal", "scenario", "output", "collocation"];
   if (wordType === "function-word") return ["scenario", "output", "minimal", "collocation"];
-  if (wordType === "phrase") return ["minimal", "output", "scenario", "collocation"];
+  if (wordType === "phrase") return ["output", "scenario", "collocation", "minimal"];
   if (level === "A0") return ["minimal", "output", "collocation", "scenario"];
   if (level === "A1") return ["minimal", "collocation", "scenario", "output"];
   if (level === "B1") return ["scenario", "output", "collocation", "contrast", "minimal"];
@@ -204,8 +204,9 @@ export const generateExamplesForWord = (word: WordItem, context: GenerateExample
     .filter((example) => !alreadyUsable.has(normalizeDutch(example.dutch)))
     .map((example) => checkGeneratedExample(example, word, { microScenario, dayPack: context.dayPack }));
 
-  const usable = checked.filter((example) => example.dutch.trim() && example.meaningZh.trim() && example.meaningEn.trim());
-  const sorted = sortExamples(usable.length ? usable : checked, level, wordType);
+  const complete = checked.filter((example) => example.dutch.trim() && example.meaningZh.trim() && example.meaningEn.trim());
+  const usable = complete.filter((example) => !example.needsHumanReview && !(example.qualityIssues?.length) && example.confidence !== "low");
+  const sorted = sortExamples(usable.length ? usable : complete, level, wordType);
   if (sorted.length) return sorted.slice(0, maxExamples);
 
   return [checkGeneratedExample(fallbackReviewExample(word, level), word, { microScenario, dayPack: context.dayPack })];

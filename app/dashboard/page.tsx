@@ -9,6 +9,7 @@ import { authChangedEvent, getCurrentUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
 import { accessLevelChangedEvent, canAccessLesson, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
+import { getDefaultLearningProgress, getLearningProgress, learningProgressChangedEvent, type LearningProgress } from "@/lib/learningProgress";
 import type { CourseLevel } from "@/types/course";
 
 const courseLevelOrder = ["A0", "A1", "A2", "B1"] as const;
@@ -27,10 +28,13 @@ const levelSummaries = {
     note: { zh: "按真实生活任务组织：预约、表格、信件、电话、工作、住房、交通。", en: "Practical Dutch for appointments, forms, letters, calls, work, housing, and travel." },
   },
   B1: {
-    title: { zh: "B1 工作学习任务", en: "B1 Work & Study Tasks" },
-    note: { zh: "工作、mbo 学习、官方文字、投诉、观点表达和综合输出。", en: "Work, mbo study, official texts, complaints, opinions, and integrated output." },
+    title: { zh: "B1 独立任务表达", en: "B1 Independent Task Dutch" },
+    note: { zh: "按公开 B1 教材主题练自我表达、社区、钱、工作、opleiding、媒体、观点、展示和正式文字。", en: "Public B1 textbook themes: self-expression, neighborhood, money, work, education, media, opinions, presentations, and formal texts." },
   },
 } as const;
+
+const lessonIdForProgress = (progress: LearningProgress) =>
+  `${progress.currentLevel.toLowerCase()}-${String(progress.currentDay).padStart(2, "0")}`;
 
 export default function DashboardPage() {
   const { t, language } = useLanguage();
@@ -38,7 +42,8 @@ export default function DashboardPage() {
   const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
-  const currentLesson = lessons.find((lesson) => lesson.id === firstCourseLessonId) ?? lessons[0];
+  const [learningProgress, setLearningProgress] = useState<LearningProgress>(() => getDefaultLearningProgress());
+  const currentLesson = lessons.find((lesson) => lesson.id === lessonIdForProgress(learningProgress)) ?? lessons.find((lesson) => lesson.id === firstCourseLessonId) ?? lessons[0];
   const nextLesson = currentLesson.nextLessonId ? lessons.find((lesson) => lesson.id === currentLesson.nextLessonId) : undefined;
   const lessonsByLevel = useMemo(
     () =>
@@ -71,7 +76,6 @@ export default function DashboardPage() {
         : language === "zh"
           ? "需解锁"
           : "LOCKED";
-
   useEffect(() => {
     setCurrentAccessLevel(getUnlockedLevels());
     try {
@@ -91,17 +95,23 @@ export default function DashboardPage() {
         if (!cancelled) setSignedIn(Boolean(user));
       });
     };
+    const syncProgress = () => setLearningProgress(getLearningProgress());
     syncUser();
     syncAccess();
+    syncProgress();
     window.addEventListener(accessLevelChangedEvent, syncAccess);
     window.addEventListener(authChangedEvent, syncUser);
+    window.addEventListener(learningProgressChangedEvent, syncProgress);
     window.addEventListener("storage", syncAccess);
     window.addEventListener("storage", syncUser);
+    window.addEventListener("storage", syncProgress);
     return () => {
       window.removeEventListener(accessLevelChangedEvent, syncAccess);
       window.removeEventListener(authChangedEvent, syncUser);
+      window.removeEventListener(learningProgressChangedEvent, syncProgress);
       window.removeEventListener("storage", syncAccess);
       window.removeEventListener("storage", syncUser);
+      window.removeEventListener("storage", syncProgress);
       cancelled = true;
     };
   }, []);
