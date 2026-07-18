@@ -9,11 +9,13 @@ import { authChangedEvent, getCurrentUser } from "@/lib/auth";
 import { getBaseCourseLessons, getBaseDayPacks, getBaseWords, getEffectiveDayPacks, getEffectiveWordBubble, getEffectiveWords, type EffectiveWordBubble } from "@/lib/contentStore";
 import { verbUsageFor } from "@/lib/dutchVerbForms";
 import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
-import { isBadGenericTargetTemplate, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
+import { isBadGenericTargetTemplate, isIncompletePhraseChunk, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
+import { infinitiveForWord } from "@/lib/exampleTemplates";
 import { useLanguage } from "@/lib/i18n";
 import { fetchServerLearnedWords, readLearnedWords, syncLearnedWordToServer, writeLearnedWords } from "@/lib/learnerProgress";
 import { getDefaultLearningProgress, getLearningProgress, learningProgressChangedEvent, markStepComplete, setLearningRouteContext, updateLearningProgress, type LearningProgress } from "@/lib/learningProgress";
 import { memoryPathFor, shouldShowPluralInWordHeader, stepLabelsForStrategy, wordTypeFor } from "@/lib/memoryPath";
+import { shouldUseGeneratedMemoryPath } from "@/lib/memoryPathQualityGate";
 import { memoryAssociationsFor, type WordAssociation } from "@/lib/wordAssociations";
 import type { CourseLevel, LocalizedText } from "@/types/course";
 import type { DailyWordItem, DailyWordPack, WordItem } from "@/types/vocabulary";
@@ -97,7 +99,22 @@ const levelDailyValue = (level: CourseLevel, language: "zh" | "en", plan: (typeo
   return copy[level][language];
 };
 
-const packWordsFor = (pack: DailyWordPack) => [...pack.newWords, ...pack.reviewWords, ...pack.recognitionWords];
+const dailyVerbBaseKey = (word: DailyWordItem) => {
+  const infinitive = !word.article && !word.dutch.includes(" ") ? infinitiveForWord(word.dutch) : undefined;
+  return infinitive ?? word.dutch.toLowerCase();
+};
+
+const packRoleRank: Record<DailyWordItem["learningRole"], number> = { new: 3, review: 2, recognition: 1 };
+
+const packWordsFor = (pack: DailyWordPack) => {
+  const byKey = new Map<string, DailyWordItem>();
+  [...pack.newWords, ...pack.reviewWords, ...pack.recognitionWords].forEach((word) => {
+    const key = dailyVerbBaseKey(word);
+    const existing = byKey.get(key);
+    if (!existing || packRoleRank[word.learningRole] > packRoleRank[existing.learningRole]) byKey.set(key, word);
+  });
+  return Array.from(byKey.values());
+};
 
 const initialPacks = getBaseDayPacks();
 const initialWords = getBaseWords();
@@ -430,26 +447,25 @@ function centerBubbleWordClass(word: string) {
   const compactLength = word.replace(/[\s-]/g, "").length;
   const isPhrase = /\s/.test(word.trim());
   if (isPhrase) {
-    if (compactLength <= 12) return "text-2xl leading-7 sm:text-3xl sm:leading-8";
-    if (compactLength <= 18) return "text-xl leading-6 sm:text-2xl sm:leading-7";
-    return "text-base leading-5 sm:text-xl sm:leading-6";
+    if (compactLength <= 10) return "text-xl leading-6 sm:text-2xl sm:leading-7";
+    if (compactLength <= 16) return "text-base leading-5 sm:text-xl sm:leading-6";
+    return "text-sm leading-4 sm:text-base sm:leading-5";
   }
   if (compactLength <= 7) return "text-3xl leading-8 sm:text-4xl sm:leading-9";
-  if (compactLength <= 9) return "text-2xl leading-7 sm:text-3xl sm:leading-8";
-  if (compactLength <= 11) return "text-[20px] leading-6 sm:text-[26px] sm:leading-7";
-  if (compactLength <= 13) return "text-[16px] leading-5 sm:text-[22px] sm:leading-6";
-  if (compactLength <= 16) return "text-[13px] leading-4 sm:text-[18px] sm:leading-5";
-  if (compactLength <= 20) return "text-[10px] leading-4 sm:text-[15px] sm:leading-4";
-  return "text-[8px] leading-3 sm:text-[12px] sm:leading-4";
+  if (compactLength <= 9) return "text-[22px] leading-6 sm:text-[30px] sm:leading-8";
+  if (compactLength <= 11) return "text-[20px] leading-6 sm:text-[25px] sm:leading-7";
+  if (compactLength <= 13) return "text-[17px] leading-5 sm:text-[21px] sm:leading-6";
+  if (compactLength <= 16) return "text-sm leading-4 sm:text-lg sm:leading-5";
+  if (compactLength <= 20) return "text-[11px] leading-4 sm:text-sm sm:leading-4";
+  return "text-[10px] leading-3 sm:text-xs sm:leading-4";
 }
 
 function centerBubbleWordWrapClass(word: string) {
   const compactLength = word.replace(/[\s-]/g, "").length;
   const isPhrase = /\s/.test(word.trim());
-  if (isPhrase) return "max-w-[7.75rem] whitespace-normal break-normal sm:max-w-[9.25rem]";
-  if (compactLength <= 11) return "max-w-[8rem] whitespace-nowrap sm:max-w-[9.75rem]";
-  if (compactLength <= 16) return "max-w-[8.25rem] whitespace-nowrap sm:max-w-[10rem]";
-  return "max-w-[8.5rem] whitespace-nowrap sm:max-w-[10.5rem]";
+  if (isPhrase) return "max-w-[7.25rem] whitespace-normal break-words [overflow-wrap:anywhere] sm:max-w-[8.75rem]";
+  if (compactLength <= 20) return "max-w-[calc(100%-1rem)] whitespace-nowrap";
+  return "max-w-[7rem] whitespace-normal break-words [overflow-wrap:anywhere] sm:max-w-[8.5rem]";
 }
 
 function outerBubbleWordClass(word: string) {
@@ -523,10 +539,10 @@ function MemoryLinkConstellation({
         })}
       </svg>
 
-      <div data-testid="memory-center-bubble" className="absolute left-1/2 top-[50%] z-10 grid size-36 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-ink text-center text-white shadow-[0_24px_70px_rgba(13,43,83,0.24)] ring-[10px] ring-white/90 sm:size-44 sm:ring-[12px]">
+      <div data-testid="memory-center-bubble" className="absolute left-1/2 top-[50%] z-10 grid size-40 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-ink text-center text-white shadow-[0_24px_70px_rgba(13,43,83,0.24)] ring-[10px] ring-white/90 sm:size-48 sm:ring-[12px]">
         <div className="w-full px-2">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-peach">{language === "zh" ? "当前词" : "Center"}</p>
-          <p data-testid="memory-center-word" className={`mx-auto mt-1 overflow-hidden font-black ${centerWordWrapClass} ${centerWordClass}`}>
+          <p data-testid="memory-center-word" className={`mx-auto mt-1 overflow-visible font-black ${centerWordWrapClass} ${centerWordClass}`}>
             {centerWord}
           </p>
         </div>
@@ -615,8 +631,60 @@ const possessivePronouns = new Set(["mijn", "jouw", "uw", "zijn", "haar", "ons",
 const articleWords = new Set(["de", "het", "een"]);
 const questionWords = new Set(["wie", "wat", "waar", "wanneer", "hoe", "hoeveel", "waarom"]);
 
+const multiUseWordKindNotes: Record<string, { zh: string; en: string }> = {
+  zijn: {
+    zh: "可作动词“是/在”，也可作物主词“他的/它的”；先看它后面接什么。",
+    en: "Can be the verb to be or the possessive his/its; check what follows it.",
+  },
+  haar: {
+    zh: "het haar 是“头发”；haar + 名词是“她的”；单独作代词可指“她”。",
+    en: "het haar means hair; haar + noun means her; alone it can mean her.",
+  },
+  het: {
+    zh: "名词前是 het-词冠词；动词后常是“它/这件事”。",
+    en: "Before a noun it is an article; after a verb it often means it/the matter.",
+  },
+  je: {
+    zh: "je 可当“你/你的”；在句首、动词后、名词前意思不同。",
+    en: "je can mean you or your; sentence position decides the job.",
+  },
+  u: {
+    zh: "u 是礼貌的“您”，主语和宾语同形；名词前的“您的”用 uw。",
+    en: "u is polite you as subject or object; before a noun, your is uw.",
+  },
+  zij: {
+    zh: "zij 可指“她”或重读的“他们/她们”；看后面动词单复数。",
+    en: "zij can mean she or stressed they; check the verb form.",
+  },
+  ze: {
+    zh: "ze 是弱读高频词，可指她/他们/她们；看动词和位置。",
+    en: "ze is a common reduced pronoun: she/they/them; check verb and position.",
+  },
+  ons: {
+    zh: "ons 可作“我们”宾语，也可在 het-名词前作“我们的”。",
+    en: "ons can be object us, or our before het-nouns.",
+  },
+  jullie: {
+    zh: "jullie 可作“你们”，也可在名词前作“你们的”。",
+    en: "jullie can mean you plural, and before a noun it can mean your plural.",
+  },
+  er: {
+    zh: "er 常表示“有/存在”或“在那里”；不要只按英语 there 硬翻。",
+    en: "er often marks existence or there; do not force one English translation.",
+  },
+};
+
 function wordKindFor(word: WordItem, language: "zh" | "en", verbUsage?: ReturnType<typeof verbUsageFor>) {
   const lower = word.dutch.toLowerCase();
+
+  const multiUseNote = multiUseWordKindNotes[lower];
+  if (multiUseNote) {
+    return {
+      label: language === "zh" ? "多义词" : "Multiple Uses",
+      tone: "bg-ink text-white ring-ink",
+      note: language === "zh" ? multiUseNote.zh : multiUseNote.en,
+    };
+  }
 
   if (subjectPronouns.has(lower)) {
     return {
@@ -667,12 +735,13 @@ function wordKindFor(word: WordItem, language: "zh" | "en", verbUsage?: ReturnTy
   }
 
   if (type === "noun") {
+    const articleChunk = word.article ? `${word.article} ${word.dutch}` : word.dutch;
     return {
       label: language === "zh" ? "名词" : "Noun",
       tone: "bg-peach text-pop ring-orange-100",
       note: language === "zh"
-        ? `${word.article ? `先记 ${word.article} ${word.dutch}` : `先记 ${word.dutch}`}，再看它最常出现在哪些短语里。`
-        : `${word.article ? `Learn ${word.article} ${word.dutch}` : `Learn ${word.dutch}`} first, then check its natural phrase chunks.`,
+        ? `冠词一起读：${articleChunk}。再配一个自然短语。`
+        : `Read it with its article: ${articleChunk}. Then add one natural phrase.`,
     };
   }
 
@@ -747,11 +816,27 @@ function strategyBadgeLabel(strategy: string, wordType: string, language: "zh" |
   if (strategy === "fixed-expression") return language === "zh" ? "固定表达" : "Fixed Expression";
   if (strategy === "meaning-contrast") return language === "zh" ? "词义对比" : "Meaning Contrast";
   if (strategy === "word-formation") return language === "zh" ? "词形联想" : "Word Formation";
-  if (strategy === "phrase-based") return language === "zh" ? "联想词块" : "Hooked Phrase";
-  if (strategy === "sentence-based") return language === "zh" ? "句子记忆" : "Sentence Based";
+  if (strategy === "phrase-based" && wordType === "verb") return language === "zh" ? "动作+物体" : "Action + Object";
+  if (strategy === "phrase-based" && wordType === "phrase") return language === "zh" ? "固定表达" : "Fixed Expression";
+  if (strategy === "phrase-based") return language === "zh" ? "常用搭配" : "Useful Chunk";
+  if (strategy === "sentence-based" && wordType === "noun") return language === "zh" ? "用法落点" : "Usage Anchor";
+  if (strategy === "sentence-based" && wordType === "verb") return language === "zh" ? "用法落点" : "Usage Anchor";
+  if (strategy === "sentence-based") return language === "zh" ? "记忆钩子" : "Memory Hook";
   if (strategy === "category-rule") return language === "zh" ? "类别规则" : "Category Rule";
   return language === "zh" ? "场景联想" : "Scene Hook";
 }
+
+const forceGeneratedMemoryPathWords = new Set([
+  "kaart",
+  "meisje",
+  "naamkaartje",
+  "prijskaartje",
+  "kaartje",
+  "bonnetje",
+  "vriend",
+  "vriendin",
+  "uit",
+]);
 
 function normalizeDutchLine(line: string) {
   return line.trim().toLowerCase().replace(/[.!?]+$/g, "");
@@ -792,32 +877,32 @@ function WordLinkContent() {
   const [extensionPanel, setExtensionPanel] = useState<WordAssociation | null>(null);
   const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
   const [signedIn, setSignedIn] = useState(false);
+  const [accessReady, setAccessReady] = useState(false);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
 
   useEffect(() => {
     let cancelled = false;
-    const syncAccess = () => {
-      setCurrentAccessLevel(getUnlockedLevels());
-      void getEntitledUnlockedLevels().then((level) => {
-        if (!cancelled) setCurrentAccessLevel(level);
+    const syncAuthAndAccess = () => {
+      setAccessReady(false);
+      void getCurrentUser().then(async (user) => {
+        if (cancelled) return;
+        setSignedIn(Boolean(user));
+        setCurrentAccessLevel(getUnlockedLevels());
+        const level = await getEntitledUnlockedLevels();
+        if (!cancelled) {
+          setCurrentAccessLevel(level);
+          setAccessReady(true);
+        }
       });
     };
-    const syncUser = () => {
-      void getCurrentUser().then((user) => {
-        if (!cancelled) setSignedIn(Boolean(user));
-      });
-    };
-    syncAccess();
-    syncUser();
-    window.addEventListener(accessLevelChangedEvent, syncAccess);
-    window.addEventListener(authChangedEvent, syncUser);
-    window.addEventListener("storage", syncAccess);
-    window.addEventListener("storage", syncUser);
+    syncAuthAndAccess();
+    window.addEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+    window.addEventListener(authChangedEvent, syncAuthAndAccess);
+    window.addEventListener("storage", syncAuthAndAccess);
     return () => {
-      window.removeEventListener(accessLevelChangedEvent, syncAccess);
-      window.removeEventListener(authChangedEvent, syncUser);
-      window.removeEventListener("storage", syncAccess);
-      window.removeEventListener("storage", syncUser);
+      window.removeEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+      window.removeEventListener(authChangedEvent, syncAuthAndAccess);
+      window.removeEventListener("storage", syncAuthAndAccess);
       cancelled = true;
     };
   }, []);
@@ -873,6 +958,7 @@ function WordLinkContent() {
     setContentReady(true);
 
     setDebugContent(debugContentParam === "true");
+    if (!accessReady) return;
     const requestedLevel = courseLevels.find((level) => level === levelParam);
     const requestedDay = Number(dayParam);
     const requestedPack = requestedLevel
@@ -886,6 +972,7 @@ function WordLinkContent() {
         setUpgradeLevel(requestedPack.level);
         return;
       }
+      setUpgradeLevel(undefined);
       setActivePackId(requestedPack.id);
       setSelectedId(packWordsFor(requestedPack)[0]?.wordId ?? initialFirstWordId);
       return;
@@ -915,10 +1002,11 @@ function WordLinkContent() {
         setUpgradeLevel(pack.level);
         return;
       }
+      setUpgradeLevel(undefined);
       setActivePackId(pack.id);
     }
     setSelectedId(target?.id ?? dailyTarget?.wordId ?? initialFirstWordId);
-  }, [accessLevel, dayParam, debugContentParam, levelParam, signedIn, wordParam]);
+  }, [accessLevel, accessReady, dayParam, debugContentParam, levelParam, signedIn, wordParam]);
 
   const firstPack = effectivePacks[0] ?? initialFirstPack;
   const activePack = effectivePacks.find((pack) => pack.id === activePackId) ?? firstPack;
@@ -938,6 +1026,10 @@ function WordLinkContent() {
     });
   }, [activePack.dayNumber, activePack.level]);
   const packWords = packWordsFor(activePack);
+  const packRoleCounts = packWords.reduce(
+    (counts, word) => ({ ...counts, [word.learningRole]: counts[word.learningRole] + 1 }),
+    { new: 0, review: 0, recognition: 0 } as Record<DailyWordItem["learningRole"], number>,
+  );
   const selectedDailyInPack = packWords.find((word) => word.wordId === selectedId || word.dutch === selectedId);
   const selectedFromState = effectiveWords.find((word) => word.id === selectedId) ?? effectiveWords.find((word) => word.dutch === selectedId);
   const selected = selectedFromState ?? wordSourceFor(selectedDailyInPack ?? packWords[0], effectiveWords);
@@ -960,13 +1052,25 @@ function WordLinkContent() {
   const selectedIndex = packWords.findIndex((word) => word.wordId === selectedDailyInPack?.wordId);
   const progress = getPackProgress(activePack, learnedWords);
   const selectedWordType = wordTypeFor(selected);
-  const memoryPath = useMemo(
-    () => selectedBubble?.memoryPath ?? memoryPathFor(selected, {
+  const generatedMemoryPath = useMemo(
+    () => memoryPathFor(selected, {
       allWords: effectiveWords,
       phraseChunks: activePack.phraseChunks,
       examples: selectedBubble?.exampleSentences,
     }),
-    [activePack.phraseChunks, effectiveWords, selected, selectedBubble?.exampleSentences, selectedBubble?.memoryPath],
+    [activePack.phraseChunks, effectiveWords, selected, selectedBubble?.exampleSentences],
+  );
+  const memoryPath = useMemo(
+    () => {
+      if (generatedMemoryPath.wordType === "number") return generatedMemoryPath;
+      if (forceGeneratedMemoryPathWords.has(selected.dutch.toLowerCase())) return generatedMemoryPath;
+      const currentMemoryPath = selectedBubble?.memoryPath;
+      if (!currentMemoryPath) return generatedMemoryPath;
+      return shouldUseGeneratedMemoryPath(currentMemoryPath, generatedMemoryPath)
+        ? generatedMemoryPath
+        : currentMemoryPath;
+    },
+    [generatedMemoryPath, selected.dutch, selectedBubble?.memoryPath],
   );
   const selectedVerb = useMemo(() => verbUsageFor(selected), [selected]);
   const selectedSentenceMatchesWord = (dutch: string) => {
@@ -1007,6 +1111,7 @@ function WordLinkContent() {
     const text = dutch.trim();
     if (!isLearnerVisibleText(text) || !selectedSentenceMatchesWord(text)) return false;
     if (/[.!?]$/.test(text)) return false;
+    if (isIncompletePhraseChunk(text)) return false;
     return !/^(ik|jij|je|u|hij|zij|ze|wij|we|jullie|dat|dit)\b/i.test(text);
   };
   const isNumberMemoryPath = memoryPath.wordType === "number";
@@ -1037,6 +1142,13 @@ function WordLinkContent() {
       }
     : undefined;
   const firstOutputSentence = visibleMemoryOutputSentences[0] ?? fallbackOutputSentence;
+  const todayPhraseChunkTexts = (visiblePhraseChunkDetails.length
+    ? visiblePhraseChunkDetails.map((chunk) => chunk.dutch)
+    : visibleMemoryPhraseChunks.map((chunk) => chunk.dutch)
+  )
+    .filter((chunk) => !isSameDutchLine(chunk, firstOutputSentence?.dutch))
+    .filter((chunk, index, chunks) => chunks.findIndex((item) => normalizeDutchLine(item) === normalizeDutchLine(chunk)) === index)
+    .slice(0, 4);
   const visibleOutputPatternSentences = [
     ...visibleMemoryOutputSentences,
     ...visibleExampleSentences.map((example) => ({
@@ -1044,9 +1156,12 @@ function WordLinkContent() {
       meaningZh: example.meaning.zh,
       meaningEn: example.meaning.en,
     })),
-  ].filter((sentence, index, sentences) =>
-    sentences.findIndex((item) => isSameDutchLine(item.dutch, sentence.dutch)) === index,
-  );
+  ]
+    .filter((sentence) => !firstOutputSentence || !isSameDutchLine(sentence.dutch, firstOutputSentence.dutch))
+    .filter((sentence, index, sentences) =>
+      sentences.findIndex((item) => isSameDutchLine(item.dutch, sentence.dutch)) === index,
+    )
+    .slice(0, 3);
   const hasOutputSentence = Boolean(firstOutputSentence);
   const engineMemorySteps = memoryPath.steps?.length
     ? memoryPath.steps.map((step) => ({
@@ -1084,7 +1199,6 @@ function WordLinkContent() {
         },
       ]);
   const memorySteps = rawMemorySteps.filter((step) => isLearnerVisibleText(step.value));
-
   const relatedWords = useMemo(() => memoryAssociationsFor(selected, effectiveWords, 8), [selected, effectiveWords]);
   const selectedWordKind = wordKindFor(selected, language, selectedVerb);
   const levelLocked = (level: CourseLevel) => !canAccessLevel(level, accessLevel, signedIn);
@@ -1107,7 +1221,8 @@ function WordLinkContent() {
     if (!isDayComplete) return;
     const currentProgress = getLearningProgress();
     if (activePack.level === "A0" && activePack.dayNumber === 1 && !currentProgress.starterWordsCompleted) {
-      markStepComplete(activePack.level, activePack.dayNumber, "starter-words");
+      markStepComplete(activePack.level, activePack.dayNumber, "starter-words", { advanceCurrent: false });
+      markStepComplete(activePack.level, activePack.dayNumber, "word-bubbles", { advanceCurrent: false });
       updateLearningProgress({
         starterWordsCompleted: true,
         currentLevel: "A0",
@@ -1269,8 +1384,8 @@ function WordLinkContent() {
             </h2>
             <p className="mt-2 font-bold text-ocean/65">
               {language === "zh"
-                ? `今日新词 ${activePack.newWords.length} · 累计复习 ${activePack.reviewWords.length} · 识别词 ${activePack.recognitionWords.length} · 今日短语块 ${activePack.phraseChunks.length} · 今日句型 ${activePack.sentencePatterns.length}`
-                : `${activePack.newWords.length} new · ${activePack.reviewWords.length} review · ${activePack.recognitionWords.length} recognition · ${activePack.phraseChunks.length} chunks · ${activePack.sentencePatterns.length} patterns`}
+                ? `今日新词 ${packRoleCounts.new} · 累计复习 ${packRoleCounts.review} · 识别词 ${packRoleCounts.recognition} · 今日短语块 ${activePack.phraseChunks.length} · 今日句型 ${activePack.sentencePatterns.length}`
+                : `${packRoleCounts.new} new · ${packRoleCounts.review} review · ${packRoleCounts.recognition} recognition · ${activePack.phraseChunks.length} chunks · ${activePack.sentencePatterns.length} patterns`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1428,8 +1543,8 @@ function WordLinkContent() {
                       {selected.meaning.en}
                     </h3>
                   </div>
-                  <div className="shrink-0 whitespace-nowrap rounded-2xl bg-white px-4 py-3 text-sm font-black leading-6 text-ocean shadow-sm">
-                    {strategyBadgeLabel(memoryPath.strategy, memoryPath.wordType, language)}
+                  <div className="min-w-20 shrink-0 whitespace-nowrap rounded-2xl bg-white px-4 py-3 text-center text-sm font-black leading-6 text-ocean shadow-sm">
+                    {language === "zh" ? memoryPath.titleZh : memoryPath.titleEn}
                   </div>
                 </div>
 
@@ -1445,7 +1560,7 @@ function WordLinkContent() {
                       <div key={`${step.label}-${index}`} className="flex gap-3 rounded-2xl bg-white/85 p-4 shadow-sm">
                         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-peach text-sm font-black text-pop">{index + 1}</span>
                         <div className="min-w-0">
-                          <p className="text-xs font-black tracking-[0.08em] text-pop">{step.label}</p>
+                          <p className="whitespace-nowrap text-xs font-black tracking-[0.08em] text-pop">{step.label}</p>
                           <p className="mt-1 break-words text-base font-bold leading-7 text-ink">{step.value}</p>
                         </div>
                       </div>
@@ -1475,14 +1590,11 @@ function WordLinkContent() {
               <p className="mt-4 text-2xl font-black leading-9">{firstOutputSentence.dutch}</p>
               <p className="mt-2 font-bold leading-7 text-white/70">{language === "zh" ? firstOutputSentence.meaningZh : firstOutputSentence.meaningEn}</p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {(visiblePhraseChunkDetails.length || visibleMemoryPhraseChunks.length) ? (
+                {todayPhraseChunkTexts.length ? (
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-sm font-black text-orange-200">{language === "zh" ? "今日短语块" : "Phrase Chunks"}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {(visiblePhraseChunkDetails.length
-                        ? visiblePhraseChunkDetails.map((chunk) => chunk.dutch)
-                        : visibleMemoryPhraseChunks.map((chunk) => chunk.dutch)
-                      ).slice(0, 4).map((chunk) => (
+                      {todayPhraseChunkTexts.map((chunk) => (
                         <span key={chunk} className="rounded-full bg-white px-3 py-1 text-sm font-black text-ink">
                           {chunk}
                         </span>
@@ -1490,14 +1602,16 @@ function WordLinkContent() {
                     </div>
                   </div>
                 ) : null}
-                <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-sm font-black text-orange-200">{language === "zh" ? "相关句型" : "Related Patterns"}</p>
-                  <div key={`${selected.id}-patterns`} className="mt-3 space-y-2">
-                    {visibleOutputPatternSentences.slice(0, 3).map((pattern) => (
-                      <p key={pattern.dutch} className="font-black leading-6 text-white">{pattern.dutch}</p>
-                    ))}
+                {visibleOutputPatternSentences.length ? (
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-sm font-black text-orange-200">{language === "zh" ? "相关句型" : "Related Patterns"}</p>
+                    <div key={`${selected.id}-patterns`} className="mt-3 space-y-2">
+                      {visibleOutputPatternSentences.map((pattern) => (
+                        <p key={pattern.dutch} className="font-black leading-6 text-white">{pattern.dutch}</p>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             </div>
             ) : null}
@@ -1625,67 +1739,67 @@ function WordLinkContent() {
             ) : null}
           </section>
 
-          <section className="rounded-[30px] border border-blue-100 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="grid size-9 place-items-center rounded-full bg-peach text-pop">
-                    <Sparkles size={18} />
-                  </span>
-                  <h2 className="text-2xl font-black text-ink">{language === "zh" ? "记忆关联泡泡" : "Memory Link Bubbles"}</h2>
+          {relatedWords.length ? (
+            <section className="rounded-[30px] border border-blue-100 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-9 place-items-center rounded-full bg-peach text-pop">
+                      <Sparkles size={18} />
+                    </span>
+                    <h2 className="text-2xl font-black text-ink">{language === "zh" ? "记忆关联泡泡" : "Memory Link Bubbles"}</h2>
+                  </div>
+                  <p className="mt-2 max-w-3xl font-bold leading-7 text-ocean/65">
+                    {language === "zh"
+                      ? "悬停看一句解释，点开能看的关联词；这里只放真的能帮你记住的关系。"
+                      : "Hover for a memory clue. Open linked words when they are in the course vocabulary."}
+                  </p>
                 </div>
-                <p className="mt-2 max-w-3xl font-bold leading-7 text-ocean/65">
-                  {language === "zh"
-                    ? "悬停看一句解释，点开能看的关联词；这里只放真的能帮你记住的关系。"
-                    : "Hover for a memory clue. Open linked words when they are in the course vocabulary."}
-                </p>
-              </div>
-              {relatedWords.length ? (
                 <span className="w-fit rounded-full bg-skywash px-3 py-1 text-xs font-black text-ocean">
                   {relatedWords.length} {language === "zh" ? "个关联" : "links"}
                 </span>
-              ) : null}
-            </div>
+              </div>
 
-            <div className="mt-5">
-              <MemoryLinkConstellation
-                centerWord={selected.dutch}
-                links={relatedWords}
-                language={language}
-                onSelect={(word) => {
-                  if (word.wordId) {
-                    setExtensionPanel(null);
-                    setSelectedId(word.wordId);
-                    return;
-                  }
-                  if (word.isExtensionWord ?? word.isExtensionTarget) {
-                    setExtensionPanel(word);
-                  }
-                }}
-              />
-              {extensionPanel ? (
-                <div className="mt-4 rounded-[24px] border border-blue-100 bg-slate-50 p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-black tracking-[0.14em] text-pop">
-                        {language === "zh" ? "扩展词 / 识别即可" : "Extension / Recognition"}
-                      </p>
-                      <h3 className="mt-2 text-2xl font-black text-ink">{extensionPanel.dutch}</h3>
-                      {extensionPanel.meaning?.[language] ? (
-                        <p className="mt-1 font-black text-ocean/70">{extensionPanel.meaning[language]}</p>
-                      ) : null}
+              <div className="mt-5">
+                <MemoryLinkConstellation
+                  centerWord={selected.dutch}
+                  links={relatedWords}
+                  language={language}
+                  onSelect={(word) => {
+                    if (word.wordId) {
+                      setExtensionPanel(null);
+                      setSelectedId(word.wordId);
+                      return;
+                    }
+                    if (word.isExtensionWord ?? word.isExtensionTarget) {
+                      setExtensionPanel(word);
+                    }
+                  }}
+                />
+                {extensionPanel ? (
+                  <div className="mt-4 rounded-[24px] border border-blue-100 bg-slate-50 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black tracking-[0.14em] text-pop">
+                          {language === "zh" ? "扩展词 / 识别即可" : "Extension / Recognition"}
+                        </p>
+                        <h3 className="mt-2 text-2xl font-black text-ink">{extensionPanel.dutch}</h3>
+                        {extensionPanel.meaning?.[language] ? (
+                          <p className="mt-1 font-black text-ocean/70">{extensionPanel.meaning[language]}</p>
+                        ) : null}
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ocean ring-1 ring-blue-100">
+                        {extensionPanel.kind[language]}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ocean ring-1 ring-blue-100">
-                      {extensionPanel.kind[language]}
-                    </span>
+                    <p className="mt-4 border-l-4 border-orange-300 pl-4 font-bold leading-7 text-ocean/75">
+                      {extensionPanel.reason[language]}
+                    </p>
                   </div>
-                  <p className="mt-4 border-l-4 border-orange-300 pl-4 font-bold leading-7 text-ocean/75">
-                    {extensionPanel.reason[language]}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </section>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
         </div>
       </section>

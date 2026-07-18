@@ -12,7 +12,7 @@ import { useLanguage } from "@/lib/i18n";
 import { getLearningProgress, updateLearningProgress } from "@/lib/learningProgress";
 import type { LocalizedText } from "@/types/course";
 
-type ToolId = "verbs" | "articles" | "plurals" | "order" | "adjectives" | "past";
+type ToolId = "verbs" | "articles" | "plurals" | "order" | "prepositions" | "adjectives" | "past";
 
 const lt = (zh: string, en: string): LocalizedText => ({ zh, en });
 const gt = (language: "zh" | "en", text: string) => (language === "zh" ? text : grammarEn[text] ?? text);
@@ -249,6 +249,7 @@ const tools: Array<{ id: ToolId; title: LocalizedText; body: LocalizedText; icon
   { id: "articles", title: lt("de/het 探测器", "De/Het Detective"), body: lt("名词前面常要带 de 或 het。先学线索和高频词。", "Nouns often need de or het. Learn clues and high-frequency chunks first."), icon: Search },
   { id: "plurals", title: lt("单复数生成器", "Plural Builder"), body: lt("复数不是只加 s，荷兰语常见 -en 和 -s。", "Plural is not just adding s; Dutch often uses -en and -s."), icon: BookOpenCheck },
   { id: "order", title: lt("词序训练", "Sentence Order"), body: lt("荷兰语不是中文词序。动词位置是核心。", "Dutch word order is not Chinese word order. Verb position is central."), icon: Puzzle },
+  { id: "prepositions", title: lt("介词结构", "Preposition Patterns"), body: lt("in/uit/op/naar/om 先看后面接什么。", "For in/uit/op/naar/om, first check what follows."), icon: Puzzle },
   { id: "adjectives", title: lt("形容词与顺序表达", "Adjectives & Order"), body: lt("包含形容词 -e、比较级、最高级和序数词。", "Includes adjective -e, comparatives, superlatives, and ordinals."), icon: ListOrdered },
   { id: "past", title: lt("过去表达", "Past Time"), body: lt("学会说已经做了、过去做、之前已经做了。", "Learn completed actions, past tense, and past perfect."), icon: Clock3 },
 ];
@@ -297,6 +298,15 @@ const grammarConcepts: Record<ToolId, {
     examples: ["Ik ga morgen naar school.", "Morgen ga ik naar school.", "Ik wil een afspraak maken."],
     chineseMistake: lt("中文会说“明天我去学校”，直译成 Morgen ik ga naar school 是错的。荷兰语要 Morgen ga ik naar school。", "Chinese says tomorrow I go school, but Morgen ik ga naar school is wrong. Dutch needs Morgen ga ik naar school."),
     learnerAction: lt("先找限定动词，再数它是不是第二位。", "First find the finite verb, then check whether it is in position 2."),
+  },
+  prepositions: {
+    label: lt("介词结构是什么？", "What are preposition patterns?"),
+    what: lt("荷兰语介词不能只背成一个中文。in、uit、op、naar、bij、om 这类词要先看后面接的是地点、方向、来源、时间、工具还是目的。", "Dutch prepositions cannot be memorized as one Chinese translation. For words like in, uit, op, naar, bij, and om, first check whether the phrase after it is place, direction, source, time, tool, or purpose."),
+    why: lt("单词泡泡只负责提醒你“这个词要按结构记”。真正的结构判断和练习，放在语法模块里系统做。", "Word bubbles only remind you that this word must be learned structurally. The real pattern decision and practice belong in the grammar module."),
+    formula: "preposition + phrase type → meaning",
+    examples: ["in Nederland", "uit China", "naar de huisarts", "op maandag", "om tien uur"],
+    chineseMistake: lt("中文常用一个“在/从/到”兜住很多情况，但荷兰语要选具体结构：住在荷兰是 in Nederland，去医生那里是 naar de huisarts，周一是 op maandag。", "Chinese can cover many cases with 在/从/到, but Dutch needs a specific pattern: living in the Netherlands is in Nederland, going to the doctor is naar de huisarts, and Monday is op maandag."),
+    learnerAction: lt("先问：后面是地点、方向、来源、时间、工具还是目的？再选介词。", "First ask: is the following phrase place, direction, source, time, tool, or purpose? Then choose the preposition."),
   },
   adjectives: {
     label: lt("形容词与顺序表达是什么？", "What are adjectives and order expressions?"),
@@ -657,6 +667,366 @@ const pastPractice = [
   { id: "past-5", question: "我那时已经付过账单了：Ik ___ de rekening al ___.", options: ["had / betaald", "heb / betalen", "was / betaald"], answer: "had / betaald", explanation: "“那时已经……”用过去完成式 had + betaald。" },
   { id: "past-6", question: "我已经发过邮件：Ik heb de e-mail ___.", options: ["gestuurd", "sturen", "stuurde"], answer: "gestuurd", explanation: "完成时用过去分词 gestuurd。" },
 ];
+
+const prepositionGroups = [
+  {
+    id: "in",
+    level: "A1",
+    title: lt("in：里面/范围/时间段", "in: inside / area / period"),
+    decision: lt("后面是国家、城市、空间容器或一段时间，优先检查 in。", "If the phrase is a country, city, container-like place, or time period, first check in."),
+    rule: "in + place/container/period",
+    examples: [
+      ["in Nederland", "在荷兰", "国家/城市"],
+      ["in de tas", "在包里", "容器里面"],
+      ["in maart", "在三月", "月份/时间段"],
+      ["in de ochtend", "在早上", "一天中的时间段"],
+    ],
+    mistakes: [
+      ["op Nederland", "in Nederland", "国家、城市通常用 in，不用 op。"],
+      ["naar de tas", "in de tas", "在包里是位置，不是方向。"],
+    ],
+  },
+  {
+    id: "uit",
+    level: "A1",
+    title: lt("uit：从里面出来/来自", "uit: out of / from"),
+    decision: lt("后面是来源地、出发点或从某个空间里拿出来，先看 uit。", "If the phrase is a source, origin, or something taken out of a space, first check uit."),
+    rule: "uit + source/container",
+    examples: [
+      ["uit China", "来自中国", "来源地"],
+      ["uit de trein stappen", "从火车下来", "从交通工具里出来"],
+      ["uit de tas halen", "从包里拿出来", "从容器里出来"],
+      ["uit school komen", "放学出来", "从机构/场景出来"],
+    ],
+    mistakes: [
+      ["van China", "uit China", "来自国家/城市，日常先用 uit。"],
+      ["in de trein stappen", "uit de trein stappen", "下车是从里面出来，用 uit。"],
+    ],
+  },
+  {
+    id: "op",
+    level: "A1/A2",
+    title: lt("op：表面/日子/预约场景", "op: surface / days / appointments"),
+    decision: lt("后面是表面、星期/日期、网站/页面或某些固定办事场景，先看 op。", "If the phrase is a surface, day/date, website/page, or common service setting, first check op."),
+    rule: "op + surface/day/platform",
+    examples: [
+      ["op tafel", "在桌上", "表面"],
+      ["op maandag", "在周一", "星期"],
+      ["op 5 juli", "在七月五日", "具体日期"],
+      ["op de website", "在网站上", "平台/页面"],
+    ],
+    mistakes: [
+      ["in maandag", "op maandag", "星期用 op。"],
+      ["in tafel", "op tafel", "在桌面上是 op。"],
+    ],
+  },
+  {
+    id: "naar",
+    level: "A1",
+    title: lt("naar：朝某处去/方向", "naar: to / toward"),
+    decision: lt("后面是目的地、方向或你要去见的人/机构，先看 naar。", "If the phrase is a destination, direction, or person/institution you are going to, first check naar."),
+    rule: "naar + destination/direction",
+    examples: [
+      ["naar huis", "回家/去家里", "目的地"],
+      ["naar de huisarts", "去家庭医生那里", "去某人/机构"],
+      ["naar school", "去学校", "目的地"],
+      ["naar links", "向左", "方向"],
+    ],
+    mistakes: [
+      ["in de huisarts", "naar de huisarts", "去医生那里是方向/目的地，用 naar。"],
+      ["op huis", "naar huis", "回家/去家里是 naar huis。"],
+    ],
+  },
+  {
+    id: "bij",
+    level: "A1/A2",
+    title: lt("bij：在某人/机构那里", "bij: at someone's / with an institution"),
+    decision: lt("后面是人、柜台、公司、医生或“在某人家/身边”，先看 bij。", "If the phrase is a person, counter, company, doctor, or someone's place/side, first check bij."),
+    rule: "bij + person/place-as-host",
+    examples: [
+      ["bij de huisarts", "在家庭医生那里", "在某机构/专业人士那里"],
+      ["bij de balie", "在柜台", "服务点"],
+      ["bij mij thuis", "在我家", "某人家"],
+      ["bij Albert Heijn", "在 AH", "公司/门店"],
+    ],
+    mistakes: [
+      ["in de huisarts", "bij de huisarts", "人在医生那里，不是在医生里面。"],
+      ["op mij thuis", "bij mij thuis", "在某人家常用 bij。"],
+    ],
+  },
+  {
+    id: "met",
+    level: "A1",
+    title: lt("met：和/用某工具", "met: with / by means of"),
+    decision: lt("后面是一起的人、交通工具、付款方式或手段，先看 met。", "If the phrase is a companion, transport, payment method, or tool/means, first check met."),
+    rule: "met + companion/tool/means",
+    examples: [
+      ["met mijn partner", "和我的伴侣", "一起的人"],
+      ["met de fiets", "骑自行车/用自行车", "交通方式"],
+      ["met pin betalen", "刷卡付款", "付款方式"],
+      ["met een formulier", "用一张表格", "工具"],
+    ],
+    mistakes: [
+      ["door de fiets", "met de fiets", "交通方式日常说 met de fiets。"],
+      ["voor pin betalen", "met pin betalen", "付款方式用 met。"],
+    ],
+  },
+  {
+    id: "voor",
+    level: "A1/A2",
+    title: lt("voor：为了/给/在前面", "voor: for / before / in front of"),
+    decision: lt("后面是受益对象、用途、理由，或表示在某物前面，先看 voor。", "If the phrase is a beneficiary, purpose, reason, or location in front of something, first check voor."),
+    rule: "voor + person/purpose/front",
+    examples: [
+      ["voor u", "给您/为您", "对象"],
+      ["voor mijn werk", "为了我的工作", "目的/理由"],
+      ["voor de afspraak", "在预约前", "时间上的前"],
+      ["voor het station", "在车站前面", "空间上的前"],
+    ],
+    mistakes: [
+      ["om u", "voor u", "给某人/为某人常用 voor。"],
+      ["bij het station", "voor het station", "强调正前方，用 voor。"],
+    ],
+  },
+  {
+    id: "om",
+    level: "A2/B1",
+    title: lt("om：钟点/目的/请求/绕着", "om: clock time / purpose / request / around"),
+    decision: lt("om 不只等于 at。先看后面：钟点、om te + 动词、请求内容，还是绕着某处。", "om is not just at. First check what follows: clock time, om te + verb, requested content, or movement around a place."),
+    rule: "om + clock time · om te + infinitive · om + requested thing",
+    examples: [
+      ["om tien uur", "在十点", "钟点"],
+      ["om Nederlands te leren", "为了学荷兰语", "目的：om te + 动词"],
+      ["om hulp vragen", "请求帮助", "请求内容"],
+      ["om de hoek", "在拐角处/绕过拐角", "围绕/转角"],
+    ],
+    mistakes: [
+      ["op tien uur", "om tien uur", "具体钟点用 om。"],
+      ["voor te helpen", "om te helpen", "标准荷兰语里目的结构用 om te。"],
+    ],
+  },
+  {
+    id: "b1",
+    level: "B1",
+    title: lt("B1 扩展：别一词一译", "B1 extension: stop one-word translation"),
+    decision: lt("B1 开始要认结构：关于、经过、直到、没有、之间、反对，都不是一个中文能解决。", "At B1, recognize structures: about, through/by, until, without, between, against cannot be solved by one Chinese word."),
+    rule: "meaning role + phrase type → preposition",
+    examples: [
+      ["over de huur praten", "谈房租", "关于"],
+      ["door de regen fietsen", "冒雨骑车/穿过雨", "经过/原因"],
+      ["tot morgen", "到明天/明天见", "直到"],
+      ["zonder afspraak", "没有预约", "没有"],
+      ["tussen twee stations", "在两个站之间", "之间"],
+      ["tegen de regels", "违反规则/反对规则", "反对/逆着"],
+    ],
+    mistakes: [
+      ["praten op de huur", "praten over de huur", "谈论某主题用 over。"],
+      ["met afspraak niet", "zonder afspraak", "没有某物用 zonder。"],
+    ],
+  },
+];
+
+const prepositionPractice = [
+  { id: "prep-1", question: "我住在荷兰：Ik woon ___ Nederland.", options: ["in", "op", "naar"], answer: "in", explanation: "国家/城市作为位置，通常用 in。" },
+  { id: "prep-2", question: "我去家庭医生那里：Ik ga ___ de huisarts.", options: ["naar", "in", "op"], answer: "naar", explanation: "去某人/机构那里，是方向/目的地，用 naar。" },
+  { id: "prep-3", question: "我周一有时间：Ik heb ___ maandag tijd.", options: ["op", "in", "om"], answer: "op", explanation: "星期用 op。" },
+  { id: "prep-4", question: "我十点来：Ik kom ___ tien uur.", options: ["om", "op", "voor"], answer: "om", explanation: "具体钟点用 om。" },
+  { id: "prep-5", question: "我刷卡付款：Ik betaal ___ pin.", options: ["met", "door", "voor"], answer: "met", explanation: "付款方式/工具用 met。" },
+  { id: "prep-6", question: "我请求帮助：Ik vraag ___ hulp.", options: ["om", "voor", "naar"], answer: "om", explanation: "om hulp vragen 是“请求帮助”的结构。" },
+];
+
+function PrepositionPatternModule({ language }: { language: "zh" | "en" }) {
+  const [activeGroupId, setActiveGroupId] = useState(prepositionGroups[0].id);
+  const [activePart, setActivePart] = useState<"map" | "mistakes" | "practice">("map");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const currentGroup = prepositionGroups.find((group) => group.id === activeGroupId) ?? prepositionGroups[0];
+
+  useEffect(() => {
+    setActivePart("map");
+  }, [activeGroupId]);
+
+  const speakDutch = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "nl-NL";
+    utterance.rate = 0.78;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  return (
+    <section className="rounded-[34px] border border-blue-100 bg-white p-6 shadow-soft sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="rounded-[28px] bg-slate-50 p-4 ring-1 ring-blue-100 lg:sticky lg:top-28 lg:self-start">
+          <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "介词目录" : "Preposition Menu"}</p>
+          <div className="mt-4 space-y-2">
+            {prepositionGroups.map((group, index) => {
+              const isActive = group.id === activeGroupId;
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => setActiveGroupId(group.id)}
+                  className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                    isActive ? "bg-ink text-white" : "bg-white text-ocean ring-1 ring-blue-100 hover:bg-skywash"
+                  }`}
+                >
+                  <span className={`text-xs font-black ${isActive ? "text-orange-200" : "text-pop"}`}>0{index + 1} · {group.level}</span>
+                  <span className="mt-1 block text-base font-black">{group.title[language]}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-5 rounded-2xl bg-peach p-4 text-sm font-black leading-6 text-ink">
+            {language === "zh"
+              ? "判断顺序：先看后面接什么，再决定介词意思。不要把一个介词硬翻成一个中文。"
+              : "Decision order: first inspect what follows, then decide the meaning. Do not memorize by the English meaning only."}
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+          <div className="rounded-[30px] bg-ink p-6 text-white">
+            <p className="text-sm font-black tracking-[0.16em] text-orange-200">{currentGroup.level} Pattern</p>
+            <h2 className="mt-3 text-4xl font-black leading-tight">{currentGroup.title[language]}</h2>
+            <p className="mt-5 text-lg font-bold leading-8 text-blue-50">{currentGroup.decision[language]}</p>
+            <div className="mt-5 rounded-[24px] bg-white p-5 text-ink">
+              <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "判断公式" : "Decision pattern"}</p>
+              <p className="mt-2 text-3xl font-black leading-tight">{currentGroup.rule}</p>
+            </div>
+          </div>
+
+          <RulePartNavigator
+            title={language === "zh" ? "介词先按三块看" : "Read prepositions in three parts"}
+            activeId={activePart}
+            onSelect={setActivePart}
+            items={[
+              {
+                id: "map",
+                label: language === "zh" ? "用法地图" : "Usage Map",
+                body: language === "zh" ? "先看这个介词后面常接什么。" : "First see what this preposition commonly attaches to.",
+              },
+              {
+                id: "mistakes",
+                label: language === "zh" ? "别这样翻" : "Avoid This",
+                body: language === "zh" ? "专门对比中文直译会错在哪里。" : "Contrast where direct translation breaks.",
+              },
+              {
+                id: "practice",
+                label: language === "zh" ? "立刻练习" : "Practice",
+                body: language === "zh" ? "用真实短句练判断，不放进记忆路径硬背。" : "Practice real short sentences, not memory-path stuffing.",
+              },
+            ]}
+          />
+
+          {activePart === "map" ? (
+            <>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {currentGroup.examples.map(([dutch, zh, role]) => (
+                  <article key={`${currentGroup.id}-${dutch}`} className="rounded-[24px] border border-blue-100 bg-white p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-black text-pop">{role}</p>
+                        <p className="mt-2 text-2xl font-black leading-8 text-ink">{dutch}</p>
+                        <p className="mt-2 font-bold text-ocean/65">{zh}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => speakDutch(dutch)}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-4 py-3 font-black text-ocean transition hover:bg-peach"
+                      >
+                        <Play size={16} />
+                        {language === "zh" ? "听" : "Play"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-[24px] bg-peach p-5">
+                <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "记忆路径该做什么" : "What the memory path should do"}</p>
+                <p className="mt-2 font-black leading-8 text-ink">
+                  {language === "zh"
+                    ? "单词泡泡只提示“这个词按结构判断”。真正的多用法、错法对比和短句训练，都在这里做。"
+                    : "The word bubble only flags that this word needs structural judgment. Multiple uses, mistake contrasts, and sentence practice happen here."}
+                </p>
+              </div>
+            </>
+          ) : null}
+
+          {activePart === "mistakes" ? (
+            <div className="mt-7 rounded-[28px] bg-slate-50 p-5 ring-1 ring-blue-100">
+              <h3 className="text-2xl font-black text-ink">{language === "zh" ? "中文直译常见坑" : "Common Direct-Translation Traps"}</h3>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {currentGroup.mistakes.map(([wrong, correct, reason]) => (
+                  <article key={`${wrong}-${correct}`} className="rounded-2xl bg-white p-4">
+                    <p className="font-black text-red-600">x {wrong}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="font-black text-emerald-700">✓ {correct}</p>
+                      <button type="button" onClick={() => speakDutch(correct)} className="rounded-full bg-skywash p-2 text-ocean hover:bg-peach" aria-label={`Play ${correct}`}>
+                        <Play size={13} />
+                      </button>
+                    </div>
+                    <p className="mt-2 text-sm font-bold leading-6 text-ocean/70">{reason}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {activePart === "practice" ? (
+            <div className="mt-7 rounded-[28px] border border-blue-100 bg-white p-5">
+              <h3 className="text-2xl font-black text-ink">{language === "zh" ? "立刻练习" : "Practice Now"}</h3>
+              <div className="mt-4 grid gap-4">
+                {prepositionPractice.map((question) => {
+                  const selected = answers[question.id];
+                  const isCorrect = selected === question.answer;
+                  return (
+                    <article key={question.id} className="rounded-[22px] bg-slate-50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-lg font-black leading-7 text-ink">{question.question}</p>
+                        <button
+                          type="button"
+                          onClick={() => speakDutch(question.question.replace("___", question.answer).replace(/^.*：/, ""))}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-black text-ocean ring-1 ring-blue-100 hover:bg-peach"
+                        >
+                          <Play size={14} />
+                          {language === "zh" ? "听答案句" : "Play answer"}
+                        </button>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                        {question.options.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
+                            className={`rounded-2xl px-4 py-3 text-left font-black ring-1 ${
+                              selected === option
+                                ? isCorrect
+                                  ? "bg-mint text-ocean ring-emerald-100"
+                                  : "bg-peach text-ocean ring-orange-100"
+                                : "bg-white text-ocean ring-blue-100 hover:bg-skywash"
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                      {selected ? (
+                        <p className={`mt-3 rounded-2xl p-3 text-sm font-black leading-6 ${isCorrect ? "bg-mint text-ocean" : "bg-peach text-ocean"}`}>
+                          {isCorrect ? (language === "zh" ? "对了。" : "Correct.") : `${language === "zh" ? "答案" : "Answer"}: ${question.answer}`} {question.explanation}
+                        </p>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function PresentTenseModule({ language }: { language: "zh" | "en" }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -1652,7 +2022,7 @@ export default function RulesPage() {
     const tool = params.get("tool");
     const mode = params.get("mode");
     const focusParam = params.get("focus");
-    if (tool === "verbs" || tool === "articles" || tool === "plurals" || tool === "order" || tool === "adjectives" || tool === "past") {
+    if (tool === "verbs" || tool === "articles" || tool === "plurals" || tool === "order" || tool === "prepositions" || tool === "adjectives" || tool === "past") {
       setActiveTool(tool);
     } else if (mode === "foundation") {
       setActiveTool("verbs");
@@ -1684,7 +2054,7 @@ export default function RulesPage() {
         </p>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeTool === tool.id;
@@ -1705,7 +2075,7 @@ export default function RulesPage() {
         })}
       </section>
 
-      {activeTool !== "verbs" && activeTool !== "order" && activeTool !== "adjectives" && activeTool !== "past" ? (
+      {activeTool !== "verbs" && activeTool !== "order" && activeTool !== "prepositions" && activeTool !== "adjectives" && activeTool !== "past" ? (
         <section className="mt-7 rounded-[34px] border border-blue-100 bg-white p-6 shadow-soft sm:p-8">
           <div className="grid gap-7 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
@@ -1740,6 +2110,7 @@ export default function RulesPage() {
         {activeTool === "articles" ? <ArticleDetector nouns={nounEntries} focusSingular={focus} /> : null}
         {activeTool === "plurals" ? <PluralTrainer patterns={pluralEntries} /> : null}
         {activeTool === "order" ? <SentenceOrderTrainer patterns={sentencePatterns} /> : null}
+        {activeTool === "prepositions" ? <PrepositionPatternModule language={language} /> : null}
         {activeTool === "adjectives" ? <ComparisonOrdinalModule language={language} /> : null}
         {activeTool === "past" ? <PastTenseModule language={language} /> : null}
       </section>

@@ -29,7 +29,7 @@ export const vocabularyLevelPlans: VocabularyLevelPlan[] = [
     targetWordRange: "600-700 active words",
     currentWordCount: 650,
     dailyWordCount: "10 active words + review",
-    totalDays: 65,
+    totalDays: 50,
     description: lt("A1 是生活基础层：覆盖个人、家庭、时间日期、数字、食物饮料、超市、基础交通、天气、住处、学校工作、简单健康、方向、爱好、基础动词、形容词和常用功能词。", "A1 is the daily-life foundation: personal details, family, time/dates, numbers, food/drinks, supermarket, basic transport, weather, home, school/work, simple health, directions, hobbies, basic verbs, adjectives, and common function words."),
   },
   {
@@ -62,8 +62,60 @@ const appearsInLevelsFor = (level: CourseLevel) => {
   return ["B1"] as const;
 };
 
-const pluralize = (word: string) => {
+const pluralize = (word: string): string | undefined => {
   const verified: Record<string, string> = {
+    app: "apps",
+    "DigiD-app": "DigiD-apps",
+    email: "emails",
+    "e-mail": "e-mails",
+    "e-mailadres": "e-mailadressen",
+    bevestigingsmail: "bevestigingsmails",
+    voicemail: "voicemails",
+    "sms-controle": "sms-controles",
+    account: "accounts",
+    website: "websites",
+    laptop: "laptops",
+    centrum: "centra",
+    restaurant: "restaurants",
+    café: "cafés",
+    museum: "musea",
+    moeder: "moeders",
+    vader: "vaders",
+    broer: "broers",
+    zus: "zussen",
+    zoon: "zonen",
+    dochter: "dochters",
+    ouders: "ouders",
+    man: "mannen",
+    vrouw: "vrouwen",
+    mens: "mensen",
+    vloer: "vloeren",
+    vriend: "vrienden",
+    vriendin: "vriendinnen",
+    persoon: "personen",
+    student: "studenten",
+    partner: "partners",
+    opa: "opa's",
+    oma: "oma's",
+    baby: "baby's",
+    jongen: "jongens",
+    meisje: "meisjes",
+    buurman: "buurmannen",
+    buurvrouw: "buurvrouwen",
+    familie: "families",
+    gezin: "gezinnen",
+    ijs: "ijsjes",
+    bril: "brillen",
+    kaas: "kazen",
+    prijs: "prijzen",
+    huurprijs: "huurprijzen",
+    wc: "wc's",
+    gram: "grammen",
+    bewijs: "bewijzen",
+    vervoerbewijs: "vervoerbewijzen",
+    garantiebewijs: "garantiebewijzen",
+    rijbewijs: "rijbewijzen",
+    identiteitsbewijs: "identiteitsbewijzen",
     huis: "huizen",
     ziekenhuis: "ziekenhuizen",
     stad: "steden",
@@ -71,6 +123,227 @@ const pluralize = (word: string) => {
     naam: "namen",
     vraag: "vragen",
     raam: "ramen",
+    vacature: "vacatures",
+    team: "teams",
+    stage: "stages",
+    salaris: "salarissen",
+    werkplek: "werkplekken",
+    standpunt: "standpunten",
+    voorbeeld: "voorbeelden",
+    maatschappij: "maatschappijen",
+    argument: "argumenten",
+    tegenargument: "tegenargumenten",
+    contact: "contacten",
+    gebeurtenis: "gebeurtenissen",
+    leidinggevende: "leidinggevenden",
+    proeftijd: "proeftijden",
+    docent: "docenten",
+    kenmerk: "kenmerken",
+    termijn: "termijnen",
+    bijlage: "bijlagen",
+    wachtwoord: "wachtwoorden",
+    bestand: "bestanden",
+    "pdf-bestand": "pdf-bestanden",
+    toeslag: "toeslagen",
+    huurtoeslag: "huurtoeslagen",
+    zorgtoeslag: "zorgtoeslagen",
+    gemeente: "gemeenten",
+    voorkeur: "voorkeuren",
+    reisadvies: "reisadviezen",
+    aankomsttijd: "aankomsttijden",
+    kop: "koppen",
+    abonnement: "abonnementen",
+    bedrijfsarts: "bedrijfsartsen",
+    uitzendkracht: "uitzendkrachten",
+    stagiair: "stagiairs",
+    praktijk: "praktijken",
+    besluit: "besluiten",
+    evenement: "evenementen",
+    krant: "kranten",
+    eigenschap: "eigenschappen",
+    gewoonte: "gewoontes",
+    interesse: "interesses",
+    verbeterpunt: "verbeterpunten",
+    toekomstplan: "toekomstplannen",
+    vriendschap: "vriendschappen",
+    misverstand: "misverstanden",
+    netwerk: "netwerken",
+    vertrekpunt: "vertrekpunten",
+    toerist: "toeristen",
+    fietsroute: "fietsroutes",
+    natuurgebied: "natuurgebieden",
+    bron: "bronnen",
+    feit: "feiten",
+    hoofdgedachte: "hoofdgedachten",
+    detail: "details",
+    podcast: "podcasts",
+    interview: "interviews",
+    verslag: "verslagen",
+    schilderij: "schilderijen",
+    kern: "kernen",
+    agendapunt: "agendapunten",
+    actiepunt: "actiepunten",
+    maandbudget: "maandbudgetten",
+    schuld: "schulden",
+    betaaltermijn: "betaaltermijnen",
+    beroepsziekte: "beroepsziektes",
+    leefstijl: "leefstijlen",
+    herstelplan: "herstelplannen",
+    hulpdienst: "hulpdiensten",
+    buurtkrant: "buurtkranten",
+    sportclub: "sportclubs",
+    klantgesprek: "klantgesprekken",
+    werkverslag: "werkverslagen",
+    personeelsblad: "personeelsbladen",
+    oefenopdracht: "oefenopdrachten",
+    spreekopdracht: "spreekopdrachten",
+    luistertekst: "luisterteksten",
+    leestekst: "leesteksten",
+    verwijswoord: "verwijswoorden",
+    zinsvolgorde: "zinsvolgordes",
+    bijzin: "bijzinnen",
+    hoofdzin: "hoofdzinnen",
+    voorwaarde: "voorwaarden",
+    informatiepunt: "informatiepunten",
+    wijkbericht: "wijkberichten",
+    woordenschat: "woordenschatten",
+    zinsbouw: "zinsbouwen",
+    taalfout: "taalfouten",
+    kernwoord: "kernwoorden",
+    woordgroep: "woordgroepen",
+    taalcontact: "taalcontacten",
+    beeldfragment: "beeldfragmenten",
+    tekstsoort: "tekstsoorten",
+    signaalwoord: "signaalwoorden",
+    tekstverband: "tekstverbanden",
+    stageplek: "stageplekken",
+    stageverslag: "stageverslagen",
+    studiekeuze: "studiekeuzes",
+    lesboektekst: "lesboekteksten",
+    leerroute: "leerroutes",
+    verbeteradvies: "verbeteradviezen",
+    vervolgstap: "vervolgstappen",
+    weerbericht: "weerberichten",
+    storm: "stormen",
+    wolk: "wolken",
+    werkstuk: "werkstukken",
+    schrijfopdracht: "schrijfopdrachten",
+    luisterfragment: "luisterfragmenten",
+    paspoortcontrole: "paspoortcontroles",
+    verbindingswoord: "verbindingswoorden",
+    praktijkopdracht: "praktijkopdrachten",
+    advies: "adviezen",
+    stap: "stappen",
+    gevolg: "gevolgen",
+    onderzoek: "onderzoeken",
+    uitslag: "uitslagen",
+    huid: "huiden",
+    nek: "nekken",
+    borst: "borsten",
+    hart: "harten",
+    bloeddruk: "bloeddrukken",
+    lekkage: "lekkages",
+    monteur: "monteurs",
+    conducteur: "conducteurs",
+    boete: "boetes",
+    overstap: "overstappen",
+    perron: "perrons",
+    klant: "klanten",
+    klantenservice: "klantenservices",
+    voorraadstatus: "voorraadstatussen",
+    aankoopdatum: "aankoopdatums",
+    ruiltermijn: "ruiltermijnen",
+    pakketpunt: "pakketpunten",
+    klacht: "klachten",
+    reparatieverzoek: "reparatieverzoeken",
+    verpleeghuis: "verpleeghuizen",
+    wond: "wonden",
+    kaartcontrole: "kaartcontroles",
+    fietspad: "fietspaden",
+    kruispunt: "kruispunten",
+    ongeluk: "ongelukken",
+    verpleegkundige: "verpleegkundigen",
+    opdracht: "opdrachten",
+    onderwerp: "onderwerpen",
+    tekst: "teksten",
+    grafiek: "grafieken",
+    baard: "baarden",
+    conciërge: "conciërges",
+    directeur: "directeuren",
+    urencontract: "urencontracten",
+    ploegendienst: "ploegendiensten",
+    nachtdienst: "nachtdiensten",
+    beslistermijn: "beslistermijnen",
+    wijk: "wijken",
+    buurtcentrum: "buurtcentra",
+    activiteit: "activiteiten",
+    bibliotheekpas: "bibliotheekpassen",
+    aangifte: "aangiftes",
+    diefstal: "diefstallen",
+    verlies: "verliezen",
+    getuige: "getuigen",
+    ambulance: "ambulances",
+    intaketoets: "intaketoetsen",
+    cursist: "cursisten",
+    oefentoets: "oefentoetsen",
+    studieadvies: "studieadviezen",
+    cv: "cv's",
+    dienstverband: "dienstverbanden",
+    proefdag: "proefdagen",
+    reisdocument: "reisdocumenten",
+    visum: "visa",
+    afgiftedatum: "afgiftedatums",
+    grens: "grenzen",
+    douane: "douanes",
+    instapkaart: "instapkaarten",
+    stappenplan: "stappenplannen",
+    nieuwsbericht: "nieuwsberichten",
+    aanslag: "aanslagen",
+    teruggave: "teruggaves",
+    jaaropgave: "jaaropgaven",
+    aftrekpost: "aftrekposten",
+    voorschot: "voorschotten",
+    overleg: "overleggen",
+    werkoverleg: "werkoverleggen",
+    werkdruk: "werkdrukken",
+    arbeidscontract: "arbeidscontracten",
+    bestandsgrootte: "bestandsgroottes",
+    belastingdienst: "belastingdiensten",
+    informatieavond: "informatieavonden",
+    machtigingscode: "machtigingscodes",
+    instructiekaart: "instructiekaarten",
+    huiswerkopdracht: "huiswerkopdrachten",
+    belastingaangifte: "belastingaangiftes",
+    inburgeringscursus: "inburgeringscursussen",
+    waarschuwingstekst: "waarschuwingsteksten",
+    sollicitatiegesprek: "sollicitatiegesprekken",
+    stationingang: "stationingangen",
+    halteplaats: "halteplaatsen",
+    waarborgsom: "waarborgsommen",
+    oppervlakte: "oppervlaktes",
+    meterstand: "meterstanden",
+    iban: "IBANs",
+    afschrift: "afschriften",
+    polisblad: "polisbladen",
+    verzekerde: "verzekerden",
+    prik: "prikken",
+    verloskundige: "verloskundigen",
+    mondhygiënist: "mondhygiënisten",
+    fysiotherapeut: "fysiotherapeuten",
+    wachtdienst: "wachtdiensten",
+    hersteladvies: "hersteladviezen",
+    oppas: "oppassen",
+    noodcontact: "noodcontacten",
+    familielid: "familieleden",
+    geluidsoverlast: "geluidsoverlasten",
+    tandartscontrole: "tandartscontroles",
+    gezondheidsklacht: "gezondheidsklachten",
+    gezondheidscentrum: "gezondheidscentra",
+    kinderopvangtoeslag: "kinderopvangtoeslagen",
+    weduwe: "weduwen",
+    marktkoopman: "marktkoopmannen",
+    pleincentrum: "pleincentra",
+    maandbedrag: "maandbedragen",
     probleem: "problemen",
     systeem: "systemen",
     appel: "appels",
@@ -104,14 +377,60 @@ const pluralize = (word: string) => {
     herhaling: "herhalingen",
   };
   if (verified[word]) return verified[word];
+  const uncountable = new Set([
+    "afval",
+    "bagage",
+    "bloed",
+    "buitenland",
+    "energieverbruik",
+    "fruit",
+    "grofvuil",
+    "koorts",
+    "kunst",
+    "mantelzorg",
+    "mist",
+    "museumbezoek",
+    "nieuws",
+    "onderhoud",
+    "publiek",
+    "respect",
+    "sneeuw",
+    "stress",
+    "toezicht",
+    "toekomst",
+    "uitval",
+    "verbruik",
+    "vrijwilligerswerk",
+    "warmte",
+    "waterverbruik",
+    "wind",
+  ]);
+  if (uncountable.has(word)) return undefined;
+  if (/\s/.test(word) || /^[A-Z]/.test(word)) return undefined;
   if (word.endsWith("je")) return `${word}s`;
+  if (word.endsWith("tie")) return `${word}s`;
   if (word.endsWith("ie")) return `${word}s`;
   if (word.endsWith("ing")) return `${word}en`;
   if (word.endsWith("heid")) return `${word}heden`;
+  if (word.endsWith("schap")) return `${word}pen`;
+  if (word.endsWith("ment")) return `${word}en`;
+  if (word.endsWith("punt")) return `${word}en`;
+  if (word.endsWith("woord")) return `${word}en`;
+  if (word.endsWith("blad")) return `${word}en`;
+  if (word.endsWith("advies")) return `${word.slice(0, -"advies".length)}adviezen`;
+  if (word.endsWith("bewijs")) return `${word.slice(0, -"bewijs".length)}bewijzen`;
+  if (word.endsWith("prijs")) return `${word.slice(0, -"prijs".length)}prijzen`;
+  if (word.endsWith("nis")) return `${word}sen`;
+  if (word.endsWith("is")) return `${word}sen`;
+  if (word.endsWith("ij")) return `${word}en`;
+  if (word.endsWith("e")) return `${word}s`;
+  if (/(eur|teur|air)$/.test(word)) return `${word}s`;
+  if (/(ist|ant|ent|tekst|dienst|toets|kaart|route|plan|slag|drag|zoek)$/.test(word)) return `${word}en`;
+  if (/[aiouy]$/.test(word)) return `${word}'s`;
   if (/(aa|ee|oo|uu)[bcdfghjklmnpqrstvwxz]$/.test(word)) {
     return `${word.replace(/(aa|ee|oo|uu)([bcdfghjklmnpqrstvwxz])$/, (_, vowel: string, consonant: string) => `${vowel[0]}${consonant}`)}en`;
   }
-  if (word.endsWith("s")) return `${word}en`;
+  if (/(el|em|en|er)$/.test(word)) return `${word}s`;
   if (word.endsWith("f")) return `${word.slice(0, -1)}ven`;
   return `${word}en`;
 };
@@ -142,8 +461,8 @@ const normalizeGeneratedContent = (item: WordItem): WordItem => {
   const memoryHook =
     hasGenericHook && wordType === "verb"
       ? lt(
-          `把 ${item.dutch} 当动词记：先背 ${primary.phraseChunkUsed ?? primary.dutch}，再整句跟读 ${primary.dutch}`,
-          `Treat ${item.dutch} as a verb${infinitive ? ` from ${infinitive}` : ""}: learn the chunk ${primary.phraseChunkUsed ?? primary.dutch}, then repeat ${primary.dutch}`,
+          `${primary.phraseChunkUsed ?? item.dutch} = ${primary.meaningZh}`,
+          `${primary.phraseChunkUsed ?? item.dutch} = ${primary.meaningEn}${infinitive ? ` (${infinitive})` : ""}`,
         )
       : item.memoryHook;
   return {
@@ -1205,7 +1524,7 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     relatedWords: ["trekken", "deur", "ingang", "uitgang"],
     memoryLinks: [
       memoryLink("trekken", "opposite", "duwen 是推，trekken 是拉，公共标识里常成对出现。", "duwen is push; trekken is pull. They often appear together on public signs."),
-      memoryLink("deur", "action-object", "最自然的动作对象是 deur：推门。", "The natural object is deur: push a door."),
+      memoryLink("deur", "action-object", "门口标识看到 duwen，就是推。", "On a door sign, duwen means push."),
     ],
     exampleSentence: { dutch: "Duw tegen de deur.", meaning: lt("推这扇门。", "Push against the door.") },
   },
@@ -1216,7 +1535,7 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     relatedWords: ["duwen", "deur", "ingang", "uitgang"],
     memoryLinks: [
       memoryLink("duwen", "opposite", "trekken 是拉，duwen 是推，公共标识里常成对出现。", "trekken is pull; duwen is push. They often appear together on public signs."),
-      memoryLink("deur", "action-object", "最自然的动作对象是 deur：拉门。", "The natural object is deur: pull a door."),
+      memoryLink("deur", "action-object", "门口标识看到 trekken，就是拉。", "On a door sign, trekken means pull."),
     ],
     exampleSentence: { dutch: "Trek aan de deur.", meaning: lt("拉这扇门。", "Pull the door.") },
   },
@@ -1263,7 +1582,7 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     article: "het",
     plural: "servicepunten",
     meaning: lt("服务点", "service point"),
-    memoryHook: lt("servicepunt 是办事/求助的地点；先整块记 het servicepunt。", "servicepunt is where you go for service or help; remember het servicepunt."),
+    memoryHook: lt("servicepunt 像大厅里的求助柜台：有问题就走到这个点，找 medewerker 开口。", "Picture servicepunt as the help desk in a hall: walk to that point and speak to a staff member."),
     phraseChunks: ["het servicepunt", "naar het servicepunt gaan", "Ik vraag hulp bij het servicepunt."],
     relatedWords: ["informatiebalie", "medewerker", "volgnummer", "formulier"],
     memoryLinks: [
@@ -1361,7 +1680,7 @@ const supplementOverrides: Record<string, WordContentOverride> = {
   ontbijt: {
     article: "het",
     plural: "ontbijten",
-    memoryHook: lt("ontbijt 是早餐；先整块记 het ontbijt，再接 eten。", "ontbijt is breakfast; learn het ontbijt, then connect it with eten."),
+    memoryHook: lt("ontbijt 的画面是早上桌上的面包、咖啡或牛奶；一天第一顿饭就是 ontbijt。", "Picture bread, coffee, or milk on the morning table: the first meal of the day is ontbijt."),
     phraseChunks: ["het ontbijt", "ontbijt eten", "Ik eet ontbijt."],
     relatedWords: ["lunch", "avondeten", "brood"],
     memoryLinks: [
@@ -1434,8 +1753,9 @@ const supplementOverrides: Record<string, WordContentOverride> = {
   kopen: {
     memoryHook: lt("kopen 是“买”的原形；超市里最常用 Ik koop ...。", "kopen is to buy; in supermarket scenes, Ik koop ... is very common."),
     phraseChunks: ["brood kopen", "Ik koop water.", "Ik wil dit kopen."],
-    relatedWords: ["betalen", "prijs", "supermarkt", "boodschappen"],
+    relatedWords: ["verkopen", "betalen", "prijs", "supermarkt", "boodschappen"],
     memoryLinks: [
+      memoryLink("verkopen", "prefix-suffix-family", "kopen 是买，verkopen 是 ver- 扩出来的“卖”；同一笔交易里动作方向相反。", "kopen is buy; verkopen is the ver- expansion meaning sell. They point in opposite directions in the same transaction."),
       memoryLink("betalen", "action-object", "先 kopen，再 betalen：买了以后付款。", "First kopen, then betalen: buy, then pay."),
       memoryLink("prijs", "scenario-neighbor", "买东西前会看 prijs。", "Before buying, you check the prijs."),
     ],
@@ -2053,10 +2373,15 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     article: "de",
     plural: "appels",
     meaning: lt("苹果", "apple"),
-    memoryHook: lt("appel 很像 apple，先借外形记住意思，发音按荷兰语。", "appel looks like apple, which helps with meaning; pronounce it in Dutch."),
+    memoryHook: lt("appel 很像 apple；看到它先认出“苹果”，发音按荷兰语。", "appel looks like apple, which helps with meaning; pronounce it in Dutch."),
     englishBridge: "appel looks like apple.",
     phraseChunks: ["een appel", "Ik eet een appel.", "twee appels"],
     relatedWords: ["aardappel", "sinaasappel", "appelsap"],
+    memoryLinks: [
+      memoryLink("aardappel", "compound-family", "aardappel 里面有 appel：aard 是土地，aardappel 是“地里的苹果”= 土豆。", "aardappel contains appel: aard is earth, so aardappel is an earth apple, potato."),
+      memoryLink("sinaasappel", "compound-family", "sinaasappel 里面也有 appel；它整体是橙子，不是苹果。", "sinaasappel also contains appel; as a whole it means orange, not apple."),
+      memoryLink("appelsap", "compound-family", "appelsap = appel + sap：苹果 + 汁。", "appelsap = appel + sap: apple + juice."),
+    ],
     exampleSentence: { dutch: "Ik eet een appel.", meaning: lt("我吃一个苹果。", "I eat an apple.") },
   },
   aardappel: {
@@ -2067,6 +2392,10 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     englishBridge: "aardappel literally feels like earth apple.",
     phraseChunks: ["een kilo aardappels", "Ik koop aardappels.", "aardappels koken"],
     relatedWords: ["aard", "appel", "sinaasappel"],
+    memoryLinks: [
+      memoryLink("appel", "compound-part", "aardappel 拆成 aard + appel；这里的 appel 是构词线索。", "aardappel breaks into aard + appel; appel is the visible word-building clue."),
+      memoryLink("sinaasappel", "compound-family", "aardappel 和 sinaasappel 都带 appel，但一个是土豆，一个是橙子。", "aardappel and sinaasappel both contain appel, but one is potato and the other is orange."),
+    ],
     exampleSentence: { dutch: "Ik koop aardappels.", meaning: lt("我买土豆。", "I buy potatoes.") },
   },
   sinaasappel: {
@@ -2077,6 +2406,11 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     englishBridge: "Contains appel, but means orange.",
     phraseChunks: ["een sinaasappel", "Ik koop sinaasappels.", "sinaasappelsap"],
     relatedWords: ["appel", "aardappel", "appelsap"],
+    memoryLinks: [
+      memoryLink("appel", "compound-part", "sinaasappel 带 appel，但整体意思是橙子。", "sinaasappel contains appel, but the whole word means orange."),
+      memoryLink("aardappel", "compound-family", "sinaasappel 和 aardappel 都借 appel 造词，意思不能按苹果硬翻。", "sinaasappel and aardappel both use appel in word-building; do not translate them as apple literally."),
+      memoryLink("appelsap", "compound-family", "appelsap 是苹果汁；sinaasappelsap 是橙汁，这一组都用 sap 表示汁。", "appelsap is apple juice; sinaasappelsap is orange juice, both using sap for juice."),
+    ],
     exampleSentence: { dutch: "Ik koop sinaasappels.", meaning: lt("我买橙子。", "I buy oranges.") },
   },
   appelsap: {
@@ -2087,6 +2421,11 @@ const supplementOverrides: Record<string, WordContentOverride> = {
     englishBridge: "appel is apple; sap is juice.",
     phraseChunks: ["een glas appelsap", "Ik drink appelsap.", "appelsap drinken"],
     relatedWords: ["appel", "sinaasappel", "water"],
+    memoryLinks: [
+      memoryLink("appel", "compound-part", "appelsap 直接拆成 appel + sap：苹果汁。", "appelsap breaks directly into appel + sap: apple juice."),
+      memoryLink("sap", "compound-part", "sap 是“汁”，所以 appelsap、sinaasappelsap 都能按这个尾巴认。", "sap means juice, so appelsap and sinaasappelsap share this ending."),
+      memoryLink("sinaasappel", "compound-family", "sinaasappel 是橙子；sinaasappelsap 就是橙汁。", "sinaasappel means orange; sinaasappelsap means orange juice."),
+    ],
     exampleSentence: { dutch: "Ik drink appelsap.", meaning: lt("我喝苹果汁。", "I drink apple juice.") },
   },
   minuut: {
@@ -2405,10 +2744,7 @@ const supplementFallbackExampleFor = (word: WordItem): WordItem["exampleSentence
       meaning: word.meaning,
     };
   }
-  return {
-    dutch: `Ik gebruik ${word.dutch} in een zin.`,
-    meaning: lt(`我在句子里使用${word.meaning.zh}。`, `I use ${word.meaning.en} in a sentence.`),
-  };
+  return emptyExampleSentence();
 };
 
 const makeSupplementWord = (level: CourseLevel, seed: ThemeSeed, word: string, index: number): WordItem => {
@@ -2455,7 +2791,7 @@ const makeSupplementWord = (level: CourseLevel, seed: ThemeSeed, word: string, i
 
   const draft: WordItem = {
     ...commonFields,
-    memoryHook: override?.memoryHook ?? lt(`先把 ${word} 放进常用搭配里记。`, `Remember ${word} through useful chunks first.`),
+    memoryHook: override?.memoryHook ?? lt(`${word} = ${meaning.zh}`, `${word} = ${meaning.en}`),
     phraseChunks: override?.phraseChunks ?? (isAction ? uniqueStrings([actionExample.phrase, actionExample.sentence, actionExample.command]) : []),
     exampleSentence: override?.exampleSentence ?? {
       ...(isAction ? { dutch: actionExample.sentence, meaning } : emptyExampleSentence()),
@@ -2471,20 +2807,20 @@ const makeSupplementWord = (level: CourseLevel, seed: ThemeSeed, word: string, i
   const fallbackExample = supplementFallbackExampleFor(draft);
   const exampleDutch = generatedExample?.dutch ?? (draft.exampleSentence.dutch || fallbackExample.dutch);
   const exampleMeaning = generatedExample ? lt(generatedExample.meaningZh, generatedExample.meaningEn) : (draft.exampleSentence.meaning.zh ? draft.exampleSentence.meaning : fallbackExample.meaning);
-  const defaultMemoryHook = article
-    ? lt(
-        `先整块记 ${article} ${word}，再跟常用搭配一起记。`,
-        `Remember ${article} ${word} as one chunk, then attach it to useful phrases.`,
-      )
-    : isAction
-      ? lt(
-          `这是动词，重点看它放进句子后怎么用。`,
-          `This is a verb, so focus on how it works inside sentences.`,
-        )
-      : lt(
-          `先把 ${word} 放进能直接说出口的短句里记。`,
-          `Remember ${word} inside a sentence you can actually say.`,
-        );
+	  const defaultMemoryHook = article
+	    ? lt(
+	        `${article} ${word} = ${meaning.zh}`,
+	        `${article} ${word} = ${meaning.en}`,
+	      )
+	    : isAction
+	      ? lt(
+	          `${word} 先和自然对象一起记：谁在做、做什么，词义就稳了。`,
+	          `${word} works best with a natural object: who does it and what it touches make the meaning stick.`,
+	        )
+	      : lt(
+	          `${word} = ${meaning.zh}；先放进下面的常用句里记。`,
+	          `${word} = ${meaning.en}; anchor it in the practical sentence below.`,
+	        );
 
   return applyContentOverride(normalizeGeneratedContent({
     ...draft,
@@ -2500,18 +2836,102 @@ const makeSupplementWord = (level: CourseLevel, seed: ThemeSeed, word: string, i
 const uniqueWordItemsByDutch = (items: WordItem[]) => {
   const result = new Map<string, WordItem>();
   items.forEach((item) => {
-    const key = item.dutch.toLowerCase();
+    const key = canonicalWordKeyForPlan(item);
+    const normalizedItem = normalizeVerbFormWordItem(item, key);
     const existing = result.get(key);
     if (!existing) {
-      result.set(key, item);
+      result.set(key, normalizedItem);
       return;
     }
-    const existingScore = (existing.levelConfidence === "high" ? 3 : existing.levelConfidence === "medium" ? 2 : 1) + (existing.sourceTags.includes("generated") ? 0 : 2);
-    const nextScore = (item.levelConfidence === "high" ? 3 : item.levelConfidence === "medium" ? 2 : 1) + (item.sourceTags.includes("generated") ? 0 : 2);
-    if (nextScore > existingScore) result.set(key, item);
+    const existingScore = wordItemDedupeScore(existing, key);
+    const nextScore = wordItemDedupeScore(normalizedItem, key);
+    if (nextScore > existingScore) result.set(key, normalizedItem);
   });
   return Array.from(result.values());
 };
+
+const verbFormMeaningHints = [
+  "am/is called",
+  "ask",
+  "buy",
+  "call",
+  "click",
+  "close",
+  "come",
+  "do",
+  "drink",
+  "eat",
+  "fill",
+  "give",
+  "grab",
+  "help",
+  "learn",
+  "listen",
+  "live",
+  "look",
+  "make",
+  "open",
+  "pay",
+  "put",
+  "read",
+  "say",
+  "search",
+  "see",
+  "sit",
+  "sleep",
+  "speak",
+  "stand",
+  "stop",
+  "take",
+  "walk",
+  "wash",
+  "work",
+  "write",
+];
+
+const knownNounLikeVerbForms = new Set(["antwoord", "werk"]);
+
+const looksLikeVerbFormEntry = (item: WordItem, infinitive: string) => {
+  const dutch = item.dutch.toLowerCase();
+  if (dutch === infinitive || item.article || item.dutch.includes(" ")) return false;
+  const meaning = `${item.meaning.zh} ${item.meaning.en}`.toLowerCase();
+  if (knownNounLikeVerbForms.has(dutch)) {
+    return item.scenarioTags.includes("routine") || item.scenarioTags.includes("classroom") || verbFormMeaningHints.some((hint) => meaning.includes(hint));
+  }
+  return verbFormMeaningHints.some((hint) => meaning.includes(hint)) || Boolean(actionExampleFor(dutch));
+};
+
+const canonicalWordKeyForPlan = (item: WordItem) => {
+  const normalized = item.dutch.toLowerCase();
+  const infinitive = infinitiveForWord(item);
+  if (infinitive && looksLikeVerbFormEntry(item, infinitive)) return infinitive;
+  return normalized;
+};
+
+const normalizeVerbFormWordItem = (item: WordItem, key: string): WordItem => {
+  if (item.dutch.toLowerCase() === key) return item;
+  const infinitive = infinitiveForWord(item);
+  if (!infinitive || key !== infinitive) return item;
+  const override = supplementOverrides[infinitive] ?? curatedWordOverrides[infinitive];
+  const actionExample = actionExampleFor(infinitive);
+  return {
+    ...item,
+    id: item.id.replace(new RegExp(`${slugFor(item.dutch)}$`), slugFor(infinitive)),
+    dutch: infinitive,
+    meaning: override?.meaning ?? item.meaning,
+    memoryHook: override?.memoryHook ?? lt(`${item.dutch} 是 ${infinitive} 的句中形式；学习词条按原形 ${infinitive} 归档。`, `${item.dutch} is a sentence form of ${infinitive}; learn it under the base form ${infinitive}.`),
+    phraseChunks: override?.phraseChunks ?? (actionExample ? uniqueStrings([actionExample.phrase, actionExample.sentence, actionExample.command]) : item.phraseChunks),
+    relatedWords: uniqueStrings([...(override?.relatedWords ?? item.relatedWords), item.dutch]),
+    memoryLinks: override?.memoryLinks ?? item.memoryLinks,
+    exampleSentence: override?.exampleSentence ?? item.exampleSentence,
+    audioText: infinitive,
+  };
+};
+
+const wordItemDedupeScore = (item: WordItem, key: string) =>
+  (item.dutch.toLowerCase() === key ? 20 : 0) +
+  (item.levelConfidence === "high" ? 3 : item.levelConfidence === "medium" ? 2 : 1) +
+  (item.sourceTags.includes("generated") ? 0 : 2);
 
 const a1ToA2AuditWords = new Set([
   "geboorteplaats",
@@ -2805,15 +3225,16 @@ const chooseCoreItems = (items: WordItem[], activeTarget: number, recognitionTar
 
 const repeatToTarget = (items: WordItem[], target: number, level: CourseLevel, themes: ThemeSeed[]) => {
   const result = [...items];
-  const usedDutch = new Set(result.map((item) => item.dutch.toLowerCase()));
+  const usedDutch = new Set(result.map((item) => canonicalWordKeyForPlan(item)));
   let themeIndex = 0;
   while (result.length < target && themeIndex < themes.length) {
     const seed = themes[themeIndex % themes.length];
     seed.words.forEach((word, index) => {
       if (result.length >= target) return;
-      const key = word.toLowerCase();
+      const supplement = makeSupplementWord(level, seed, word, index);
+      const key = canonicalWordKeyForPlan(supplement);
       if (usedDutch.has(key)) return;
-      result.push(makeSupplementWord(level, seed, word, index));
+      result.push(normalizeVerbFormWordItem(supplement, key));
       usedDutch.add(key);
     });
     themeIndex += 1;

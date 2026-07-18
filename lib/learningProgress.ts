@@ -83,7 +83,7 @@ const normalizeDay = (day: unknown) => {
 
 const nextStepAfter = (step: LearningStep): LearningStep => {
   if (step === "pronunciation") return "starter-words";
-  if (step === "starter-words") return "grammar";
+  if (step === "starter-words") return "word-bubbles";
   if (step === "grammar") return "lesson";
   if (step === "lesson") return "word-bubbles";
   if (step === "word-bubbles") return "grammar-on-demand";

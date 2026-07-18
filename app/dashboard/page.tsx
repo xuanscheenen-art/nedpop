@@ -17,19 +17,19 @@ const courseLevelOrder = ["A0", "A1", "A2", "B1"] as const;
 const levelSummaries = {
   A0: {
     title: { zh: "A0 零基础生存入门", en: "A0 Survival Starter" },
-    note: { zh: "先把问候、姓名、数字、听不懂求重复这些最小表达打牢。", en: "Start with greetings, name, numbers, and repair phrases." },
+    note: { zh: "从问候、姓名、数字和求重复开始，先把开口需要的最小表达打牢。", en: "Start with greetings, names, numbers, and repair phrases for first real exchanges." },
   },
   A1: {
     title: { zh: "A1 生活基础", en: "A1 Daily Foundation" },
-    note: { zh: "个人信息、家庭、购物、交通、时间、地点和基础日常表达。", en: "Personal info, family, shopping, transport, time, places, and daily basics." },
+    note: { zh: "围绕个人信息、家庭、购物、交通、时间和地点，建立日常生活里的基础表达。", en: "Build daily-life basics around personal info, family, shopping, transport, time, and places." },
   },
   A2: {
     title: { zh: "A2 生活任务", en: "A2 Practical Life Tasks" },
-    note: { zh: "按真实生活任务组织：预约、表格、信件、电话、工作、住房、交通。", en: "Practical Dutch for appointments, forms, letters, calls, work, housing, and travel." },
+    note: { zh: "把预约、表格、信件、电话、住房、交通和工作沟通练成能直接用的办事能力。", en: "Turn appointments, forms, letters, calls, housing, travel, and work communication into usable task skills." },
   },
   B1: {
     title: { zh: "B1 独立任务表达", en: "B1 Independent Task Dutch" },
-    note: { zh: "按公开 B1 教材主题练自我表达、社区、钱、工作、opleiding、媒体、观点、展示和正式文字。", en: "Public B1 textbook themes: self-expression, neighborhood, money, work, education, media, opinions, presentations, and formal texts." },
+    note: { zh: "练自我表达、社区生活、钱、工作学习、媒体观点、展示和正式文字，逐步说清自己的想法。", en: "Practice self-expression, community life, money, work and study, media, opinions, presentations, and formal writing." },
   },
 } as const;
 
@@ -230,8 +230,8 @@ export default function DashboardPage() {
           <h2 className="mt-2 text-3xl font-black text-ink">{language === "zh" ? "A0 到 B1 课程总览" : "A0 to B1 Course Index"}</h2>
             <p className="mt-3 max-w-2xl text-sm font-black leading-6 text-ocean/60">
               {language === "zh"
-                ? "A0 免费。A1/A2/B1 按级别解锁，重点是日常生活、政务、工作学习里的真实任务。"
-                : "A0 is free. A1/A2/B1 unlock by level and focus on real daily-life, admin, work, and study tasks."}
+                ? "参考公开荷兰语教材、NT2 课程主题和 inburgering 生活任务编排，从零基础一路练到能独立处理日常、政务和工作学习场景。"
+                : "Built from public Dutch-learning textbook themes, NT2 course progression, and inburgering-style life tasks, from zero basics to independent daily, admin, work, and study Dutch."}
             </p>
           </div>
           <span className="rounded-full bg-skywash px-4 py-2 text-sm font-black text-ocean">

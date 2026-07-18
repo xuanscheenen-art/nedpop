@@ -1,6 +1,7 @@
 import {
   accessPlanFromUnlockedLevels,
   canAccessLevel as canAccessLevelForSubject,
+  mergeUnlockedLevels,
   normalizeUnlockedLevels,
   planToUnlockedLevels,
   type AccessPlan,
@@ -23,6 +24,21 @@ const isProductionBuild = process.env.NODE_ENV === "production";
 const localFallbackRequested =
   process.env.NEXT_PUBLIC_ENABLE_LOCAL_ACCESS_FALLBACK === "true" ||
   process.env.NEXT_PUBLIC_ENABLE_REVIEW_LOGIN === "true";
+const entitlementRequestTimeoutMs = 2500;
+
+const withEntitlementTimeout = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), entitlementRequestTimeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
 
 export const isLocalEntitlementFallbackEnabled =
   localFallbackRequested && !isProductionBuild && !isSupabaseConfigured;
@@ -101,18 +117,27 @@ export async function getEntitledUnlockedLevels(): Promise<UserUnlockedLevels> {
 
   try {
     const supabase = getSupabaseBrowserClient();
-    const { data: userData } = await supabase.auth.getUser();
+    const userResponse = await withEntitlementTimeout(supabase.auth.getUser().catch(() => null), null);
+    if (!userResponse) return localFallback;
+    const { data: userData } = userResponse;
     const user = userData.user;
-    if (!user) return [];
+    if (!user) return localFallback;
 
-    const { data, error } = await supabase
-      .from("users")
-      .select("unlocked_levels")
-      .eq("id", user.id)
-      .maybeSingle();
+    const entitlementResponse = await withEntitlementTimeout(
+      Promise.resolve(
+        supabase
+        .from("users")
+        .select("unlocked_levels")
+        .eq("id", user.id)
+        .maybeSingle(),
+      ).catch(() => null),
+      null,
+    );
+    if (!entitlementResponse) return localFallback;
+    const { data, error } = entitlementResponse;
 
-    if (error) return [];
-    return normalizeUnlockedLevels(data?.unlocked_levels);
+    if (error) return localFallback;
+    return mergeUnlockedLevels(localFallback, normalizeUnlockedLevels(data?.unlocked_levels));
   } catch {
     return localFallback;
   }
@@ -128,7 +153,8 @@ export function canAccessLevel(
   signedIn = false,
 ) {
   const unlockedLevels = Array.isArray(access) ? normalizeUnlockedLevels(access) : planToUnlockedLevels(access);
-  return canAccessLevelForSubject(level, { signedIn, unlockedLevels });
+  const hasLocalPreviewAccess = isLocalEntitlementFallbackEnabled && unlockedLevels.length > 0;
+  return canAccessLevelForSubject(level, { signedIn: signedIn || hasLocalPreviewAccess, unlockedLevels });
 }
 
 export function canAccessLesson(

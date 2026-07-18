@@ -69,12 +69,12 @@ const b1ExactScenarioExamples: Record<string, TemplateExample[]> = {
   uitslag: [{ dutch: "Ik krijg de uitslag morgen.", meaningZh: "我明天拿到结果。", meaningEn: "I get the result tomorrow.", type: "scenario", phraseChunkUsed: "de uitslag krijgen", scenarioTags: ["health"] }],
   verwijzing: [{ dutch: "Ik heb een verwijzing nodig voor de specialist.", meaningZh: "我需要一张转诊单去看专科医生。", meaningEn: "I need a referral for the specialist.", type: "scenario", phraseChunkUsed: "een verwijzing nodig hebben", scenarioTags: ["health"] }],
   huid: [{ dutch: "Mijn huid is rood en gevoelig.", meaningZh: "我的皮肤发红并且敏感。", meaningEn: "My skin is red and sensitive.", type: "scenario", phraseChunkUsed: "mijn huid is rood", scenarioTags: ["health"] }],
-  schouder: [{ dutch: "Mijn schouder doet pijn.", meaningZh: "我的肩膀疼。", meaningEn: "My shoulder hurts.", type: "scenario", phraseChunkUsed: "schouder doet pijn", scenarioTags: ["health"] }],
-  knie: [{ dutch: "Mijn knie doet pijn bij het lopen.", meaningZh: "我走路时膝盖疼。", meaningEn: "My knee hurts when walking.", type: "scenario", phraseChunkUsed: "knie doet pijn", scenarioTags: ["health"] }],
-  nek: [{ dutch: "Ik heb pijn in mijn nek.", meaningZh: "我脖子疼。", meaningEn: "I have pain in my neck.", type: "scenario", phraseChunkUsed: "pijn in mijn nek", scenarioTags: ["health"] }],
-  borst: [{ dutch: "Ik heb pijn op mijn borst.", meaningZh: "我胸口疼。", meaningEn: "I have chest pain.", type: "scenario", phraseChunkUsed: "pijn op mijn borst", scenarioTags: ["health"] }],
+  schouder: [{ dutch: "Ik draag een tas op mijn schouder.", meaningZh: "我把包背在肩上。", meaningEn: "I carry a bag on my shoulder.", type: "scenario", phraseChunkUsed: "op mijn schouder dragen", scenarioTags: ["health", "body"] }],
+  knie: [{ dutch: "Ik buig mijn knie bij het lopen.", meaningZh: "我走路时弯曲膝盖。", meaningEn: "I bend my knee when walking.", type: "scenario", phraseChunkUsed: "mijn knie buigen", scenarioTags: ["health", "body"] }],
+  nek: [{ dutch: "Ik draai mijn nek rustig.", meaningZh: "我轻轻转动脖子。", meaningEn: "I turn my neck gently.", type: "scenario", phraseChunkUsed: "mijn nek draaien", scenarioTags: ["health", "body"] }],
+  borst: [{ dutch: "Mijn borst beweegt als ik adem.", meaningZh: "我呼吸时胸口会动。", meaningEn: "My chest moves when I breathe.", type: "scenario", phraseChunkUsed: "mijn borst beweegt", scenarioTags: ["health", "body"] }],
   hart: [{ dutch: "Mijn hart klopt snel.", meaningZh: "我的心跳很快。", meaningEn: "My heart is beating fast.", type: "scenario", phraseChunkUsed: "hart klopt snel", scenarioTags: ["health"] }],
-  maag: [{ dutch: "Mijn maag doet pijn na het eten.", meaningZh: "我吃完饭后胃疼。", meaningEn: "My stomach hurts after eating.", type: "scenario", phraseChunkUsed: "maag doet pijn", scenarioTags: ["health"] }],
+  maag: [{ dutch: "Mijn maag is vol na het eten.", meaningZh: "我吃完饭后胃很满。", meaningEn: "My stomach is full after eating.", type: "scenario", phraseChunkUsed: "mijn maag is vol", scenarioTags: ["health", "body"] }],
   bloed: [{ dutch: "De huisarts controleert mijn bloed.", meaningZh: "家庭医生检查我的血液。", meaningEn: "The GP checks my blood.", type: "scenario", phraseChunkUsed: "bloed controleren", scenarioTags: ["health"] }],
   verhuurder: [{ dutch: "Ik bel de verhuurder over de lekkage.", meaningZh: "我给房东打电话说漏水问题。", meaningEn: "I call the landlord about the leak.", type: "scenario", phraseChunkUsed: "de verhuurder bellen", scenarioTags: ["housing"] }],
   schimmel: [{ dutch: "Er zit schimmel in de badkamer.", meaningZh: "浴室里有霉菌。", meaningEn: "There is mould in the bathroom.", type: "scenario", phraseChunkUsed: "schimmel in de badkamer", scenarioTags: ["housing"] }],
@@ -220,10 +220,10 @@ export const scenarioExamplesForWord = (
   }
 
   if (wordType === "function-word" && dutch === "waar") {
-    examples.push({ dutch: "Waar is het station?", meaningZh: "车站在哪里？", meaningEn: "Where is the station?", type: "output", phraseChunkUsed: "waar is", scenarioTags: ["directions"] });
+    examples.push({ dutch: "Waar is het station?", meaningZh: "车站在哪里？", meaningEn: "Where is the station?", type: "output", phraseChunkUsed: "waar is het station", scenarioTags: ["directions"] });
   }
   if (wordType === "function-word" && dutch === "wanneer") {
-    examples.push({ dutch: "Wanneer kan ik langskomen?", meaningZh: "我什么时候可以过来？", meaningEn: "When can I come by?", type: "output", phraseChunkUsed: "wanneer kan ik", scenarioTags: ["appointment"] });
+    examples.push({ dutch: "Wanneer kan ik langskomen?", meaningZh: "我什么时候可以过来？", meaningEn: "When can I come by?", type: "output", phraseChunkUsed: "wanneer kan ik langskomen", scenarioTags: ["appointment"] });
   }
 
   return examples;

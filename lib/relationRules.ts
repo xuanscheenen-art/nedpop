@@ -107,7 +107,7 @@ export const rootFamilies: string[][] = [
   ["hulp", "helpen"],
   ["woon", "wonen", "woning"],
   ["leer", "leren", "leraar", "leerling", "Nederlandse les"],
-  ["schrijf", "schrijven"],
+  ["schrijf", "schrijft", "schrijven", "schrift"],
   ["betaal", "betalen", "betaling"],
   ["meld", "melden", "melding", "ziekmelding"],
   ["uitleg", "uitleggen"],

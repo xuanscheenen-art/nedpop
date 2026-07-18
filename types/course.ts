@@ -73,7 +73,7 @@ export type GrammarRule = {
   id: string;
   level: CourseLevel;
   title: LocalizedText;
-  category: "verb" | "article" | "plural" | "word-order" | "modal" | "separable-verb" | "negation";
+  category: "verb" | "article" | "plural" | "word-order" | "modal" | "separable-verb" | "negation" | "preposition" | "connector";
   explanation: LocalizedText;
   memoryHook: LocalizedText;
   pattern?: string;

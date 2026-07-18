@@ -33,6 +33,11 @@ const completedForDay = (progress: LearningProgress): LearningStep[] => {
   return levelSteps[String(progress.currentDay)] ?? [];
 };
 
+const starterWordBubblesCompleted = (progress: LearningProgress) => {
+  const starterSteps = progress.completedStepsByDay.A0?.["1"] ?? [];
+  return starterSteps.includes("word-bubbles");
+};
+
 const lessonFor = (level: string, day: number) =>
   courseLessons.find((lesson) => lesson.level === level && lesson.order === day);
 
@@ -67,6 +72,23 @@ export function getNextRecommendedAction(progress: LearningProgress): NextRecomm
       reasonZh: starterLesson?.lessonGoal.goal.zh ?? "先学马上能开口的第一批句子。",
       reasonEn: starterLesson?.lessonGoal.goal.en ?? "Learn the first lines you can use right away.",
       type: "starter-words",
+    };
+  }
+
+  if (!starterWordBubblesCompleted(progress)) {
+    const pack = packFor("A0", 1);
+    const wordCount = wordCountForPack("A0", 1);
+    return {
+      labelZh: pack ? `本日单词泡泡：${pack.title.zh}` : "A0 Day 1 本日单词泡泡",
+      labelEn: pack ? `Today's word bubbles: ${pack.title.en}` : "A0 Day 1 Word Bubbles",
+      route: wordBubbleRouteFor("A0", 1),
+      reasonZh: wordCount
+        ? `课程已经完成，先把这 ${wordCount} 个入门词记住，再去最小语法地基。`
+        : "课程已经完成，先把 A0 Day 1 的入门词记住，再去最小语法地基。",
+      reasonEn: wordCount
+        ? `The lesson is done. Memorize these ${wordCount} starter words before the grammar base.`
+        : "The lesson is done. Memorize the A0 Day 1 starter words before the grammar base.",
+      type: "word-bubbles",
     };
   }
 

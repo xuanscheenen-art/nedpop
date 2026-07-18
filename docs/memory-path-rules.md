@@ -15,7 +15,7 @@ Each word should get exactly one primary strategy:
 - `phrase-based`: the word is best learned through a strong collocation.
 - `sentence-based`: function words, verbs, and abstract words learned in sentences.
 - `category-rule`: language names, countries, months, weekdays, numbers, colors, family categories.
-- `no-strong-association`: last fallback only.
+- `no-strong-association`: last fallback only; for concrete nouns, use a first life scene instead of forcing a weak collocation.
 
 The path must help a Chinese-speaking learner:
 
@@ -29,16 +29,17 @@ Memory Path explains how to remember the word; the blue card handles speaking pr
 
 ## Strategy Order
 
-1. Category rules for closed groups: languages, countries, numbers, dates, colors.
-2. Real word breakdown: `ziekenhuis = ziek + huis`, `middernacht = midden + nacht`.
-3. English bridge: `adres ≈ address`, `trein ≈ train`.
-4. Meaning contrast: `prima ≈ goed / fijn / oké`.
-5. Word formation: `helpen → hulp`, `betalen → betaling`.
+1. Special closed rules that must override everything else: finite verb form → infinitive, numbers, time/date words, multi-use words.
+2. Real word breakdown: `ziekenhuis = ziek + huis`, `naamkaartje = naam + kaart + -je`.
+3. Word formation with a real base form: `helpen → hulp`, diminutives like `meid → meisje`.
+4. Safe English bridge: `adres ≈ address`, `hier ≈ here`, `vriend ≈ friend`.
+5. Meaning contrast when the word is best learned against neighbors: `prima / goed / fijn / oké`.
 6. Fixed expression function: `hallo`, `tot ziens`, `dank je`, `alsjeblieft`.
-7. Function word role: `ik`, `u`, `niet`, `geen`.
-8. Strong phrase: `afspraak maken`, `formulier invullen`.
-9. Sentence role: `maar`, verbs, abstract words.
-10. No strong association.
+7. Function word role: `ik`, `u`, `niet`, `geen`, `dit`, `dat`.
+8. Strong phrase only when the collocation is the real learning point: `afspraak maken`, `formulier invullen`.
+9. Sentence role for verbs, adverbs, abstract words, and grammar-heavy items.
+10. First life scene for concrete nouns with no stronger bridge: `tas`, `stoel`, `tafel`, `boom`.
+11. No strong association fallback.
 
 ## Quality Gate
 
@@ -114,8 +115,8 @@ hook.
 
 `no-strong-association`:
 
-- 不硬编联想
-- 使用提醒
+- 第一生活画面
+- 开口落点
 
 ## Fallback Rule
 
@@ -123,3 +124,9 @@ hook.
 It must still include a concrete usage anchor and one output sentence in data.
 The output sentence is displayed by the blue sentence card, not as a Memory Path step.
 It must not say only "这个词建议通过短语和例句记。"
+
+For concrete nouns without a real breakdown, safe English bridge, formation rule,
+or strong collocation, do not invent a "usage anchor" such as `in de tas` just to
+fill the card. Use the first natural life scene instead: the object's first
+mental image in daily life. The scene must be visual, specific, and immediately
+recognizable.

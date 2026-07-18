@@ -4,9 +4,10 @@ import { dailyWordPacks as baseDayPacks } from "@/data/dailyWordPacks";
 import { courseLessons as baseCourseLessons } from "@/data/courseLessons";
 import { wordItems as baseWords } from "@/data/vocabularyPlan";
 import { generateExamplesForWord, type GeneratedExample } from "@/lib/exampleSentenceGenerator";
-import { articlePhraseFor, inferWordType, phraseChunkMeaningFor, verbFormsForWord } from "@/lib/exampleTemplates";
-import { isBadGenericTargetTemplate, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
+import { articlePhraseFor, inferWordType, infinitiveForWord, phraseChunkMeaningFor, verbFormsForWord } from "@/lib/exampleTemplates";
+import { isBadGenericTargetTemplate, isIncompletePhraseChunk, isKnownBadLearnerLine } from "@/lib/exampleQualityRules";
 import { memoryPathFor, validateMemoryPath } from "@/lib/memoryPath";
+import { hasStaleMemoryPathContent, shouldUseGeneratedMemoryPath } from "@/lib/memoryPathQualityGate";
 import type { LocalizedText } from "@/types/course";
 import type { CourseLesson } from "@/types/lesson";
 import type { DailyWordItem, DailyWordPack, LearningRoleInPack, MemoryLink, MemoryPath, PhraseChunk, SentencePattern, WordItem } from "@/types/vocabulary";
@@ -341,6 +342,8 @@ const isUsablePhraseText = (value: string) => {
   const text = value.trim();
   if (!text) return false;
   if (looksLikeInternalContentId(text)) return false;
+  if (isIncompletePhraseChunk(text)) return false;
+  if (/[.!?]$/.test(text)) return false;
   if (/(?:\.\.\.|…)/.test(text)) return false;
   if (learnerInternalCopyPattern.test(text)) return false;
   if (/\bIk ga naar (uit|hier|daar)\b/i.test(text)) return false;
@@ -743,16 +746,19 @@ const effectiveMemoryPathFor = (
   overrideMemoryPath?: MemoryPath,
 ): MemoryPath => {
   const lowerWord = word.dutch.toLowerCase();
+  const generatedPath = memoryPathFor(word);
   const badOverrideMemoryPath =
     overrideMemoryPath &&
     (
+      forceGeneratedMemoryPathWords.has(lowerWord) ||
+      generatedPath.wordType === "number" ||
       (safeStandaloneWords.has(lowerWord) && (overrideMemoryPath.wordType === "day-month" || overrideMemoryPath.strategy === "category-rule")) ||
-      overrideMemoryPath.wordType !== memoryPathFor(word).wordType ||
+      shouldUseGeneratedMemoryPath(overrideMemoryPath, generatedPath) ||
       overrideMemoryPath.outputSentences.some((sentence) => /^Dit is\s+\w+\.?$/i.test(sentence.dutch)) ||
       learnerInternalCopyPattern.test(`${overrideMemoryPath.explanationZh} ${overrideMemoryPath.memoryHookZh}`) ||
-      /这个词最好通过常用搭配记|先背能直接用的词块/i.test(`${overrideMemoryPath.explanationZh} ${overrideMemoryPath.memoryHookZh}`)
+      hasStaleMemoryPathContent(overrideMemoryPath)
     );
-  const basePath = badOverrideMemoryPath ? memoryPathFor(word) : overrideMemoryPath ?? memoryPathFor(word);
+  const basePath = badOverrideMemoryPath ? generatedPath : overrideMemoryPath ?? generatedPath;
   if (basePath.wordType === "number") return basePath;
 
   const phraseChunksFromDetails = memoryPhraseChunksFromDetails(phraseChunkDetails).filter((chunk) => isTargetedMemoryPhraseChunk(word, chunk));
@@ -786,6 +792,58 @@ const effectiveMemoryPathFor = (
 export const getBaseWords = () => baseWords;
 
 const knownPluralCorrections: Record<string, string> = {
+  app: "apps",
+  "digid-app": "DigiD-apps",
+  email: "emails",
+  "e-mail": "e-mails",
+  "e-mailadres": "e-mailadressen",
+  bevestigingsmail: "bevestigingsmails",
+  voicemail: "voicemails",
+  "sms-controle": "sms-controles",
+  account: "accounts",
+  website: "websites",
+  laptop: "laptops",
+  centrum: "centra",
+  restaurant: "restaurants",
+  café: "cafés",
+  museum: "musea",
+  moeder: "moeders",
+  vader: "vaders",
+  broer: "broers",
+  zus: "zussen",
+  zoon: "zonen",
+  dochter: "dochters",
+  ouders: "ouders",
+  man: "mannen",
+  vrouw: "vrouwen",
+  mens: "mensen",
+  vloer: "vloeren",
+  vriend: "vrienden",
+  vriendin: "vriendinnen",
+  persoon: "personen",
+  student: "studenten",
+  partner: "partners",
+  opa: "opa's",
+  oma: "oma's",
+  baby: "baby's",
+  jongen: "jongens",
+  meisje: "meisjes",
+  buurman: "buurmannen",
+  buurvrouw: "buurvrouwen",
+  familie: "families",
+  gezin: "gezinnen",
+  ijs: "ijsjes",
+  bril: "brillen",
+  kaas: "kazen",
+  prijs: "prijzen",
+  huurprijs: "huurprijzen",
+  wc: "wc's",
+  gram: "grammen",
+  bewijs: "bewijzen",
+  vervoerbewijs: "vervoerbewijzen",
+  garantiebewijs: "garantiebewijzen",
+  rijbewijs: "rijbewijzen",
+  identiteitsbewijs: "identiteitsbewijzen",
   naam: "namen",
   vraag: "vragen",
   raam: "ramen",
@@ -869,12 +927,27 @@ const isUsableMemoryLinkOverride = (word: WordItem, link: MemoryLink) => {
   return true;
 };
 
-const isBadMemoryPathOverride = (word: WordItem, memoryPath: MemoryPath) =>
-  memoryPath.wordType !== memoryPathFor(word).wordType ||
+const forceGeneratedMemoryPathWords = new Set([
+  "kaart",
+  "meisje",
+  "naamkaartje",
+  "prijskaartje",
+  "kaartje",
+  "bonnetje",
+  "vriend",
+  "vriendin",
+  "uit",
+]);
+
+const isBadMemoryPathOverride = (word: WordItem, memoryPath: MemoryPath) => {
+  const generatedPath = memoryPathFor(word);
+  return memoryPath.wordType !== generatedPath.wordType ||
+  shouldUseGeneratedMemoryPath(memoryPath, generatedPath) ||
   memoryPath.outputSentences.some((sentence) => isBadMemoryOutputSentence(word, sentence)) ||
   memoryPath.phraseChunks.some((chunk) => !isTargetedMemoryPhraseChunk(word, chunk)) ||
   learnerInternalCopyPattern.test(`${memoryPath.explanationZh} ${memoryPath.explanationEn} ${memoryPath.memoryHookZh} ${memoryPath.memoryHookEn}`) ||
-  /这个词最好通过常用搭配记|先背能直接用的词块/i.test(`${memoryPath.explanationZh} ${memoryPath.memoryHookZh}`);
+  hasStaleMemoryPathContent(memoryPath);
+};
 
 const sanitizeWordOverride = (override: WordContentOverride): WordContentOverride | undefined => {
   const base = baseWords.find((word) => word.id === override.id || word.dutch === override.id || word.dutch === override.dutch);
@@ -1002,8 +1075,19 @@ export const saveCreatorDayPackOverride = (packId: string, patch: DayPackContent
   return next[id];
 };
 
+const wordForDailyEntry = (entry: { wordId?: string; dutch?: string }, words: WordItem[]) => {
+  const normalized = entry.dutch?.toLowerCase();
+  const infinitive = entry.dutch ? infinitiveForWord(entry.dutch) : undefined;
+  return words.find((item) =>
+    item.id === entry.wordId ||
+    item.dutch === entry.dutch ||
+    Boolean(infinitive && item.dutch.toLowerCase() === infinitive) ||
+    Boolean(normalized && item.dutch.toLowerCase() === normalized),
+  );
+};
+
 const hydrateDailyItem = (entry: DailyWordItem, words: WordItem[]): DailyWordItem => {
-  const word = words.find((item) => item.id === entry.wordId || item.dutch === entry.dutch);
+  const word = wordForDailyEntry(entry, words);
   if (!word) return entry;
   return {
     ...entry,
@@ -1021,7 +1105,7 @@ const hydrateDailyItem = (entry: DailyWordItem, words: WordItem[]): DailyWordIte
 };
 
 const dailyItemFromPackWord = (entry: DayPackWordOverride, pack: DailyWordPack, words: WordItem[]): DailyWordItem | undefined => {
-  const word = words.find((item) => item.id === entry.wordId || item.dutch === entry.dutch);
+  const word = wordForDailyEntry(entry, words);
   if (!word) return undefined;
   return {
     wordId: word.id,

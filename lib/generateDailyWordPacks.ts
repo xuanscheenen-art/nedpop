@@ -1,7 +1,7 @@
 import type { CourseLevel, LocalizedText } from "@/types/course";
 import type { DailyPackAssignment, DailyWordItem, DailyWordPack, PhraseChunk, SentencePattern, WordItem } from "@/types/vocabulary";
 import { generateExamplesForWord, type GeneratedExample } from "@/lib/exampleSentenceGenerator";
-import { phraseChunkMeaningFor } from "@/lib/exampleTemplates";
+import { infinitiveForWord, phraseChunkMeaningFor } from "@/lib/exampleTemplates";
 
 const lt = (zh: string, en: string): LocalizedText => ({ zh, en });
 
@@ -30,7 +30,7 @@ const levelConfig: Record<
     priorityTags: ["greeting", "identity", "numbers", "time"],
   },
   A1: {
-    totalDays: 65,
+    totalDays: 50,
     newPerDay: 10,
     reviewPerDay: 3,
     recognitionPerDay: 0,
@@ -91,12 +91,71 @@ function scoreWord(word: WordItem) {
   return activeScore + examScore + confidenceScore;
 }
 
+const verbFormMeaningHints = [
+  "am/is called",
+  "ask",
+  "buy",
+  "call",
+  "click",
+  "close",
+  "come",
+  "do",
+  "drink",
+  "eat",
+  "fill",
+  "give",
+  "grab",
+  "help",
+  "learn",
+  "listen",
+  "live",
+  "look",
+  "make",
+  "open",
+  "pay",
+  "put",
+  "read",
+  "say",
+  "search",
+  "see",
+  "sit",
+  "sleep",
+  "speak",
+  "stand",
+  "stop",
+  "take",
+  "walk",
+  "wash",
+  "work",
+  "write",
+];
+
+const nounLikeVerbForms = new Set(["antwoord", "werk"]);
+
+function dailyWordKey(word: WordItem) {
+  const normalized = word.dutch.toLowerCase();
+  const infinitive = infinitiveForWord(word);
+  if (!infinitive || infinitive === normalized || word.article || word.dutch.includes(" ")) return normalized;
+  const meaning = `${word.meaning.zh} ${word.meaning.en}`.toLowerCase();
+  const looksLikeVerb =
+    verbFormMeaningHints.some((hint) => meaning.includes(hint)) ||
+    (!nounLikeVerbForms.has(normalized) && word.scenarioTags.some((tag) => ["routine", "classroom", "work", "supermarket", "form", "phone-call"].includes(tag)));
+  return looksLikeVerb ? infinitive : normalized;
+}
+
 function uniqueByDutch(words: WordItem[]) {
   const best = new Map<string, WordItem>();
   words.forEach((word) => {
-    const key = word.dutch.toLowerCase();
+    const key = dailyWordKey(word);
     const current = best.get(key);
-    if (!current || levelRank[word.originalLevel as CourseLevel] < levelRank[current.originalLevel as CourseLevel] || scoreWord(word) > scoreWord(current)) {
+    const currentIsBase = current?.dutch.toLowerCase() === key;
+    const wordIsBase = word.dutch.toLowerCase() === key;
+    if (
+      !current ||
+      (wordIsBase && !currentIsBase) ||
+      levelRank[word.originalLevel as CourseLevel] < levelRank[current.originalLevel as CourseLevel] ||
+      scoreWord(word) > scoreWord(current)
+    ) {
       best.set(key, word);
     }
   });
@@ -115,10 +174,10 @@ function sortForLearning(words: WordItem[], priorityTags: string[]) {
 }
 
 function takeThematic(pool: WordItem[], used: Set<string>, theme: string, count: number) {
-  const firstPass = pool.filter((word) => !used.has(word.id) && word.scenarioTags.includes(theme));
-  const fallback = pool.filter((word) => !used.has(word.id) && !firstPass.includes(word));
+  const firstPass = pool.filter((word) => !used.has(dailyWordKey(word)) && word.scenarioTags.includes(theme));
+  const fallback = pool.filter((word) => !used.has(dailyWordKey(word)) && !firstPass.includes(word));
   const picked = [...firstPass, ...fallback].slice(0, count);
-  picked.forEach((word) => used.add(word.id));
+  picked.forEach((word) => used.add(dailyWordKey(word)));
   return picked;
 }
 
@@ -128,7 +187,7 @@ function takeCyclic(pool: WordItem[], start: number, count: number, excludedIds 
   let offset = 0;
   while (picked.length < count && offset < pool.length * 2) {
     const candidate = pool[(start + offset) % pool.length];
-    if (candidate && !excludedIds.has(candidate.id) && !picked.some((word) => word.id === candidate.id)) {
+    if (candidate && !excludedIds.has(dailyWordKey(candidate)) && !picked.some((word) => dailyWordKey(word) === dailyWordKey(candidate))) {
       picked.push(candidate);
     }
     offset += 1;
@@ -290,7 +349,7 @@ export function generateDailyWordPacks(words: WordItem[]) {
         : [];
       const newWordsRaw = takeThematic(newPool, usedNew, theme, config.newPerDay);
       const sameLevelReviewRaw = newWordsRaw.length < config.newPerDay
-        ? takeCyclic(newPool, dayNumber * config.newPerDay, config.newPerDay - newWordsRaw.length, new Set([...newWordsRaw.map((word) => word.id), ...reviewWordsRaw.map((word) => word.id)]))
+        ? takeCyclic(newPool, dayNumber * config.newPerDay, config.newPerDay - newWordsRaw.length, new Set([...newWordsRaw.map(dailyWordKey), ...reviewWordsRaw.map(dailyWordKey)]))
         : [];
       const recognitionWordsRaw = config.recognitionPerDay ? takeThematic(recognitionPool, usedRecognition, theme, config.recognitionPerDay) : [];
 

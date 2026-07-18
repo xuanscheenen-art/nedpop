@@ -1,5 +1,6 @@
 import type { LocalizedText } from "@/types/course";
 import type { WordItem } from "@/types/vocabulary";
+import { specialForms } from "@/data/specialForms";
 
 const text = (zh: string, en: string): LocalizedText => ({ zh, en });
 
@@ -13,11 +14,204 @@ export type VerbUsageCard = {
   examples: string[];
 };
 
+export type FiniteVerbForm = {
+  form: string;
+  meaningZh: string;
+  meaningEn: string;
+  roleZh: string;
+  roleEn: string;
+  exampleDutch: string;
+  exampleZh: string;
+  exampleEn: string;
+};
+
+export type FiniteVerbFamily = {
+  infinitive: string;
+  infinitiveMeaningZh: string;
+  infinitiveMeaningEn: string;
+  forms: FiniteVerbForm[];
+  tableZh: string;
+  tableEn: string;
+};
+
+export type FiniteVerbFormInfo = FiniteVerbFamily & {
+  current: FiniteVerbForm;
+  isInfinitive: boolean;
+  hookZh: string;
+  hookEn: string;
+  explanationZh: string;
+  explanationEn: string;
+  usageZh: string;
+  usageEn: string;
+  warningZh?: string;
+  warningEn?: string;
+};
+
 type StemResult = {
   stem: string;
   ruleZh: string;
   ruleEn: string;
 };
+
+const finiteVerbFamilies: Record<string, FiniteVerbFamily> = {
+  zijn: {
+    infinitive: "zijn",
+    infinitiveMeaningZh: "是/在",
+    infinitiveMeaningEn: "be",
+    forms: [
+      { form: "ben", meaningZh: "我是/我在", meaningEn: "am", roleZh: "ik 形式", roleEn: "ik form", exampleDutch: "Ik ben Lin.", exampleZh: "我是 Lin。", exampleEn: "I am Lin." },
+      { form: "bent", meaningZh: "你是/你在", meaningEn: "are", roleZh: "jij/je/u 形式", roleEn: "jij/je/u form", exampleDutch: "Jij bent student.", exampleZh: "你是学生。", exampleEn: "You are a student." },
+      { form: "is", meaningZh: "他/她/它/这是", meaningEn: "is", roleZh: "hij/zij/het/dit/dat 形式", roleEn: "hij/zij/het/dit/dat form", exampleDutch: "Dit is mijn boek.", exampleZh: "这是我的书。", exampleEn: "This is my book." },
+      { form: "zijn", meaningZh: "是/在", meaningEn: "are / be", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij zijn klaar.", exampleZh: "我们准备好了。", exampleEn: "We are ready." },
+    ],
+    tableZh: "ik ben / jij bent / hij is / wij zijn",
+    tableEn: "ik ben / jij bent / hij is / wij zijn",
+  },
+  hebben: {
+    infinitive: "hebben",
+    infinitiveMeaningZh: "有",
+    infinitiveMeaningEn: "have",
+    forms: [
+      { form: "heb", meaningZh: "我有", meaningEn: "have", roleZh: "ik 形式", roleEn: "ik form", exampleDutch: "Ik heb tijd.", exampleZh: "我有时间。", exampleEn: "I have time." },
+      { form: "hebt", meaningZh: "你有", meaningEn: "have", roleZh: "jij/je/u 形式", roleEn: "jij/je/u form", exampleDutch: "Jij hebt tijd.", exampleZh: "你有时间。", exampleEn: "You have time." },
+      { form: "heeft", meaningZh: "他/她/它有", meaningEn: "has", roleZh: "hij/zij/het 形式", roleEn: "hij/zij/het form", exampleDutch: "Zij heeft een afspraak.", exampleZh: "她有一个预约。", exampleEn: "She has an appointment." },
+      { form: "hebben", meaningZh: "有", meaningEn: "have", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij hebben les.", exampleZh: "我们有课。", exampleEn: "We have class." },
+    ],
+    tableZh: "ik heb / jij hebt / hij heeft / wij hebben",
+    tableEn: "ik heb / jij hebt / hij heeft / wij hebben",
+  },
+  heten: {
+    infinitive: "heten",
+    infinitiveMeaningZh: "叫/名字是",
+    infinitiveMeaningEn: "be called / be named",
+    forms: [
+      { form: "heet", meaningZh: "我/你/他叫", meaningEn: "am/is called", roleZh: "ik/jij/hij/zij 形式", roleEn: "ik/jij/hij/zij form", exampleDutch: "Ik heet Lin.", exampleZh: "我叫 Lin。", exampleEn: "My name is Lin." },
+      { form: "heten", meaningZh: "叫/名字是", meaningEn: "are called / be named", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij heten Li.", exampleZh: "我们姓 Li。", exampleEn: "We are called Li." },
+    ],
+    tableZh: "ik heet / jij heet / hij heet / wij heten",
+    tableEn: "ik heet / jij heet / hij heet / wij heten",
+  },
+  kunnen: {
+    infinitive: "kunnen",
+    infinitiveMeaningZh: "能/可以",
+    infinitiveMeaningEn: "can / be able to",
+    forms: [
+      { form: "kan", meaningZh: "我/他可以", meaningEn: "can", roleZh: "ik/hij/zij/het 形式", roleEn: "ik/hij/zij/het form", exampleDutch: "Ik kan helpen.", exampleZh: "我可以帮忙。", exampleEn: "I can help." },
+      { form: "kunt", meaningZh: "你/您可以", meaningEn: "can", roleZh: "jij/je/u 形式", roleEn: "jij/je/u form", exampleDutch: "U kunt hier wachten.", exampleZh: "您可以在这里等。", exampleEn: "You can wait here." },
+      { form: "kunnen", meaningZh: "能/可以", meaningEn: "can", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij kunnen komen.", exampleZh: "我们可以来。", exampleEn: "We can come." },
+    ],
+    tableZh: "ik kan / jij kunt / hij kan / wij kunnen",
+    tableEn: "ik kan / jij kunt / hij kan / wij kunnen",
+  },
+  willen: {
+    infinitive: "willen",
+    infinitiveMeaningZh: "想要",
+    infinitiveMeaningEn: "want",
+    forms: [
+      { form: "wil", meaningZh: "我/他想要", meaningEn: "want", roleZh: "ik/hij/zij/het 形式", roleEn: "ik/hij/zij/het form", exampleDutch: "Ik wil koffie.", exampleZh: "我想要咖啡。", exampleEn: "I want coffee." },
+      { form: "wilt", meaningZh: "你想要", meaningEn: "want", roleZh: "jij/je 形式", roleEn: "jij/je form", exampleDutch: "Jij wilt water.", exampleZh: "你想要水。", exampleEn: "You want water." },
+      { form: "willen", meaningZh: "想要", meaningEn: "want", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij willen betalen.", exampleZh: "我们想付款。", exampleEn: "We want to pay." },
+    ],
+    tableZh: "ik wil / jij wilt / hij wil / wij willen",
+    tableEn: "ik wil / jij wilt / hij wil / wij willen",
+  },
+  moeten: {
+    infinitive: "moeten",
+    infinitiveMeaningZh: "必须/需要",
+    infinitiveMeaningEn: "must / have to",
+    forms: [
+      { form: "moet", meaningZh: "必须/需要", meaningEn: "must / have to", roleZh: "单数形式", roleEn: "singular form", exampleDutch: "Ik moet naar de gemeente.", exampleZh: "我必须去市政厅。", exampleEn: "I have to go to the municipality." },
+      { form: "moeten", meaningZh: "必须/需要", meaningEn: "must / have to", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij moeten wachten.", exampleZh: "我们必须等。", exampleEn: "We have to wait." },
+    ],
+    tableZh: "ik moet / jij moet / hij moet / wij moeten",
+    tableEn: "ik moet / jij moet / hij moet / wij moeten",
+  },
+  gaan: {
+    infinitive: "gaan",
+    infinitiveMeaningZh: "去",
+    infinitiveMeaningEn: "go",
+    forms: [
+      { form: "ga", meaningZh: "我去", meaningEn: "go", roleZh: "ik 形式", roleEn: "ik form", exampleDutch: "Ik ga naar huis.", exampleZh: "我回家。", exampleEn: "I go home." },
+      { form: "gaat", meaningZh: "你/他去", meaningEn: "goes", roleZh: "jij/hij/zij/het 形式", roleEn: "jij/hij/zij/het form", exampleDutch: "Hij gaat naar school.", exampleZh: "他去学校。", exampleEn: "He goes to school." },
+      { form: "gaan", meaningZh: "去", meaningEn: "go", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij gaan samen.", exampleZh: "我们一起去。", exampleEn: "We go together." },
+    ],
+    tableZh: "ik ga / jij gaat / hij gaat / wij gaan",
+    tableEn: "ik ga / jij gaat / hij gaat / wij gaan",
+  },
+  lezen: {
+    infinitive: "lezen",
+    infinitiveMeaningZh: "读",
+    infinitiveMeaningEn: "read",
+    forms: [
+      { form: "lees", meaningZh: "我读/读吧", meaningEn: "read", roleZh: "ik 形式/命令形", roleEn: "ik form / imperative", exampleDutch: "Ik lees de brief.", exampleZh: "我读这封信。", exampleEn: "I read the letter." },
+      { form: "leest", meaningZh: "你/他读", meaningEn: "read / reads", roleZh: "jij/hij/zij 形式", roleEn: "jij/hij/zij form", exampleDutch: "Hij leest de zin.", exampleZh: "他读这个句子。", exampleEn: "He reads the sentence." },
+      { form: "lezen", meaningZh: "读", meaningEn: "read", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij lezen samen.", exampleZh: "我们一起读。", exampleEn: "We read together." },
+    ],
+    tableZh: "ik lees / jij leest / hij leest / wij lezen",
+    tableEn: "ik lees / jij leest / hij leest / wij lezen",
+  },
+  schrijven: {
+    infinitive: "schrijven",
+    infinitiveMeaningZh: "写",
+    infinitiveMeaningEn: "write",
+    forms: [
+      { form: "schrijf", meaningZh: "我写/写吧", meaningEn: "write", roleZh: "ik 形式/命令形", roleEn: "ik form / imperative", exampleDutch: "Ik schrijf mijn naam.", exampleZh: "我写我的名字。", exampleEn: "I write my name." },
+      { form: "schrijft", meaningZh: "你/他写", meaningEn: "write / writes", roleZh: "jij/hij/zij 形式", roleEn: "jij/hij/zij form", exampleDutch: "Zij schrijft het adres.", exampleZh: "她写地址。", exampleEn: "She writes the address." },
+      { form: "schrijven", meaningZh: "写", meaningEn: "write", roleZh: "原形/复数形式", roleEn: "infinitive/plural form", exampleDutch: "Wij schrijven een email.", exampleZh: "我们写一封邮件。", exampleEn: "We write an email." },
+    ],
+    tableZh: "ik schrijf / jij schrijft / hij schrijft / wij schrijven",
+    tableEn: "ik schrijf / jij schrijft / hij schrijft / wij schrijven",
+  },
+};
+
+const finiteVerbFormToInfinitive = Object.fromEntries(
+  Object.values(finiteVerbFamilies).flatMap((family) =>
+    family.forms.map((form) => [form.form, family.infinitive]),
+  ),
+) as Record<string, string>;
+
+// Perfect participles are separate study entries in the vocabulary plan too.
+// Route them back to their infinitive instead of generating a generic verb card.
+const pastParticipleToInfinitive = Object.fromEntries(
+  specialForms.flatMap((entry) => {
+    if (!("pastParticiple" in entry) || !entry.pastParticiple || !entry.infinitive) return [];
+    return [[entry.pastParticiple.toLowerCase(), entry.infinitive.toLowerCase()] as const];
+  }),
+) as Record<string, string>;
+
+export const infinitiveForPastParticiple = (form: string) =>
+  pastParticipleToInfinitive[form.trim().toLowerCase()];
+
+export function finiteVerbFormInfoFor(wordOrText: WordItem | string): FiniteVerbFormInfo | undefined {
+  const form = (typeof wordOrText === "string" ? wordOrText : wordOrText.dutch).trim().toLowerCase();
+  const infinitive = finiteVerbFamilies[form]?.infinitive ?? finiteVerbFormToInfinitive[form];
+  if (!infinitive) return undefined;
+  const family = finiteVerbFamilies[infinitive];
+  const current = family.forms.find((item) => item.form === form) ?? family.forms.find((item) => item.form === infinitive);
+  if (!current) return undefined;
+  const isInfinitive = form === infinitive;
+  return {
+    ...family,
+    current,
+    isInfinitive,
+    hookZh: isInfinitive ? `${infinitive} 整组变位：${family.tableZh}` : `${current.form} = ${infinitive} 的${current.roleZh}`,
+    hookEn: isInfinitive ? `${infinitive} forms: ${family.tableEn}` : `${current.form} = the ${current.roleEn} of ${infinitive}`,
+    explanationZh: isInfinitive
+      ? `${infinitive} 是动词原形，也会出现在复数主语后；这组要按主语整块记。`
+      : `${current.form} 不是新词；它是 ${infinitive} 跟主语/命令句变出来的样子。`,
+    explanationEn: isInfinitive
+      ? `${infinitive} is the infinitive and also appears with plural subjects; learn the whole subject-form set.`
+      : `${current.form} is not a new verb; it is a subject-based form of ${infinitive}.`,
+    usageZh: `${family.tableZh}。${current.exampleDutch} = ${current.exampleZh}`,
+    usageEn: `${family.tableEn}. ${current.exampleDutch} = ${current.exampleEn}`,
+    warningZh: isInfinitive ? undefined : `别把 ${current.form} 当独立动词；回到原形 ${infinitive} 才能看懂整组。`,
+    warningEn: isInfinitive ? undefined : `Do not treat ${current.form} as a separate verb; connect it back to ${infinitive}.`,
+  };
+}
+
+export function finiteVerbFormMeaningFor(form: string) {
+  return finiteVerbFormInfoFor(form)?.current;
+}
 
 const verbOverrides: Record<string, VerbUsageCard> = {
   zijn: {
@@ -37,6 +231,15 @@ const verbOverrides: Record<string, VerbUsageCard> = {
     rule: text("hebben 是高频特殊动词：ik heb，jij hebt，wij hebben。", "hebben is a high-frequency irregular verb: ik heb, jij hebt, wij hebben."),
     hint: text("我有 heb，你有 hebt，他/她/它 heeft，复数 hebben。", "ik heb, jij hebt, hij/zij/het heeft, plural hebben."),
     examples: ["Ik heb een boek.", "Jij hebt tijd.", "Wij hebben een afspraak."],
+  },
+  heten: {
+    infinitive: "heten",
+    ikForm: "ik heet",
+    jijForm: "jij heet / je heet",
+    wijForm: "wij heten",
+    rule: text("heten 是“叫/名字是”。heet 不是孤立词，它是 ik/jij/hij/zij 的现在时形式。", "heten means 'to be called / be named'. heet is not a standalone word; it is the present form for ik/jij/hij/zij."),
+    hint: text("先整句记：Ik heet Lin. / Hoe heet je? 复数才用 wij heten。", "First learn the chunks: Ik heet Lin. / Hoe heet je? Use wij heten for plural."),
+    examples: ["Ik heet Lin.", "Hoe heet je?", "Zij heet Anna."],
   },
   gaan: {
     infinitive: "gaan",
@@ -65,14 +268,32 @@ const verbOverrides: Record<string, VerbUsageCard> = {
     hint: text("A0 先记：ik kan + 动词原本的样子，例如 Ik kan helpen。", "For A0, first learn: ik kan + base verb, for example Ik kan helpen."),
     examples: ["Ik kan helpen.", "Jij kunt komen.", "Wij kunnen wachten."],
   },
+  zien: {
+    infinitive: "zien",
+    ikForm: "ik zie",
+    jijForm: "jij ziet / je ziet",
+    wijForm: "wij zien",
+    rule: text("zien 是“看见”。当前词形 zie 要回到完整动词 zien 来记。", "zien means see. Connect the current form zie back to the full verb zien."),
+    hint: text("先记三格：ik zie，jij ziet，wij zien。", "Remember the three slots: ik zie, jij ziet, wij zien."),
+    examples: ["Ik zie het station.", "Jij ziet de brief.", "Wij zien de balie."],
+  },
+  doen: {
+    infinitive: "doen",
+    ikForm: "ik doe",
+    jijForm: "jij doet / je doet",
+    wijForm: "wij doen",
+    rule: text("doen 是“做”的完整动词；放进句子后常见 ik doe，jij doet，wij doen。", "doen is the base verb 'to do'; in sentences it becomes ik doe, jij doet, wij doen."),
+    hint: text("先记两块：Wat doe je? / boodschappen doen。", "First learn two chunks: Wat doe je? / boodschappen doen."),
+    examples: ["Wat doe je?", "Ik doe boodschappen.", "Wij doen het samen."],
+  },
   komen: {
     infinitive: "komen",
     ikForm: "ik kom",
     jijForm: "jij komt / je komt",
     wijForm: "wij komen",
     rule: text("komen 放进句子后：ik kom，jij komt，wij komen。", "komen becomes ik kom, jij komt, wij komen."),
-    hint: text("o 不写成 oo：komen -> kom。", "Do not write oo here: komen -> kom."),
-    examples: ["Ik kom uit China.", "Jij komt morgen.", "Wij komen om tien uur."],
+    hint: text("先按“来/到来”记；说来自哪里才加 uit。o 不写成 oo：komen -> kom。", "Learn it first as coming/arriving; add uit only for origin. Do not write oo here: komen -> kom."),
+    examples: ["Wanneer kan ik komen?", "Jij komt morgen.", "Wij komen om tien uur."],
   },
   kijken: {
     infinitive: "kijken",
@@ -155,6 +376,15 @@ const verbOverrides: Record<string, VerbUsageCard> = {
     hint: text("a 变成 aa，是为了保持长音。", "a becomes aa to keep the long vowel."),
     examples: ["Ik slaap goed.", "Jij slaapt thuis.", "Wij slapen om tien uur."],
   },
+  halen: {
+    infinitive: "halen",
+    ikForm: "ik haal",
+    jijForm: "jij haalt / je haalt",
+    wijForm: "wij halen",
+    rule: text("halen 放进句子后：ik haal，jij haalt，wij halen。", "halen becomes ik haal, jij haalt, wij halen."),
+    hint: text("a 变成 aa，是为了保持长音；不要写 ik hal。", "a becomes aa to keep the long vowel; do not write ik hal."),
+    examples: ["Ik haal brood.", "Jij haalt koffie.", "Wij halen de kinderen."],
+  },
   lezen: {
     infinitive: "lezen",
     ikForm: "ik lees",
@@ -181,6 +411,33 @@ const verbOverrides: Record<string, VerbUsageCard> = {
     rule: text("bellen 放进句子后：ik bel，jij belt，wij bellen。", "bellen becomes ik bel, jij belt, wij bellen."),
     hint: text("双 l 回到单 l：bellen -> bel。", "Double l becomes single l: bellen -> bel."),
     examples: ["Ik bel de huisarts.", "Jij belt morgen.", "Wij bellen samen."],
+  },
+  appen: {
+    infinitive: "appen",
+    ikForm: "ik app",
+    jijForm: "jij appt / je appt",
+    wijForm: "wij appen",
+    rule: text("appen 是发 app/WhatsApp 消息；ik 形式保留 app，不是 ap。", "appen means messaging via an app/WhatsApp; the ik form stays app, not ap."),
+    hint: text("名词 app 复数 apps；动作才是 appen。", "The noun app has plural apps; the action is appen."),
+    examples: ["Ik app mijn zus.", "Jij appt de afspraak.", "Wij appen straks."],
+  },
+  emailen: {
+    infinitive: "emailen",
+    ikForm: "ik email",
+    jijForm: "jij emailt / je emailt",
+    wijForm: "wij emailen",
+    rule: text("emailen 是“发邮件”这个动作；名词 email 的复数是 emails。", "emailen is the action 'to email'; the noun email has plural emails."),
+    hint: text("看到 -en 才是动作：emailen = 发邮件。", "The -en form is the action: emailen = to email."),
+    examples: ["Ik email de gemeente.", "Jij emailt de bijlage.", "Wij emailen vandaag."],
+  },
+  "e-mailen": {
+    infinitive: "e-mailen",
+    ikForm: "ik e-mail",
+    jijForm: "jij e-mailt / je e-mailt",
+    wijForm: "wij e-mailen",
+    rule: text("e-mailen 是带连字符的“发邮件”；名词 e-mail 的复数是 e-mails。", "e-mailen is the hyphenated verb 'to email'; the noun e-mail has plural e-mails."),
+    hint: text("名词 e-mail，复数 e-mails；动作 e-mailen。", "Noun e-mail, plural e-mails; action e-mailen."),
+    examples: ["Ik e-mail de gemeente.", "Jij e-mailt de bijlage.", "Wij e-mailen vandaag."],
   },
   beginnen: {
     infinitive: "beginnen",
@@ -403,12 +660,17 @@ const verbOverrides: Record<string, VerbUsageCard> = {
 const knownInfinitives = new Set([
   "zijn",
   "hebben",
+  "heten",
   "gaan",
   "willen",
   "kunnen",
+  "doen",
   "komen",
   "beginnen",
   "bellen",
+  "appen",
+  "emailen",
+  "e-mailen",
   "klikken",
   "drinken",
   "eten",
@@ -577,6 +839,7 @@ const knownInfinitives = new Set([
 ]);
 
 const shortCommandToInfinitive: Record<string, string> = {
+  ...finiteVerbFormToInfinitive,
   begin: "beginnen",
   klik: "klikken",
   kijk: "kijken",
@@ -587,8 +850,6 @@ const shortCommandToInfinitive: Record<string, string> = {
   sluit: "sluiten",
   stop: "stoppen",
   zeg: "zeggen",
-  ben: "zijn",
-  heb: "hebben",
   ga: "gaan",
   wil: "willen",
   kan: "kunnen",
@@ -768,6 +1029,9 @@ const genericVerbObjects: Record<string, string> = {
   lezen: "de zin",
   schrijven: "mijn naam",
   bellen: "de huisarts",
+  appen: "mijn zus",
+  emailen: "de gemeente",
+  "e-mailen": "de gemeente",
   helpen: "u",
   spreken: "Nederlands",
   begrijpen: "het niet",
@@ -783,6 +1047,7 @@ const genericVerbObjects: Record<string, string> = {
   wachten: "hier",
   hoesten: "veel",
   rusten: "vandaag",
+  halen: "brood",
   noteren: "mijn naam",
   doorverbinden: "mij",
   terugbellen: "morgen",
@@ -829,9 +1094,9 @@ function sentenceFor(infinitive: string, subject: "ik" | "jij" | "wij", form: st
 
 export function verbUsageFor(word: WordItem): VerbUsageCard | undefined {
   const normalized = word.dutch.toLowerCase();
-  const infinitive = shortCommandToInfinitive[normalized] ?? normalized;
+  const infinitive = shortCommandToInfinitive[normalized] ?? pastParticipleToInfinitive[normalized] ?? normalized;
 
-  if (word.article || normalized.includes(" ")) return undefined;
+  if ((word.article && normalized !== "zie") || normalized.includes(" ")) return undefined;
   if (verbOverrides[infinitive]) return verbOverrides[infinitive];
   if (!knownInfinitives.has(infinitive)) return undefined;
 

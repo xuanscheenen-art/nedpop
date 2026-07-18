@@ -242,9 +242,9 @@ const makeExampleMeaning = (level: CourseLevel, theme: SyllabusVocabularyTheme, 
 
 const memoryHookFor = (theme: SyllabusVocabularyTheme, word: SyllabusVocabularyWord) => {
   if (theme.id === "time-date") {
-    return `${word.dutch} 是时间表达词，放进真实时间句里记。`;
+    return `${word.dutch} 是时间表达词，约时间、填日期或说日程时会用到。`;
   }
-  return word.notesForChineseLearners ?? `${word.dutch} = ${word.meaning.zh}，先放进一个真实短句里记。`;
+  return word.notesForChineseLearners ?? `${word.dutch} 的核心意思是“${word.meaning.zh}”，优先和常见搭配或自然短句一起记。`;
 };
 
 const englishBridgeFor = (theme: SyllabusVocabularyTheme, word: SyllabusVocabularyWord) => {
@@ -449,11 +449,11 @@ const extraA2PracticeWords = extraA2PracticeSeeds
       article: word.article,
       zh: word.zh,
       en: word.en,
-      breakdownZh: word.dutch.includes("ing") ? `${word.dutch} 看到 -ing，常常是 de 词。` : `把 ${word.dutch} 放进 A2 办事场景里记。`,
-      breakdownEn: word.dutch.includes("ing") ? `${word.dutch} has -ing, often a de word.` : `Learn ${word.dutch} inside an A2 practical task.`,
-      associationZh: `${word.dutch} 不单背，和 ${word.tag} 场景一起记。`,
-      associationEn: `Connect ${word.dutch} to the ${word.tag} scenario.`,
-      chineseMemoryHook: `${word.dutch} = ${word.zh}，A2 办事时很常见。`,
+      breakdownZh: word.dutch.includes("ing") ? `${word.dutch} 有 -ing 词尾，先按名词看。` : `${word.dutch} = ${word.zh}`,
+      breakdownEn: word.dutch.includes("ing") ? `${word.dutch} has the -ing ending, so read it as a noun first.` : `${word.dutch} = ${word.en}`,
+      associationZh: `${word.dutch} = ${word.zh}`,
+      associationEn: `${word.dutch} = ${word.en}`,
+      chineseMemoryHook: `${word.dutch} = ${word.zh}`,
       englishBridge: undefined,
       soundHint: getSoundHint(word.dutch),
       sentenceDutch: word.article ? `Ik heb ${word.article} ${word.dutch} nodig.` : `Ik heb ${word.dutch} nodig.`,

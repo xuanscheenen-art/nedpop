@@ -269,7 +269,7 @@ export function generateWordBubbleCompletionDraft(word: WordItem): WordBubbleCom
   const hasUsefulBridge = Boolean(word.englishBridge && !/belongs to|links to/i.test(word.englishBridge));
   const generatedAt = new Date().toISOString();
 
-  let suggestedMemoryHook = "这个词没有特别自然的联想，建议和短语/例句一起记。";
+  let suggestedMemoryHook = "这个词暂时没有强拆词或英文桥梁，优先给一个可直接开口的搭配。";
   let suggestedEnglishExplanation = `Use ${word.dutch} in short, practical sentences instead of memorizing it alone.`;
   let suggestedEnglishBridge = hasUsefulBridge ? word.englishBridge : undefined;
   let confidence: WordBubbleCompletionDraft["confidence"] = "low";
@@ -280,11 +280,11 @@ export function generateWordBubbleCompletionDraft(word: WordItem): WordBubbleCom
     suggestedEnglishExplanation = compound.hookEn;
     confidence = "high";
   } else if (hasUsefulBridge) {
-    suggestedMemoryHook = `${word.dutch} 和 English “${word.meaning.en}” 有相似处，可以先借外形记意思，但发音按荷兰语读。`;
+    suggestedMemoryHook = `${word.dutch} 和 English “${word.meaning.en}” 有相似处；先认外形，再按荷兰语发音读。`;
     suggestedEnglishExplanation = `${word.dutch} may look familiar in English, but should be pronounced as Dutch.`;
     confidence = "medium";
   } else if (type === "verb" && verb) {
-    suggestedMemoryHook = `动词不要只背原形，要背能直接开口的句子：${verb.phrase}`;
+    suggestedMemoryHook = `动词不要只背原形，先记自然句子：${verb.phrase}`;
     suggestedEnglishExplanation = `This is a verb. Teach it through conjugated usage and one useful sentence first.`;
     confidence = "high";
   } else if (type === "verb" && verbUsage) {
@@ -344,7 +344,7 @@ export function generateWordBubbleCompletionDraft(word: WordItem): WordBubbleCom
     suggestedExamples,
     suggestedOutputSentence: suggestedExamples[0],
     suggestedLevelReason: lt(
-      `${word.level} ${word.theme} 相关词：用于${word.scenarioTags.join("、") || "日常场景"}，先放进短语和句子里掌握。`,
+      `${word.level} ${word.theme} 相关词：用于${word.scenarioTags.join("、") || "日常场景"}，需要配自然短语和句子掌握。`,
       `${word.level} ${word.theme} word: useful for ${word.scenarioTags.join(", ") || "daily scenarios"}. Learn it through chunks and sentences.`,
     ),
     confidence,

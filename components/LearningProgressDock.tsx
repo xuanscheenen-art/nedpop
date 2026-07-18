@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, ChevronUp, Route, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronUp, LockKeyhole, Route, X } from "lucide-react";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { authChangedEvent, getCachedUser, getCurrentUser } from "@/lib/auth";
+import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import {
   getDefaultLearningProgress,
   getLearningRouteContext,
@@ -16,21 +19,9 @@ import {
 } from "@/lib/learningProgress";
 import { getNextRecommendedAction } from "@/lib/nextAction";
 import { useLanguage } from "@/lib/i18n";
+import type { CourseLevel } from "@/types/course";
 
-const stepLabels: Record<LearningStep, { zh: string; en: string }> = {
-  pronunciation: { zh: "发音底座", en: "Pronunciation" },
-  "starter-words": { zh: "A0 生存词", en: "Starter words" },
-  grammar: { zh: "最小语法", en: "Tiny grammar" },
-  lesson: { zh: "课程", en: "Lesson" },
-  "word-bubbles": { zh: "单词", en: "Words" },
-  "grammar-on-demand": { zh: "小规则", en: "Rule" },
-  practice: { zh: "练习", en: "Practice" },
-  "scenario-output": { zh: "场景", en: "Scenario" },
-  review: { zh: "复习池", en: "Review" },
-  complete: { zh: "完成", en: "Complete" },
-};
-
-const foundationStepOrder = ["pronunciation", "starter-words", "grammar"] as const satisfies readonly LearningStep[];
+const foundationStepOrder = ["pronunciation", "starter-words", "word-bubbles", "grammar"] as const satisfies readonly LearningStep[];
 const dailyStepOrder = ["lesson", "word-bubbles", "grammar-on-demand", "practice", "scenario-output"] as const satisfies readonly LearningStep[];
 
 const normalizeRoute = (route: string) => {
@@ -42,9 +33,6 @@ const normalizeRoute = (route: string) => {
     return route;
   }
 };
-
-const currentBrowserRoute = () =>
-  typeof window === "undefined" ? "/" : `${window.location.pathname}${window.location.search}`;
 
 const routeUrlFor = (route: string) => new URL(route, "https://nedpop.local");
 
@@ -64,9 +52,17 @@ const wordBubbleRouteFor = (level: LearningProgress["currentLevel"], day: number
 const completedStepsForCurrentDay = (progress: LearningProgress) =>
   progress.completedStepsByDay[progress.currentLevel]?.[String(progress.currentDay)] ?? [];
 
+const completedStarterSteps = (progress: LearningProgress) => progress.completedStepsByDay.A0?.["1"] ?? [];
+
+const starterWordBubblesCompletedFor = (progress: LearningProgress) => {
+  const starterSteps = completedStarterSteps(progress);
+  return starterSteps.includes("word-bubbles");
+};
+
 const foundationCompletionFor = (progress: LearningProgress): Record<(typeof foundationStepOrder)[number], boolean> => ({
   pronunciation: progress.pronunciationBaseCompleted,
   "starter-words": progress.starterWordsCompleted,
+  "word-bubbles": starterWordBubblesCompletedFor(progress),
   grammar: progress.grammarBaseCompleted,
 });
 
@@ -127,6 +123,13 @@ const pageContextFor = (route: string, progress: LearningProgress, routeContext:
     };
   }
 
+  if (pathname === "/pricing") {
+    return {
+      zh: "你正在浏览：解锁页",
+      en: "You are browsing: Unlock page",
+    };
+  }
+
   if (pathname === "/pronunciation") {
     return {
       zh: "你正在学习：发音底座",
@@ -152,14 +155,9 @@ const pageContextFor = (route: string, progress: LearningProgress, routeContext:
   if (pathname === "/word-link") {
     const level = learningContext?.level ?? progress.currentLevel;
     const day = learningContext?.day ?? progress.currentDay;
-    const sameMainDay = level === progress.currentLevel && day === progress.currentDay;
     return {
-      zh: sameMainDay
-        ? `你正在练今天词：${level} Day ${day} 单词泡泡`
-        : `你正在自由练词：${level} Day ${day} 单词泡泡`,
-      en: sameMainDay
-        ? `You are practicing today's words: ${level} Day ${day}`
-        : `You are freely practicing: ${level} Day ${day} word bubbles`,
+      zh: `你正在练：${level} Day ${day} 单词泡泡`,
+      en: `You are practicing: ${level} Day ${day} word bubbles`,
     };
   }
 
@@ -189,6 +187,81 @@ const pageContextFor = (route: string, progress: LearningProgress, routeContext:
 };
 
 type RecommendedAction = ReturnType<typeof getNextRecommendedAction>;
+
+type NavigationStepItem = {
+  key: LearningStep;
+  labelZh: string;
+  labelEn: string;
+  route: string;
+  type: RecommendedAction["type"];
+  completed: boolean;
+};
+
+const lessonRouteForDock = (level: LearningProgress["currentLevel"], day: number, step?: "patterns" | "practice") =>
+  `/learn/${level.toLowerCase()}-${String(Math.max(1, day)).padStart(2, "0")}${step ? `?step=${step}` : ""}`;
+
+const starterSafeActionFor = (progress: LearningProgress): RecommendedAction => {
+  if (!progress.pronunciationBaseCompleted) {
+    return {
+      labelZh: "发音底座",
+      labelEn: "Pronunciation Base",
+      route: "/pronunciation",
+      reasonZh: "先把字母和组合音读顺，看到新词能大概读出来。",
+      reasonEn: "Start with letters and sound chunks so words are easier to remember.",
+      type: "pronunciation",
+    };
+  }
+
+  if (!progress.starterWordsCompleted) {
+    return {
+      labelZh: "A0 Day 1：生存词课程",
+      labelEn: "A0 Day 1: Starter Lesson",
+      route: "/learn/a0-01",
+      reasonZh: "先回到 A0 入门任务，不从定价页或自由浏览页跳到 A1。",
+      reasonEn: "Return to the A0 starter task instead of jumping from browsing into A1.",
+      type: "starter-words",
+    };
+  }
+
+  if (!starterWordBubblesCompletedFor(progress)) {
+    return {
+      labelZh: "A0 Day 1：本日单词泡泡",
+      labelEn: "A0 Day 1: Today's Word Bubbles",
+      route: "/word-link?level=A0&day=1",
+      reasonZh: "A0 Day 1 课程已完成。先把本日词包记住，再去最小语法地基。",
+      reasonEn: "A0 Day 1 lesson is done. Memorize today's word pack before the grammar base.",
+      type: "word-bubbles",
+    };
+  }
+
+  if (!progress.grammarBaseCompleted) {
+    return {
+      labelZh: "最小语法地基",
+      labelEn: "Grammar Base",
+      route: "/rules?mode=foundation",
+      reasonZh: "先补完入门地基，再进入后面的每日主线。",
+      reasonEn: "Finish the starter base before moving into later daily tracks.",
+      type: "grammar",
+    };
+  }
+
+  return {
+    labelZh: "学习首页",
+    labelEn: "Learning Home",
+    route: "/dashboard",
+    reasonZh: "你正在自由浏览，这里先回学习首页，不把当前页面当成主线进度。",
+    reasonEn: "You are browsing freely. Return to the learning home without changing main progress.",
+    type: "lesson",
+  };
+};
+
+const shouldUseFreeBrowseRecommendation = (route: string) => {
+  const url = routeUrlFor(route);
+  const pathname = url.pathname.replace(/\/$/, "") || "/";
+  if (pathname === "/" || pathname === "/pricing" || pathname === "/pronunciation") return true;
+  if (pathname === "/rules" && url.searchParams.get("mode") !== "foundation") return true;
+  return false;
+};
 
 const routeMatchesAction = (
   route: string,
@@ -233,6 +306,18 @@ const routeMatchesAction = (
   return false;
 };
 
+const lockedLevelForRoute = (
+  route: string,
+  progress: LearningProgress,
+  routeContext: LearningRouteContext | null,
+  accessLevel: UserUnlockedLevels,
+  signedIn: boolean,
+): CourseLevel | null => {
+  const learningContext = routeLearningContextFor(route, progress, routeContext);
+  if (!learningContext) return null;
+  return canAccessLevel(learningContext.level, accessLevel, signedIn) ? null : learningContext.level;
+};
+
 export function LearningProgressDock() {
   return (
     <Suspense fallback={null}>
@@ -246,33 +331,57 @@ function LearningProgressDockContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchKey = searchParams.toString();
+  const browserRoute = `${pathname || "/"}${searchKey ? `?${searchKey}` : ""}`;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState<LearningProgress>(() => getDefaultLearningProgress());
   const [routeContext, setRouteContext] = useState<LearningRouteContext | null>(null);
-  const [currentRoute, setCurrentRoute] = useState("/");
+  const [accessLevel, setAccessLevel] = useState<UserUnlockedLevels>([]);
+  const [signedIn, setSignedIn] = useState(false);
+  const [accessReady, setAccessReady] = useState(false);
+  const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
 
   useEffect(() => {
     const sync = () => {
       setMounted(true);
       setProgress(getLearningProgress());
       setRouteContext(getLearningRouteContext());
-      setCurrentRoute(currentBrowserRoute());
+    };
+    const syncAuthAndAccess = () => {
+      setSignedIn(Boolean(getCachedUser()));
+      setAccessLevel(getUnlockedLevels());
+      setAccessReady(true);
+      void getCurrentUser().then(async (user) => {
+        setSignedIn(Boolean(user));
+        setAccessLevel(getUnlockedLevels());
+        const levels = await getEntitledUnlockedLevels();
+        setAccessLevel(levels);
+        setAccessReady(true);
+      });
     };
     sync();
+    syncAuthAndAccess();
     window.addEventListener(learningProgressChangedEvent, sync);
     window.addEventListener(learningRouteContextChangedEvent, sync);
+    window.addEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+    window.addEventListener(authChangedEvent, syncAuthAndAccess);
     window.addEventListener("storage", sync);
+    window.addEventListener("storage", syncAuthAndAccess);
     return () => {
       window.removeEventListener(learningProgressChangedEvent, sync);
       window.removeEventListener(learningRouteContextChangedEvent, sync);
+      window.removeEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+      window.removeEventListener(authChangedEvent, syncAuthAndAccess);
       window.removeEventListener("storage", sync);
+      window.removeEventListener("storage", syncAuthAndAccess);
     };
   }, [pathname, searchKey]);
 
   if (!mounted) return null;
 
-  const action = getNextRecommendedAction(progress);
+  const currentRoute = browserRoute;
+  const useFreeBrowseRecommendation = shouldUseFreeBrowseRecommendation(currentRoute);
+  const action = useFreeBrowseRecommendation ? starterSafeActionFor(progress) : getNextRecommendedAction(progress);
   const learningContext = routeLearningContextFor(currentRoute, progress, routeContext);
   const isCurrentActionRoute = routeMatchesAction(currentRoute, progress, action, routeContext);
   const actionReason = isCurrentActionRoute
@@ -286,11 +395,93 @@ function LearningProgressDockContent() {
   const foundationComplete = foundationCompleteCount === foundationStepOrder.length;
   const completedToday = completedStepsForCurrentDay(progress);
   const dailyCompleteCount = dailyStepOrder.filter((step) => completedToday.includes(step)).length;
-  const progressSteps = foundationComplete ? dailyStepOrder : foundationStepOrder;
   const pageContext = pageContextFor(currentRoute, progress, routeContext);
-  const wordBubbleRoute = wordBubbleRouteFor(progress.currentLevel, progress.currentDay);
-  const headlineLabel =
-    learningContext?.page === "word-link"
+  const wordBubbleRoute = useFreeBrowseRecommendation ? wordBubbleRouteFor("A0", 1) : wordBubbleRouteFor(progress.currentLevel, progress.currentDay);
+  const actionLockedLevel = accessReady ? lockedLevelForRoute(action.route, progress, routeContext, accessLevel, signedIn) : null;
+  const wordBubbleLockedLevel = accessReady ? lockedLevelForRoute(wordBubbleRoute, progress, routeContext, accessLevel, signedIn) : null;
+  const starterNavigationSteps: NavigationStepItem[] = [
+    {
+      key: "pronunciation",
+      labelZh: "发音底座",
+      labelEn: "Pronunciation base",
+      route: "/pronunciation",
+      type: "pronunciation",
+      completed: progress.pronunciationBaseCompleted,
+    },
+    {
+      key: "starter-words",
+      labelZh: "A0 Day 1 课程",
+      labelEn: "A0 Day 1 lesson",
+      route: "/learn/a0-01",
+      type: "starter-words",
+      completed: progress.starterWordsCompleted,
+    },
+    {
+      key: "word-bubbles",
+      labelZh: "A0 Day 1 本日单词泡泡",
+      labelEn: "A0 Day 1 word bubbles",
+      route: "/word-link?level=A0&day=1",
+      type: "word-bubbles",
+      completed: starterWordBubblesCompletedFor(progress),
+    },
+    {
+      key: "grammar",
+      labelZh: "最小语法地基",
+      labelEn: "Tiny grammar base",
+      route: "/rules?mode=foundation",
+      type: "grammar",
+      completed: progress.grammarBaseCompleted,
+    },
+  ];
+  const dailyNavigationSteps: NavigationStepItem[] = [
+    {
+      key: "lesson",
+      labelZh: `${progress.currentLevel} Day ${progress.currentDay} 课程`,
+      labelEn: `${progress.currentLevel} Day ${progress.currentDay} lesson`,
+      route: lessonRouteForDock(progress.currentLevel, progress.currentDay),
+      type: "lesson",
+      completed: completedToday.includes("lesson"),
+    },
+    {
+      key: "word-bubbles",
+      labelZh: `${progress.currentLevel} Day ${progress.currentDay} 本日单词泡泡`,
+      labelEn: `${progress.currentLevel} Day ${progress.currentDay} word bubbles`,
+      route: wordBubbleRouteFor(progress.currentLevel, progress.currentDay),
+      type: "word-bubbles",
+      completed: completedToday.includes("word-bubbles"),
+    },
+    {
+      key: "grammar-on-demand",
+      labelZh: `${progress.currentLevel} Day ${progress.currentDay} 本日小规则`,
+      labelEn: `${progress.currentLevel} Day ${progress.currentDay} tiny rule`,
+      route: lessonRouteForDock(progress.currentLevel, progress.currentDay, "patterns"),
+      type: "grammar-on-demand",
+      completed: completedToday.includes("grammar-on-demand"),
+    },
+    {
+      key: "practice",
+      labelZh: `${progress.currentLevel} Day ${progress.currentDay} 练习`,
+      labelEn: `${progress.currentLevel} Day ${progress.currentDay} practice`,
+      route: lessonRouteForDock(progress.currentLevel, progress.currentDay, "practice"),
+      type: "practice",
+      completed: completedToday.includes("practice"),
+    },
+    {
+      key: "scenario-output",
+      labelZh: `${progress.currentLevel} Day ${progress.currentDay} 场景输出`,
+      labelEn: `${progress.currentLevel} Day ${progress.currentDay} scenario output`,
+      route: `/scenarios?level=${progress.currentLevel}&day=${progress.currentDay}`,
+      type: "scenario-output",
+      completed: completedToday.includes("scenario-output"),
+    },
+  ];
+  const navigationSteps = foundationComplete ? dailyNavigationSteps : starterNavigationSteps;
+  const nextOpenStepIndex = navigationSteps.findIndex((step) => !step.completed);
+  const headlineLabel = useFreeBrowseRecommendation && !learningContext
+    ? language === "zh"
+      ? "当前："
+      : "Current: "
+    : learningContext?.page === "word-link"
       ? language === "zh"
         ? "当前单词："
         : "Current words: "
@@ -299,6 +490,11 @@ function LearningProgressDockContent() {
         : "Main path: ";
   const headlineLevel = learningContext?.level ?? progress.currentLevel;
   const headlineDay = learningContext?.day ?? progress.currentDay;
+  const headlineTitle = useFreeBrowseRecommendation && !learningContext
+    ? language === "zh"
+      ? "自由浏览"
+      : "Free browsing"
+    : `${headlineLevel} Day ${headlineDay}`;
   const headlineIsMain =
     headlineLevel === progress.currentLevel && headlineDay === progress.currentDay;
 
@@ -312,73 +508,145 @@ function LearningProgressDockContent() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-ocean"
+        className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-2.5 text-xs font-black text-white shadow-soft transition hover:bg-ocean"
       >
-        <Route size={17} />
-        {language === "zh" ? "学习导航" : "Learning Nav"}
-        <ChevronUp size={16} />
+        <Route size={15} />
+        {language === "zh" ? "新手导航" : "Learning Nav"}
+        <ChevronUp size={14} />
       </button>
     );
   }
 
   return (
-    <aside className="fixed bottom-5 right-5 z-50 w-[min(24rem,calc(100vw-2rem))] rounded-[26px] border border-blue-100 bg-white p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
+    <aside className="fixed bottom-3 right-3 z-50 max-h-[min(56vh,28rem)] w-[min(18rem,calc(100vw-0.75rem))] overflow-y-auto rounded-[20px] border border-blue-100 bg-white p-2.5 shadow-soft">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-black tracking-[0.16em] text-pop">{language === "zh" ? "学习导航" : "Learning Nav"}</p>
-          <h2 className="mt-1 text-xl font-black leading-tight text-ink">
+          <p className="text-[10px] font-black tracking-[0.12em] text-pop">{language === "zh" ? "新手导航" : "Learning Nav"}</p>
+          <h2 className="mt-0.5 text-base font-black leading-tight text-ink">
             {headlineLabel}
-            {headlineLevel} Day {headlineDay}
+            {headlineTitle}
           </h2>
-          <p className="mt-1 text-xs font-black text-ocean/55">
-            {!headlineIsMain
+          <p className="mt-0.5 text-[10px] font-black text-ocean/55">
+            {!foundationComplete
+              ? language === "zh"
+                ? `入门地基：${foundationCompleteCount} / ${foundationStepOrder.length}`
+                : `Starter base: ${foundationCompleteCount} / ${foundationStepOrder.length}`
+              : useFreeBrowseRecommendation && !learningContext
+              ? language === "zh"
+                ? "不会改变新手进度"
+                : "Does not change starter progress"
+              : !headlineIsMain
               ? language === "zh"
                 ? `主线：${progress.currentLevel} Day ${progress.currentDay}`
                 : `Main path: ${progress.currentLevel} Day ${progress.currentDay}`
-              : foundationComplete
-              ? language === "zh"
-                ? `今日进度：${dailyCompleteCount} / ${dailyStepOrder.length}`
-                : `Today: ${dailyCompleteCount} / ${dailyStepOrder.length}`
               : language === "zh"
-                ? `入门地基：${foundationCompleteCount} / ${foundationStepOrder.length}`
-                : `Starter base: ${foundationCompleteCount} / ${foundationStepOrder.length}`}
+                ? `今日进度：${dailyCompleteCount} / ${dailyStepOrder.length}`
+                : `Today: ${dailyCompleteCount} / ${dailyStepOrder.length}`}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="flex size-9 items-center justify-center rounded-full bg-skywash text-ocean transition hover:bg-peach"
-          aria-label={language === "zh" ? "收起学习导航" : "Collapse learning nav"}
+          className="flex size-7 items-center justify-center rounded-full bg-skywash text-ocean transition hover:bg-peach"
+          aria-label={language === "zh" ? "收起新手导航" : "Collapse learning nav"}
         >
-          <X size={18} />
+          <X size={15} />
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {progressSteps.map((step) => {
-          const complete = foundationComplete
-            ? completedToday.includes(step)
-            : foundationCompletion[step as (typeof foundationStepOrder)[number]];
+      <div className="mt-2.5 space-y-1">
+        <p className="text-[10px] font-black tracking-[0.11em] text-pop">
+          {foundationComplete
+            ? language === "zh"
+              ? "今日顺序"
+              : "Today's Flow"
+            : language === "zh"
+              ? "入门顺序"
+              : "Starter Flow"}
+        </p>
+        {navigationSteps.map((step, index) => {
+          const isRecommendedStep = index === nextOpenStepIndex;
+          const stepLockedLevel = accessReady ? lockedLevelForRoute(step.route, progress, routeContext, accessLevel, signedIn) : null;
+          const stepIsCurrentRoute = normalizeRoute(step.route) === normalizeRoute(currentRoute);
+          const statusText = step.completed
+            ? language === "zh"
+              ? "已完成"
+              : "Done"
+            : isRecommendedStep
+              ? language === "zh"
+                ? "建议现在做"
+                : "Recommended now"
+              : language === "zh"
+                ? "稍后"
+                : "Later";
+
           return (
-            <span
-              key={step}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${
-                complete ? "bg-skywash text-ocean" : "bg-slate-50 text-ocean/45 ring-1 ring-blue-100"
+            <div
+              key={`${step.key}-${step.route}`}
+              className={`rounded-[14px] p-1.5 ring-1 ${
+                step.completed
+                  ? "bg-skywash text-ocean ring-blue-100"
+                  : isRecommendedStep
+                    ? "bg-peach text-ink ring-orange-100"
+                    : "bg-slate-50 text-ocean/55 ring-blue-100"
               }`}
             >
-              {complete ? <CheckCircle2 size={13} /> : <span className="size-2 rounded-full bg-ocean/25" />}
-              {stepLabels[step][language]}
-            </span>
+              <div className="flex items-start gap-2">
+                <span
+                  className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black ${
+                    step.completed ? "bg-white text-ocean" : isRecommendedStep ? "bg-pop text-white" : "bg-white text-ocean/45"
+                  }`}
+                >
+                  {step.completed ? <CheckCircle2 size={11} /> : index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black leading-4 text-current">{language === "zh" ? step.labelZh : step.labelEn}</p>
+                  <p className="truncate text-[9px] font-bold leading-3 text-ocean/65">{statusText}</p>
+                </div>
+              </div>
+              {!step.completed && isRecommendedStep ? (
+                <div className="mt-1 pl-6">
+                  {stepIsCurrentRoute ? (
+                    <button
+                      type="button"
+                      onClick={focusCurrentPage}
+                      className="inline-flex items-center justify-center gap-1 rounded-full bg-ink px-2 py-1 text-[10px] font-black text-white transition hover:bg-ocean"
+                    >
+                      {language === "zh" ? "回到这一步" : "Back here"}
+                      <ArrowRight size={12} />
+                    </button>
+                  ) : stepLockedLevel ? (
+                    <button
+                      type="button"
+                      onClick={() => setUpgradeLevel(stepLockedLevel)}
+                      className="inline-flex items-center justify-center gap-1 rounded-full bg-ink px-2 py-1 text-[10px] font-black text-white transition hover:bg-ocean"
+                    >
+                      <LockKeyhole size={12} />
+                      {language === "zh" ? "解锁这一步" : "Unlock"}
+                    </button>
+                  ) : (
+                    <Link
+                      href={step.route}
+                      onClick={() => setOpen(false)}
+                      className="inline-flex items-center justify-center gap-1 rounded-full bg-ink px-2 py-1 text-[10px] font-black text-white transition hover:bg-ocean"
+                    >
+                      {language === "zh" ? "去做这一步" : "Go"}
+                      <ArrowRight size={12} />
+                    </Link>
+                  )}
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </div>
 
-      <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold leading-6 text-ocean/70 ring-1 ring-blue-100">
+      <p className="mt-1.5 truncate rounded-full bg-slate-50 px-2 py-0.5 text-[9px] font-bold leading-4 text-ocean/65 ring-1 ring-blue-100">
         {pageContext[language]}
       </p>
 
-      <div className="mt-3 rounded-[22px] bg-peach px-4 py-4">
-        <p className="text-xs font-black tracking-[0.14em] text-pop">
+      <div className="mt-1.5 rounded-[14px] bg-peach px-2 py-1.5">
+        <p className="text-[9px] font-black tracking-[0.1em] text-pop">
           {isCurrentActionRoute
             ? language === "zh"
               ? "当前主线任务"
@@ -387,10 +655,10 @@ function LearningProgressDockContent() {
               ? "推荐下一步"
               : "Recommended Next"}
         </p>
-        <h3 className="mt-1 text-lg font-black leading-tight text-ink">
+        <h3 className="mt-0.5 truncate text-[13px] font-black leading-4 text-ink">
           {language === "zh" ? action.labelZh : action.labelEn}
         </h3>
-        <p className="mt-2 text-sm font-bold leading-6 text-ocean/70">
+        <p className="mt-0.5 max-h-8 overflow-hidden text-[9px] font-bold leading-4 text-ocean/65">
           {language === "zh" ? actionReason.zh : actionReason.en}
         </p>
       </div>
@@ -399,46 +667,72 @@ function LearningProgressDockContent() {
         <button
           type="button"
           onClick={focusCurrentPage}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean"
+          className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-black text-white transition hover:bg-ocean"
         >
           {language === "zh" ? "回到主线任务" : "Back to Main Task"}
-          <ArrowRight size={18} />
+          <ArrowRight size={15} />
+        </button>
+      ) : actionLockedLevel ? (
+        <button
+          type="button"
+          onClick={() => setUpgradeLevel(actionLockedLevel)}
+          className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-black text-white transition hover:bg-ocean"
+        >
+          <LockKeyhole size={15} />
+          {language === "zh" ? `解锁 ${actionLockedLevel} 主线` : `Unlock ${actionLockedLevel}`}
         </button>
       ) : (
         <Link
           href={action.route}
           onClick={() => setOpen(false)}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean"
+          className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-black text-white transition hover:bg-ocean"
         >
-          {language === "zh" ? "继续主线" : "Continue Main Path"}
-          <ArrowRight size={18} />
+          {useFreeBrowseRecommendation && action.route === "/dashboard"
+            ? language === "zh"
+              ? "回学习首页"
+              : "Back to Learning Home"
+            : language === "zh"
+              ? "继续主线"
+              : "Continue Main Path"}
+          <ArrowRight size={15} />
         </Link>
       )}
 
-      <div className="mt-3 border-t border-blue-100 pt-3">
-        <p className="text-xs font-black tracking-[0.14em] text-pop">{language === "zh" ? "自由学习" : "Free Practice"}</p>
-        <p className="mt-1 text-xs font-bold leading-5 text-ocean/55">
-          {language === "zh"
-            ? "多练单词不会改变主线进度，完成任务才会推进。"
-            : "Extra word practice will not move the main path; completed tasks do."}
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Link
-            href={wordBubbleRoute}
-            onClick={() => setOpen(false)}
-            className="inline-flex items-center justify-center rounded-full bg-skywash px-3 py-2.5 text-sm font-black text-ocean ring-1 ring-blue-100 transition hover:bg-peach"
-          >
-            {language === "zh" ? "练今天词" : "Words"}
-          </Link>
+      <div className="mt-1.5 border-t border-blue-100 pt-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
+          {wordBubbleLockedLevel ? (
+            <button
+              type="button"
+              onClick={() => setUpgradeLevel(wordBubbleLockedLevel)}
+              className="inline-flex items-center justify-center rounded-full bg-skywash px-2 py-1 text-[10px] font-black text-ocean ring-1 ring-blue-100 transition hover:bg-peach"
+            >
+              {language === "zh" ? "解锁今天词" : "Unlock words"}
+            </button>
+          ) : (
+            <Link
+              href={wordBubbleRoute}
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center justify-center rounded-full bg-skywash px-2 py-1 text-[10px] font-black text-ocean ring-1 ring-blue-100 transition hover:bg-peach"
+            >
+              {useFreeBrowseRecommendation
+                ? language === "zh"
+                  ? "练 A0 词"
+                  : "A0 words"
+                : language === "zh"
+                  ? "练今天词"
+                  : "Words"}
+            </Link>
+          )}
           <Link
             href="/word-review"
             onClick={() => setOpen(false)}
-            className="inline-flex items-center justify-center rounded-full bg-slate-50 px-3 py-2.5 text-sm font-black text-ocean ring-1 ring-blue-100 transition hover:bg-skywash"
+            className="inline-flex items-center justify-center rounded-full bg-slate-50 px-2 py-1 text-[10px] font-black text-ocean ring-1 ring-blue-100 transition hover:bg-skywash"
           >
             {language === "zh" ? "去复习池" : "Review"}
           </Link>
         </div>
       </div>
+      <UpgradeModal open={Boolean(upgradeLevel)} lockedLevel={upgradeLevel} onClose={() => setUpgradeLevel(undefined)} />
     </aside>
   );
 }

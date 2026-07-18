@@ -21,13 +21,14 @@ export default function PronunciationPage() {
     setBaseCompleted(getLearningProgress().pronunciationBaseCompleted);
   }, []);
 
-  const completePronunciationBase = () => {
+  const togglePronunciationBase = () => {
+    const nextCompleted = !baseCompleted;
     updateLearningProgress({
-      pronunciationBaseCompleted: true,
-      currentStep: "starter-words",
+      pronunciationBaseCompleted: nextCompleted,
+      currentStep: nextCompleted ? "starter-words" : "pronunciation",
       lastVisitedRoute: "/pronunciation",
     });
-    setBaseCompleted(true);
+    setBaseCompleted(nextCompleted);
   };
 
   return (
@@ -59,13 +60,14 @@ export default function PronunciationPage() {
           </div>
           <button
             type="button"
-            onClick={completePronunciationBase}
+            onClick={togglePronunciationBase}
+            aria-pressed={baseCompleted}
             className="inline-flex shrink-0 items-center justify-center rounded-full bg-pop px-5 py-3 text-sm font-black text-ink shadow-soft transition hover:bg-orange-300"
           >
             {baseCompleted
               ? language === "zh"
-                ? "已完成"
-                : "Completed"
+                ? "取消完成"
+                : "Undo complete"
               : language === "zh"
                 ? "完成发音底座"
                 : "Mark complete"}

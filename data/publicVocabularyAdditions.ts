@@ -126,7 +126,7 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleZh: "水果和饮料扩展",
     titleEn: "expanded fruit and drinks",
     entries: [
-      ["peer", "梨", "pear", "de"], ["druif", "葡萄", "grape", "de"], ["aardbei", "草莓", "strawberry", "de"], ["citroen", "柠檬", "lemon", "de"], ["meloen", "甜瓜", "melon", "de"], ["perzik", "桃子", "peach", "de"], ["fruit", "水果", "fruit", "het"], ["sap", "果汁", "juice", "het"], ["sinaasappelsap", "橙汁", "orange juice", "het"], ["frisdrank", "软饮", "soft drink", "de"], ["bier", "啤酒", "beer", "het"], ["wijn", "葡萄酒", "wine", "de"], ["sojamelk", "豆奶", "soy milk", "de"], ["kraanwater", "自来水", "tap water", "het"], ["mineraalwater", "矿泉水", "mineral water", "het"], ["warm water", "热水", "hot water"], ["koud water", "冷水", "cold water"], ["zonder suiker", "不加糖", "without sugar"],
+      ["peer", "梨", "pear", "de"], ["druif", "葡萄", "grape", "de"], ["aardbei", "草莓", "strawberry", "de"], ["citroen", "柠檬", "lemon", "de"], ["meloen", "甜瓜", "melon", "de"], ["perzik", "桃子", "peach", "de"], ["fruit", "水果", "fruit", "het"], ["aardappel", "土豆", "potato", "de"], ["sinaasappel", "橙子", "orange", "de"], ["sap", "果汁", "juice", "het"], ["sinaasappelsap", "橙汁", "orange juice", "het"], ["frisdrank", "软饮", "soft drink", "de"], ["bier", "啤酒", "beer", "het"], ["wijn", "葡萄酒", "wine", "de"], ["sojamelk", "豆奶", "soy milk", "de"], ["kraanwater", "自来水", "tap water", "het"], ["mineraalwater", "矿泉水", "mineral water", "het"], ["warm water", "热水", "hot water"], ["koud water", "冷水", "cold water"], ["zonder suiker", "不加糖", "without sugar"],
     ],
   },
   {
@@ -180,7 +180,7 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleZh: "基础形容词扩展",
     titleEn: "expanded adjectives",
     entries: [
-      ["hoog", "高的", "high"], ["laag", "低的", "low"], ["lang", "长的/高的", "long/tall"], ["kort", "短的", "short"], ["licht", "轻的/亮的", "light"], ["zwaar", "重的", "heavy"], ["vol", "满的", "full"], ["leeg", "空的", "empty"], ["open", "开的", "open"], ["dicht", "关的/近的", "closed/near"], ["schoon", "干净的", "clean"], ["vies", "脏的", "dirty"], ["druk", "忙/拥挤", "busy"], ["rustig", "安静的", "quiet"], ["veilig", "安全的", "safe"], ["gevaarlijk", "危险的", "dangerous"], ["klaar", "准备好/完成", "ready/done"], ["belangrijk", "重要的", "important"],
+      ["hoog", "高的", "high"], ["laag", "低的", "low"], ["lang", "长的/高的", "long/tall"], ["kort", "短的", "short"], ["jong", "年轻的/小的", "young"], ["licht", "轻的/亮的", "light"], ["zwaar", "重的", "heavy"], ["vol", "满的", "full"], ["leeg", "空的", "empty"], ["open", "开的", "open"], ["dicht", "关的/近的", "closed/near"], ["schoon", "干净的", "clean"], ["vies", "脏的", "dirty"], ["druk", "忙/拥挤", "busy"], ["rustig", "安静的", "quiet"], ["veilig", "安全的", "safe"], ["gevaarlijk", "危险的", "dangerous"], ["klaar", "准备好/完成", "ready/done"], ["belangrijk", "重要的", "important"],
     ],
   },
   {
@@ -207,7 +207,7 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleZh: "休闲爱好扩展",
     titleEn: "expanded leisure",
     entries: [
-      ["zwemmen", "游泳", "swim"], ["voetbal", "足球", "football", "het"], ["tennis", "网球", "tennis", "het"], ["hardlopen", "跑步", "run"], ["dansen", "跳舞", "dance"], ["zingen", "唱歌", "sing"], ["tekenen", "画画", "draw"], ["foto", "照片", "photo", "de"], ["camera", "相机", "camera", "de"], ["televisie", "电视", "television", "de"], ["programma", "节目", "program", "het"], ["nieuws", "新闻", "news", "het"], ["boek lezen", "读书", "read a book"], ["muziek luisteren", "听音乐", "listen to music"], ["vrienden bezoeken", "拜访朋友", "visit friends"], ["uitgaan", "外出娱乐", "go out"], ["feest", "聚会", "party", "het"], ["vakantie", "假期", "holiday", "de"],
+      ["zwemmen", "游泳", "swim"], ["voetbal", "足球", "football", "het"], ["tennis", "网球", "tennis", "het"], ["hardlopen", "跑步", "run"], ["rennen", "奔跑/跑", "run"], ["dansen", "跳舞", "dance"], ["zingen", "唱歌", "sing"], ["tekenen", "画画", "draw"], ["foto", "照片", "photo", "de"], ["camera", "相机", "camera", "de"], ["televisie", "电视", "television", "de"], ["programma", "节目", "program", "het"], ["nieuws", "新闻", "news", "het"], ["boek lezen", "读书", "read a book"], ["muziek luisteren", "听音乐", "listen to music"], ["vrienden bezoeken", "拜访朋友", "visit friends"], ["uitgaan", "外出娱乐", "go out"], ["feest", "聚会", "party", "het"], ["vakantie", "假期", "holiday", "de"],
     ],
   },
   {
@@ -225,7 +225,7 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleZh: "钱和购物扩展",
     titleEn: "expanded money and shopping",
     entries: [
-      ["munten", "硬币", "coins"], ["biljet", "纸币", "banknote", "het"], ["portemonnee", "钱包", "wallet", "de"], ["prijskaartje", "价签", "price tag", "het"], ["aanbieding", "特价", "special offer", "de"], ["totaal", "总计", "total"], ["extra", "额外", "extra"], ["minder", "更少", "less"], ["meer", "更多", "more"], ["genoeg", "足够", "enough"], ["te veel", "太多", "too much"], ["te weinig", "太少", "too little"], ["ruilen", "退换", "exchange"], ["terugbrengen", "拿回来/退回", "bring back"], ["bewaren", "保存", "keep"], ["bonnetje", "小票", "receipt", "het"], ["klant", "顾客", "customer", "de"], ["verkoper", "销售员", "seller", "de"],
+      ["munten", "硬币", "coins"], ["biljet", "纸币", "banknote", "het"], ["portemonnee", "钱包", "wallet", "de"], ["prijskaartje", "价签", "price tag", "het"], ["aanbieding", "特价", "special offer", "de"], ["totaal", "总计", "total"], ["extra", "额外", "extra"], ["minder", "更少", "less"], ["meer", "更多", "more"], ["genoeg", "足够", "enough"], ["te veel", "太多", "too much"], ["te weinig", "太少", "too little"], ["ruilen", "退换", "exchange"], ["terugbrengen", "拿回来/退回", "bring back"], ["bewaren", "保存", "keep"], ["bonnetje", "小票", "receipt", "het"], ["klant", "顾客", "customer", "de"], ["verkoper", "销售员", "seller", "de"], ["verkopen", "卖", "sell"],
     ],
   },
   {
@@ -324,7 +324,7 @@ const publicVocabularyBaseAdditions: PublicVocabularyTheme[] = [
     titleZh: "A1 余量实用词",
     titleEn: "A1 practical reserve words",
     entries: [
-      ["gezellig", "舒服热闹/惬意", "cozy/pleasant"], ["normaal", "正常的", "normal"], ["raar", "奇怪的", "strange"], ["handig", "方便的", "handy"], ["lastig", "麻烦的", "tricky"], ["mogelijk", "可能的", "possible"], ["onmogelijk", "不可能的", "impossible"], ["nodig hebben", "需要", "need"], ["meenemen", "带上", "bring along"], ["achterlaten", "留下", "leave behind"], ["onthouden", "记住", "remember"], ["vergeten", "忘记", "forget"], ["beginner", "初学者", "beginner", "de"], ["niveau", "水平/等级", "level", "het"], ["pauzeren", "暂停", "pause"], ["doorgaan", "继续", "continue"], ["klaarmaken", "准备", "prepare"], ["proeven", "品尝", "taste"],
+      ["gezellig", "舒服热闹/惬意", "cozy/pleasant"], ["normaal", "正常的", "normal"], ["raar", "奇怪的", "strange"], ["handig", "方便的", "handy"], ["lastig", "麻烦的", "tricky"], ["mogelijk", "可能的", "possible"], ["onmogelijk", "不可能的", "impossible"], ["nodig hebben", "需要", "need"], ["meenemen", "带上", "bring along"], ["achterlaten", "留下", "leave behind"], ["onthouden", "记住", "remember"], ["vergeten", "忘记", "forget"], ["beginner", "初学者", "beginner", "de"], ["niveau", "水平/等级", "level", "het"], ["interesseren", "使感兴趣/让人有兴趣", "interest someone"], ["pauzeren", "暂停", "pause"], ["doorgaan", "继续", "continue"], ["klaarmaken", "准备", "prepare"], ["proeven", "品尝", "taste"],
     ],
   },
   {

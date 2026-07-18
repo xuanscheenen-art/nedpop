@@ -273,6 +273,22 @@ export type MemoryPath = {
     bridge: string;
     noteZh: string;
     noteEn: string;
+    differenceZh?: string;
+    differenceEn?: string;
+  };
+  formation?: {
+    base: {
+      dutch: string;
+      meaningZh: string;
+      meaningEn: string;
+    };
+    formed: {
+      dutch: string;
+      meaningZh: string;
+      meaningEn: string;
+    };
+    noteZh: string;
+    noteEn: string;
   };
   memoryHookZh: string;
   memoryHookEn: string;

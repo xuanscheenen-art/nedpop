@@ -15,7 +15,7 @@ export type WordAnalysis = {
   derivationHints: string[];
 };
 
-const norm = (value: string) =>
+const norm = (value = "") =>
   value
     .trim()
     .toLowerCase()

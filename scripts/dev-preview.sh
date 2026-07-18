@@ -14,4 +14,7 @@ fi
 echo "Starting NedPop preview on http://${HOST}:${PORT}"
 echo "Node: $(command -v node)"
 
+export NEXT_PUBLIC_ENABLE_REVIEW_LOGIN="${NEXT_PUBLIC_ENABLE_REVIEW_LOGIN:-true}"
+export NEXT_PUBLIC_ENABLE_LOCAL_ACCESS_FALLBACK="${NEXT_PUBLIC_ENABLE_LOCAL_ACCESS_FALLBACK:-true}"
+
 exec pnpm exec next dev --webpack -H "${HOST}" -p "${PORT}"

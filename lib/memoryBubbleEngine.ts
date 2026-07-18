@@ -19,6 +19,7 @@ export type MemoryBubbleRelationType =
   | "opposite"
   | "time-contrast"
   | "comparative-superlative"
+  | "semantic-series"
   | "category-member"
   | "time-category"
   | "scenario-word"
@@ -36,6 +37,7 @@ export type MemoryBubbleRelationGroup =
   | "反义/对比"
   | "时间对照"
   | "比较级/最高级"
+  | "系列关系"
   | "同类别"
   | "时间相关"
   | "同场景"
@@ -57,6 +59,7 @@ export const memoryBubbleRelationLabels: Record<MemoryBubbleRelationType, { zh: 
   opposite: { zh: "反义/对比", en: "Opposite/Contrast", groupZh: "反义/对比", groupEn: "Contrast" },
   "time-contrast": { zh: "时间对照", en: "Time Contrast", groupZh: "时间对照", groupEn: "Time Contrast" },
   "comparative-superlative": { zh: "比较级 / 最高级", en: "Comparative", groupZh: "比较级/最高级", groupEn: "Comparative" },
+  "semantic-series": { zh: "系列关系", en: "Semantic Series", groupZh: "系列关系", groupEn: "Semantic Series" },
   "category-member": { zh: "同类别", en: "Category", groupZh: "同类别", groupEn: "Category" },
   "time-category": { zh: "时间相关", en: "Time Related", groupZh: "时间相关", groupEn: "Time Related" },
   "scenario-word": { zh: "实用联想", en: "Useful Link", groupZh: "同场景", groupEn: "Scenario" },

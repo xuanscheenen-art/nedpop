@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { notFound, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Ear, LockKeyhole, MessageCircle, Pencil, Play, Puzzle, Sparkles, Target } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, Ear, LockKeyhole, MessageCircle, Pencil, Play, Puzzle, Sparkles, Target } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
-import { authChangedEvent, getCurrentUser } from "@/lib/auth";
+import { authChangedEvent, getCachedUser, getCurrentUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
 import { accessLevelChangedEvent, canAccessLesson, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
@@ -87,36 +87,35 @@ export default function LearnLessonPage() {
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
 
   useEffect(() => {
-    setCurrentAccessLevel(getUnlockedLevels());
-    setAccessReady(true);
     try {
       setLessons(getEffectiveCourseLessons());
     } catch {
       setLessons(getBaseCourseLessons());
     }
     let cancelled = false;
-    const syncAccess = () => {
+    const syncAuthAndAccess = () => {
+      setSignedIn(Boolean(getCachedUser()));
       setCurrentAccessLevel(getUnlockedLevels());
-      void getEntitledUnlockedLevels().then((level) => {
-        if (!cancelled) setCurrentAccessLevel(level);
+      setAccessReady(true);
+      void getCurrentUser().then(async (user) => {
+        if (cancelled) return;
+        setSignedIn(Boolean(user));
+        setCurrentAccessLevel(getUnlockedLevels());
+        const level = await getEntitledUnlockedLevels();
+        if (!cancelled) {
+          setCurrentAccessLevel(level);
+          setAccessReady(true);
+        }
       });
     };
-    const syncUser = () => {
-      void getCurrentUser().then((user) => {
-        if (!cancelled) setSignedIn(Boolean(user));
-      });
-    };
-    syncUser();
-    syncAccess();
-    window.addEventListener(accessLevelChangedEvent, syncAccess);
-    window.addEventListener(authChangedEvent, syncUser);
-    window.addEventListener("storage", syncAccess);
-    window.addEventListener("storage", syncUser);
+    syncAuthAndAccess();
+    window.addEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+    window.addEventListener(authChangedEvent, syncAuthAndAccess);
+    window.addEventListener("storage", syncAuthAndAccess);
     return () => {
-      window.removeEventListener(accessLevelChangedEvent, syncAccess);
-      window.removeEventListener(authChangedEvent, syncUser);
-      window.removeEventListener("storage", syncAccess);
-      window.removeEventListener("storage", syncUser);
+      window.removeEventListener(accessLevelChangedEvent, syncAuthAndAccess);
+      window.removeEventListener(authChangedEvent, syncAuthAndAccess);
+      window.removeEventListener("storage", syncAuthAndAccess);
       cancelled = true;
     };
   }, []);
@@ -336,15 +335,8 @@ export default function LearnLessonPage() {
   const lessonFlowComplete = lessonComplete && grammarOnDemandComplete && practiceComplete;
   const isStarterLesson = lesson.level === "A0" && lesson.order === 1;
   const wordBubbleRoute = `/word-link?level=${lesson.level}&day=${lesson.order}`;
-  const nextRouteAfterLesson = isStarterLesson && !foundationGrammarCompleted ? "/rules?mode=foundation" : wordBubbleRoute;
-  const nextLabelAfterLesson =
-    isStarterLesson && !foundationGrammarCompleted
-      ? language === "zh"
-        ? "去最小语法地基"
-        : "Open Grammar Base 1"
-      : language === "zh"
-        ? "去今日单词泡泡"
-        : "Open today's word bubbles";
+  const shouldOpenFoundationAfterLesson = isStarterLesson && !foundationGrammarCompleted;
+  const nextLessonAccessible = nextLesson ? canAccessLesson(nextLesson, accessLevel, signedIn) : false;
   const completeLessonFlow = () => {
     markStepComplete(lesson.level, lesson.order, "lesson");
     markStepComplete(lesson.level, lesson.order, "grammar-on-demand");
@@ -354,7 +346,7 @@ export default function LearnLessonPage() {
         starterWordsCompleted: true,
         currentLevel: "A0",
         currentDay: 1,
-        currentStep: foundationGrammarCompleted ? "word-bubbles" : "grammar",
+        currentStep: "word-bubbles",
         lastVisitedRoute: "/learn/a0-01",
       });
       setStarterBaseCompleted(true);
@@ -911,10 +903,39 @@ export default function LearnLessonPage() {
               <ArrowRight size={18} />
             </button>
           ) : lessonFlowComplete ? (
-            <Link href={nextRouteAfterLesson} className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white">
-              {nextLabelAfterLesson}
-              <ArrowRight size={18} />
-            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <Link href={wordBubbleRoute} className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white">
+                {language === "zh" ? "本日单词泡泡" : "Today's word bubbles"}
+                <ArrowRight size={18} />
+              </Link>
+              {shouldOpenFoundationAfterLesson ? (
+                <Link href="/rules?mode=foundation" className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-5 py-3 font-black text-ocean ring-1 ring-blue-100">
+                  {language === "zh" ? "去最小语法地基" : "Open Grammar Base 1"}
+                  <ArrowRight size={18} />
+                </Link>
+              ) : nextLesson ? (
+                nextLessonAccessible ? (
+                  <Link href={`/learn/${nextLesson.id}`} className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-5 py-3 font-black text-ocean ring-1 ring-blue-100">
+                    {language === "zh" ? "进入下一课" : "Open next lesson"}
+                    <ArrowRight size={18} />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openUpgrade(nextLesson.level)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-5 py-3 font-black text-ocean ring-1 ring-blue-100"
+                  >
+                    <LockKeyhole size={18} />
+                    {language === "zh" ? "解锁下一课" : "Unlock next lesson"}
+                  </button>
+                )
+              ) : (
+                <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-5 py-3 font-black text-ocean ring-1 ring-blue-100">
+                  {language === "zh" ? "回课程总览" : "Back to courses"}
+                  <ArrowRight size={18} />
+                </Link>
+              )}
+            </div>
           ) : (
             <button
               type="button"
@@ -1003,8 +1024,11 @@ export default function LearnLessonPage() {
         <details className="group mt-5 rounded-[24px] bg-slate-50 p-4 ring-1 ring-blue-100">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-2 py-2 font-black text-ocean outline-none transition hover:bg-white focus-visible:ring-2 focus-visible:ring-pop/35 [&::-webkit-details-marker]:hidden">
             <span>{language === "zh" ? "A0-B1 课程目录" : "A0-B1 lesson index"}</span>
-            <span className="inline-flex items-center rounded-full bg-pop px-3 py-1 text-xs font-black text-white shadow-sm">
-              {language === "zh" ? "可点击展开" : "Tap to open"}
+            <span
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pop text-white shadow-sm transition-transform group-open:rotate-180"
+              aria-label={language === "zh" ? "展开课程目录" : "Open lesson index"}
+            >
+              <ChevronDown size={20} aria-hidden="true" />
             </span>
           </summary>
           <div className="mt-5 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">

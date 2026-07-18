@@ -1,7 +1,7 @@
 import type { WordItem } from "@/types/vocabulary";
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const norm = (value: string) => value.trim().toLowerCase();
+const norm = (value = "") => value.trim().toLowerCase();
 
 const allowedSearchNouns = new Set(["station", "halte", "perron", "uitgang", "balie"]);
 
@@ -19,6 +19,9 @@ const allowedNaarPlaces = new Set([
   "ziekenhuis",
   "tandarts",
   "apotheek",
+  "kapper",
+  "bakker",
+  "slager",
   "balie",
   "winkel",
   "centrum",
@@ -103,6 +106,8 @@ const knownBadLearnerLinePatterns = [
   /^Ik werken\.$/i,
   /^Ik zijn\.$/i,
   /^Ik nodig help\.$/i,
+  /^Ik gebruik .+ in een zin\.?$/i,
+  /^Ik vraag naar\s+(?:de|het|een)?\s*.+\.?$/i,
   /^Kunt u mij hulp\??$/i,
   /^Ik heb een afspraak\.$/i,
   /^Ik ben een afspraak\.$/i,
@@ -110,6 +115,7 @@ const knownBadLearnerLinePatterns = [
   /^Ik zeg heet\.$/i,
   /^Ik ga naar (uit|hier|daar)\.?$/i,
   /^Ik kijk naar laatst\.?$/i,
+  /\bin\s+(maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag)\b/i,
   new RegExp(`^Ik ga naar ((de|het)\\s+)?${bodyPartWordsPattern}\\.?$`, "i"),
   new RegExp(`^Ik ga naar\\s+${symptomWordsPattern}\\.?$`, "i"),
   new RegExp(`^Ik gebruik ((de|het)\\s+)?${bodyPartWordsPattern}\\.?$`, "i"),
@@ -190,3 +196,56 @@ export const isBroadGenericQuestionTemplate = (sentence: string) =>
 
 export const isKnownBadLearnerLine = (sentence: string) =>
   knownBadLearnerLinePatterns.some((pattern) => pattern.test(sentence.trim()));
+
+export const isIncompletePhraseChunk = (chunk: string) => {
+  const text = chunk
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .replace(/\s+/g, " ");
+  const tokens = text.split(" ").filter(Boolean);
+  const functionOnlyTokens = new Set([
+    "ik",
+    "je",
+    "jij",
+    "u",
+    "hij",
+    "zij",
+    "ze",
+    "we",
+    "wij",
+    "jullie",
+    "kan",
+    "kun",
+    "kunt",
+    "moet",
+    "mag",
+    "wil",
+    "wilt",
+    "zal",
+    "waar",
+    "wanneer",
+    "wat",
+    "wie",
+    "hoe",
+    "waarom",
+    "is",
+    "ben",
+    "bent",
+    "zijn",
+    "heb",
+    "hebt",
+    "heeft",
+    "de",
+    "het",
+    "een",
+  ]);
+  const subject = "(ik|je|jij|u|hij|zij|ze|we|wij|jullie)";
+  const modal = "(kan|kun|kunt|moet|mag|wil|wilt|zal)";
+  const question = "(wanneer|waar|wat|wie|hoe|waarom)";
+
+  if (tokens.length >= 2 && tokens.every((token) => functionOnlyTokens.has(token))) return true;
+
+  return new RegExp(`^${question}\\s+${modal}\\s+${subject}$`, "i").test(text) ||
+    new RegExp(`^${modal}\\s+${subject}$`, "i").test(text);
+};

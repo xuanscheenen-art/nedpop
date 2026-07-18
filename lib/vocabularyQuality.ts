@@ -86,6 +86,66 @@ function hasLongVowelPluralError(word: WordItem) {
   return false;
 }
 
+const knownPluralCorrections: Record<string, string> = {
+  app: "apps",
+  "digid-app": "DigiD-apps",
+  email: "emails",
+  "e-mail": "e-mails",
+  "e-mailadres": "e-mailadressen",
+  bevestigingsmail: "bevestigingsmails",
+  voicemail: "voicemails",
+  "sms-controle": "sms-controles",
+  account: "accounts",
+  website: "websites",
+  laptop: "laptops",
+  centrum: "centra",
+  restaurant: "restaurants",
+  café: "cafés",
+  museum: "musea",
+  moeder: "moeders",
+  vader: "vaders",
+  broer: "broers",
+  zus: "zussen",
+  zoon: "zonen",
+  dochter: "dochters",
+  ouders: "ouders",
+  man: "mannen",
+  vrouw: "vrouwen",
+  mens: "mensen",
+  vriend: "vrienden",
+  vriendin: "vriendinnen",
+  persoon: "personen",
+  student: "studenten",
+  partner: "partners",
+  opa: "opa's",
+  oma: "oma's",
+  baby: "baby's",
+  jongen: "jongens",
+  meisje: "meisjes",
+  buurman: "buurmannen",
+  buurvrouw: "buurvrouwen",
+  familie: "families",
+  gezin: "gezinnen",
+  ijs: "ijsjes",
+  vloer: "vloeren",
+  bril: "brillen",
+  kaas: "kazen",
+  prijs: "prijzen",
+  huurprijs: "huurprijzen",
+  wc: "wc's",
+  gram: "grammen",
+  bewijs: "bewijzen",
+  vervoerbewijs: "vervoerbewijzen",
+  garantiebewijs: "garantiebewijzen",
+  rijbewijs: "rijbewijzen",
+  identiteitsbewijs: "identiteitsbewijzen",
+};
+
+function hasKnownPluralError(word: WordItem) {
+  const expected = knownPluralCorrections[word.dutch.toLowerCase()];
+  return Boolean(expected && word.plural && word.plural.toLowerCase() !== expected.toLowerCase());
+}
+
 function isWeakMemoryHook(word: WordItem) {
   const text = `${word.memoryHook.zh} ${word.memoryHook.en} ${word.englishBridge ?? ""}`;
   return /等级理由|level reason|belongs to|links to|自动扩充|先放进短语|真实场景句|Do not memorize .* alone|Connect .* to the/i.test(text);
@@ -163,6 +223,16 @@ export function validateVocabularyQuality(words: WordItem[]) {
         severity: "error",
         code: "wrong-plural-long-vowel",
         message: "Plural keeps a doubled long vowel before -en; check forms like probleem → problemen, vraag → vragen.",
+      });
+    }
+
+    if (hasKnownPluralError(word)) {
+      issues.push({
+        wordId: word.id,
+        dutch: word.dutch,
+        severity: "error",
+        code: "wrong-plural-long-vowel",
+        message: "Known common noun has an incorrect plural; check words like moeder → moeders, zus → zussen, opa → opa's.",
       });
     }
 

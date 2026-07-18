@@ -7,7 +7,7 @@ import { useLanguage } from "@/lib/i18n";
 
 type WordOrderRule = {
   id: string;
-  level: "A1" | "A2";
+  level: "A1" | "A2" | "B1";
   titleZh: string;
   titleEn: string;
   coreZh: string;
@@ -187,6 +187,74 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Chinese often puts 'not' before the verb, but Dutch niet is not placed that way. At A1, learn common chunks: after place/time information, e.g. Ik woon hier niet.",
     memoryZh: "不是中文“不”直接放动词前。",
     memoryEn: "Dutch niet is not placed like Chinese bu before the verb.",
+  },
+  {
+    id: "toen-past",
+    level: "B1",
+    titleZh: "toen 从句：过去某一刻",
+    titleEn: "Toen Clause: A Past Moment",
+    coreZh: "toen 用在过去的一次事件或过去一段时期；它打开从句，从句动词放后面。",
+    coreEn: "Toen is used for one past event or a past period; it opens a subordinate clause, so the verb goes back.",
+    formulaZh: "toen + 主语 + 其他 + 动词, 主句",
+    formulaEn: "toen + subject + rest + verb, main clause",
+    blocks: ["Toen", "ik", "thuiskwam,", "had", "ik", "al betaald"],
+    correct: "Toen ik thuiskwam, had ik al betaald.",
+    wrong: "Toen ik kwam thuis, had ik al betaald.",
+    whyZh: "toen 不是普通时间词随便插进去。它打开一个过去时间从句，所以 thuiskwam 要收在从句末尾。因为从句放在前面，后面的主句直接用 had 接上。",
+    whyEn: "Toen is not just a loose time word. It opens a past-time subordinate clause, so thuiskwam closes that clause. Because the subordinate clause comes first, the main clause starts with had.",
+    memoryZh: "toen = 过去那一刻；从句动词收尾。",
+    memoryEn: "toen = that past moment; close the clause with the verb.",
+  },
+  {
+    id: "toen-als-wanneer",
+    level: "B1",
+    titleZh: "toen / als / wanneer：别都翻成 when",
+    titleEn: "toen / als / wanneer: not one when",
+    coreZh: "toen 指过去特定时间；als 常表示如果/每当；wanneer 常用于提问或较正式的什么时候。",
+    coreEn: "Toen marks a specific past time; als often means if/whenever; wanneer asks or states when more formally.",
+    formulaZh: "过去那时 = toen · 条件/每当 = als · 问时间 = wanneer",
+    formulaEn: "past then = toen · if/whenever = als · asking when = wanneer",
+    blocks: ["Toen", "ik", "klein", "was,", "woonde", "ik", "in Utrecht"],
+    correct: "Toen ik klein was, woonde ik in Utrecht.",
+    wrong: "Als ik klein was, woonde ik in Utrecht.",
+    whyZh: "这里说的是过去一段具体人生时期，不是“如果我小”或“每当我小”。所以用 toen。als 更像条件或重复情况；wanneer 更像问什么时候。",
+    whyEn: "This refers to one specific past life period, not if I was little or whenever I was little. Use toen. Als is more conditional/repeated; wanneer asks when.",
+    memoryZh: "过去那时用 toen；如果/每当用 als。",
+    memoryEn: "Use toen for that past time; als for if/whenever.",
+  },
+  {
+    id: "while-sequence",
+    level: "B1",
+    titleZh: "terwijl / nadat / voordat：时间关系从句",
+    titleEn: "terwijl / nadat / voordat: time-relation clauses",
+    coreZh: "terwijl 表示同时；nadat 表示之后；voordat 表示之前。它们都打开从句，动词去后面。",
+    coreEn: "Terwijl means while; nadat means after; voordat means before. They open subordinate clauses, so the verb goes back.",
+    formulaZh: "连接词 + 主语 + 其他 + 动词",
+    formulaEn: "connector + subject + rest + verb",
+    blocks: ["Nadat", "ik", "de brief", "had gelezen,", "belde", "ik", "de gemeente"],
+    correct: "Nadat ik de brief had gelezen, belde ik de gemeente.",
+    wrong: "Nadat ik had gelezen de brief, belde ik de gemeente.",
+    whyZh: "B1 写邮件和讲事情经过时，经常要说先后。nadat 打开从句，had gelezen 作为动词组收在从句后面；后面的主句 belde 保持 V2。",
+    whyEn: "At B1, emails and narratives often need sequence. Nadat opens the subordinate clause, had gelezen closes it as the verb group; the main clause keeps V2 with belde.",
+    memoryZh: "先后同时看连接词；从句动词往后收。",
+    memoryEn: "Use the connector for timing; push subordinate verbs back.",
+  },
+  {
+    id: "cause-result-b1",
+    level: "B1",
+    titleZh: "doordat / daardoor：原因和结果",
+    titleEn: "doordat / daardoor: cause and result",
+    coreZh: "doordat 后面接原因从句；daardoor 放在主句里表示结果，后面仍然按 V2。",
+    coreEn: "Doordat introduces a cause clause; daardoor sits in a main clause for the result, so V2 still applies.",
+    formulaZh: "doordat + 从句；daardoor + 动词 + 主语",
+    formulaEn: "doordat + subclause; daardoor + verb + subject",
+    blocks: ["Daardoor", "kwam", "ik", "te laat"],
+    correct: "De trein viel uit, daardoor kwam ik te laat.",
+    wrong: "De trein viel uit, daardoor ik kwam te laat.",
+    whyZh: "daardoor 是结果副词，不是 omdat 那种从属连词。它放在第一位时，主句仍然要 V2：kwam 第二位，ik 到后面。",
+    whyEn: "Daardoor is a result adverb, not a subordinating conjunction like omdat. When it takes position 1, the main clause still uses V2: kwam is second, ik follows.",
+    memoryZh: "doordat 推动词；daardoor 还守 V2。",
+    memoryEn: "doordat pushes verbs back; daardoor keeps V2.",
   },
 ];
 
@@ -371,6 +439,46 @@ const practiceQuestions: PracticeQuestion[] = [
     explanationZh: "A1 先记：时间信息后面放 niet。不是按中文把“不”放动词前。",
     explanationEn: "At A1, learn: niet after the time information. Do not place it like Chinese before the verb.",
   },
+  {
+    id: "q-toen-1",
+    ruleId: "toen-past",
+    questionZh: "toen 从句哪个正确？",
+    questionEn: "Which toen clause is correct?",
+    options: ["Toen ik thuiskwam, had ik al betaald.", "Toen ik kwam thuis, had ik al betaald.", "Toen had ik thuiskwam al betaald."],
+    answer: "Toen ik thuiskwam, had ik al betaald.",
+    explanationZh: "toen 从句里 thuiskwam 收在从句末尾；主句 had 接上。",
+    explanationEn: "In the toen clause, thuiskwam closes the clause; the main clause starts with had.",
+  },
+  {
+    id: "q-toen-2",
+    ruleId: "toen-als-wanneer",
+    questionZh: "“我小时候住在 Utrecht”哪个更对？",
+    questionEn: "Which is better for “When I was little, I lived in Utrecht”?",
+    options: ["Toen ik klein was, woonde ik in Utrecht.", "Als ik klein was, woonde ik in Utrecht.", "Wanneer ik klein was, woonde ik in Utrecht."],
+    answer: "Toen ik klein was, woonde ik in Utrecht.",
+    explanationZh: "这里是过去一段具体时期，用 toen。",
+    explanationEn: "This is a specific past period, so use toen.",
+  },
+  {
+    id: "q-sequence-b1",
+    ruleId: "while-sequence",
+    questionZh: "nadat 从句哪个正确？",
+    questionEn: "Which nadat clause is correct?",
+    options: ["Nadat ik de brief had gelezen, belde ik de gemeente.", "Nadat ik had gelezen de brief, belde ik de gemeente.", "Nadat had ik de brief gelezen, belde ik de gemeente."],
+    answer: "Nadat ik de brief had gelezen, belde ik de gemeente.",
+    explanationZh: "nadat 从句里动词组 had gelezen 收在后面。",
+    explanationEn: "In the nadat clause, the verb group had gelezen goes to the end.",
+  },
+  {
+    id: "q-cause-result-b1",
+    ruleId: "cause-result-b1",
+    questionZh: "daardoor 主句哪个正确？",
+    questionEn: "Which daardoor main clause is correct?",
+    options: ["Daardoor kwam ik te laat.", "Daardoor ik kwam te laat.", "Daardoor te laat kwam ik."],
+    answer: "Daardoor kwam ik te laat.",
+    explanationZh: "Daardoor 第一位，kwam 第二位，主语 ik 在动词后面。",
+    explanationEn: "Daardoor takes position 1, kwam is position 2, and subject ik follows the verb.",
+  },
 ];
 
 function WordBlock({ text, index, highlight }: { text: string; index: number; highlight?: boolean }) {
@@ -426,7 +534,7 @@ function RuleCard({ rule }: { rule: WordOrderRule }) {
 export function SentenceOrderTrainer({ patterns: _patterns }: { patterns: SentencePattern[] }) {
   const { t, language } = useLanguage();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [levelFilter, setLevelFilter] = useState<"all" | "A1" | "A2">("all");
+  const [levelFilter, setLevelFilter] = useState<"all" | "A1" | "A2" | "B1">("all");
   const [activeRuleId, setActiveRuleId] = useState(wordOrderRules[0].id);
 
   const visibleRules = useMemo(
@@ -437,7 +545,7 @@ export function SentenceOrderTrainer({ patterns: _patterns }: { patterns: Senten
   const activeRuleIndex = Math.max(visibleRules.findIndex((rule) => rule.id === activeRule.id), 0);
   const activePractice = practiceQuestions.filter((question) => question.ruleId === activeRule.id);
 
-  const chooseLevel = (level: "all" | "A1" | "A2") => {
+  const chooseLevel = (level: "all" | "A1" | "A2" | "B1") => {
     const nextRules = wordOrderRules.filter((rule) => level === "all" || rule.level === level);
     setLevelFilter(level);
     setActiveRuleId(nextRules[0]?.id ?? wordOrderRules[0].id);
@@ -471,7 +579,7 @@ export function SentenceOrderTrainer({ patterns: _patterns }: { patterns: Senten
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {(["all", "A1", "A2"] as const).map((level) => (
+        {(["all", "A1", "A2", "B1"] as const).map((level) => (
           <button
             key={level}
             type="button"
@@ -493,7 +601,7 @@ export function SentenceOrderTrainer({ patterns: _patterns }: { patterns: Senten
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ocean ring-1 ring-blue-100">
-              {levelFilter === "all" ? "A1-A2" : levelFilter}
+              {levelFilter === "all" ? "A1-B1" : levelFilter}
             </span>
           </div>
 

@@ -14,6 +14,21 @@ let cachedUser: AuthUser | null = null;
 
 const reviewerAuthStorageKey = "nedpop.reviewerSignedIn";
 const isProductionBuild = process.env.NODE_ENV === "production";
+const authRequestTimeoutMs = 2500;
+
+const withAuthTimeout = async <T,>(promise: Promise<T>, fallback: T): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), authRequestTimeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
 
 export const reviewerAuthUser: AuthUser = {
   id: "reviewer-local",
@@ -35,13 +50,23 @@ const getStoredReviewerUser = (): AuthUser | null => {
 
 const grantReviewerAccess = () => {
   if (typeof window === "undefined") return;
+  let accessChanged = false;
   try {
-    window.localStorage.setItem("nedpop.unlockedLevels", JSON.stringify(["A1", "A2", "B1"]));
-    window.localStorage.setItem("nedpop.accessLevel", "bundle");
+    const nextUnlockedLevels = JSON.stringify(["A1", "A2", "B1"]);
+    accessChanged =
+      window.localStorage.getItem("nedpop.unlockedLevels") !== nextUnlockedLevels ||
+      window.localStorage.getItem("nedpop.accessLevel") !== "bundle";
+    if (accessChanged) {
+      window.localStorage.setItem("nedpop.unlockedLevels", nextUnlockedLevels);
+      window.localStorage.setItem("nedpop.accessLevel", "bundle");
+    }
   } catch {
     // The reviewer identity still works for the current page session.
+    accessChanged = false;
   }
-  window.dispatchEvent(new CustomEvent("nedpop:access-level-changed", { detail: { accessLevel: "bundle", unlockedLevels: ["A1", "A2", "B1"] } }));
+  if (accessChanged) {
+    window.dispatchEvent(new CustomEvent("nedpop:access-level-changed", { detail: { accessLevel: "bundle", unlockedLevels: ["A1", "A2", "B1"] } }));
+  }
 };
 
 const toAuthUser = (user: User | null): AuthUser | null => {
@@ -75,7 +100,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   if (!isSupabaseConfigured) return null;
   const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase.auth.getUser();
+  const response = await withAuthTimeout(supabase.auth.getUser().catch(() => null), null);
+  if (!response) return cachedUser;
+  const { data, error } = response;
   if (error) {
     cachedUser = null;
     return null;
@@ -118,6 +145,9 @@ export async function signInAsReviewer() {
 export async function signOut() {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(reviewerAuthStorageKey);
+    window.localStorage.removeItem("nedpop.unlockedLevels");
+    window.localStorage.removeItem("nedpop.accessLevel");
+    window.dispatchEvent(new CustomEvent("nedpop:access-level-changed", { detail: { accessLevel: "free", unlockedLevels: [] } }));
   }
 
   if (!isSupabaseConfigured) {
