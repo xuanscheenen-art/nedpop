@@ -12,6 +12,8 @@ type PricingSectionProps = {
   onSelectPlan?: (level: UserAccess) => void;
 };
 
+type CheckoutStartResult = "redirecting" | "sign-in-required" | "failed";
+
 export function PricingSection({ compact = false, onSelectPlan }: PricingSectionProps) {
   const { language } = useLanguage();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -24,9 +26,9 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
     ? ["银行卡", "Apple Pay", "Google Pay", "支付宝", "微信支付"]
     : ["Cards", "Apple Pay", "Google Pay", "Alipay", "WeChat Pay"];
 
-  const startStripeCheckout = useCallback(async (planId: PricingPlanId) => {
+  const startStripeCheckout = useCallback(async (planId: PricingPlanId): Promise<CheckoutStartResult> => {
     const plan = pricingPlans.find((item) => item.id === planId);
-    if (!plan || plan.id === "a0-free") return;
+    if (!plan || plan.id === "a0-free") return "failed";
 
     setStatus(language === "zh" ? "正在打开 Stripe 付款页..." : "Opening Stripe Checkout...");
     try {
@@ -36,13 +38,18 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
         body: JSON.stringify({ planId: plan.id }),
       });
       const data = await response.json() as { sessionId?: string; url?: string; error?: string };
+      if (response.status === 401) {
+        return "sign-in-required";
+      }
       if (!response.ok || !data.url) {
         setStatus(data.error ?? (language === "zh" ? "无法创建付款页。" : "Could not create Checkout session."));
-        return;
+        return "failed";
       }
       window.location.assign(data.url);
+      return "redirecting";
     } catch (err) {
       setStatus(err instanceof Error ? err.message : (language === "zh" ? "付款入口暂不可用。" : "Checkout is not available."));
+      return "failed";
     }
   }, [language]);
 
@@ -83,7 +90,8 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
     const plan = pricingPlans.find((item) => item.accessLevel === level);
     if (!plan || plan.id === "a0-free") return;
 
-    if (!user) {
+    const checkoutResult = await startStripeCheckout(plan.id);
+    if (checkoutResult === "sign-in-required") {
       try {
         setStatus(language === "zh" ? "正在进入安全购买流程..." : "Starting secure purchase...");
         const { error } = await signInWithGoogle(`/pricing?checkout=${plan.id}`);
@@ -91,8 +99,6 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
       } catch (err) {
         setStatus(err instanceof Error ? err.message : (language === "zh" ? "登录服务暂时不可用，请稍后再试。" : "Sign-in is temporarily unavailable. Please try again later."));
       }
-    } else {
-      void startStripeCheckout(plan.id);
     }
     onSelectPlan?.(level);
   };
