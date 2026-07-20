@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
   const stripe = new Stripe(stripeSecretKey);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    allow_promotion_codes: true,
     // Leave payment_method_types unset so Checkout uses Dashboard-managed dynamic payment methods.
     client_reference_id: userData.user.id,
     customer_email: userData.user.email ?? undefined,
