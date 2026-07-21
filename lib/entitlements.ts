@@ -20,6 +20,8 @@ export const accessLevelChangedEvent = "nedpop:access-level-changed";
 
 const accessLevels: UserAccess[] = ["free", "a1", "a2", "b1", "bundle"];
 let memoryUnlockedLevels: UserUnlockedLevels = [];
+let verifiedEntitlementUserId: string | null = null;
+let verifiedUnlockedLevels: UserUnlockedLevels | null = null;
 const isProductionBuild = process.env.NODE_ENV === "production";
 const localFallbackRequested =
   process.env.NEXT_PUBLIC_ENABLE_LOCAL_ACCESS_FALLBACK === "true" ||
@@ -85,6 +87,16 @@ export function getUnlockedLevels(): UserUnlockedLevels {
   return getStoredUnlockedLevels();
 }
 
+export function getCachedEntitledUnlockedLevels(userId: string | null | undefined): UserUnlockedLevels | null {
+  if (!userId || verifiedEntitlementUserId !== userId || !verifiedUnlockedLevels) return null;
+  return [...verifiedUnlockedLevels];
+}
+
+export function cacheEntitledUnlockedLevels(userId: string, levels: UserUnlockedLevels) {
+  verifiedEntitlementUserId = userId;
+  verifiedUnlockedLevels = normalizeUnlockedLevels(levels);
+}
+
 export function getAccessLevel(): UserAccess {
   return accessPlanFromUnlockedLevels(getStoredUnlockedLevels());
 }
@@ -121,7 +133,11 @@ export async function getEntitledUnlockedLevels(): Promise<UserUnlockedLevels> {
     if (!userResponse) return localFallback;
     const { data: userData } = userResponse;
     const user = userData.user;
-    if (!user) return localFallback;
+    if (!user) {
+      verifiedEntitlementUserId = null;
+      verifiedUnlockedLevels = null;
+      return localFallback;
+    }
 
     const entitlementResponse = await withEntitlementTimeout(
       Promise.resolve(
@@ -137,7 +153,9 @@ export async function getEntitledUnlockedLevels(): Promise<UserUnlockedLevels> {
     const { data, error } = entitlementResponse;
 
     if (error) return localFallback;
-    return mergeUnlockedLevels(localFallback, normalizeUnlockedLevels(data?.unlocked_levels));
+    const levels = mergeUnlockedLevels(localFallback, normalizeUnlockedLevels(data?.unlocked_levels));
+    cacheEntitledUnlockedLevels(user.id, levels);
+    return levels;
   } catch {
     return localFallback;
   }

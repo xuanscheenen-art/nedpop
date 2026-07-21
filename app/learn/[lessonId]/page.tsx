@@ -8,7 +8,14 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { normalizeUnlockedLevels } from "@/lib/access-control";
 import { authChangedEvent, getCachedUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
-import { accessLevelChangedEvent, canAccessLesson, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import {
+  accessLevelChangedEvent,
+  cacheEntitledUnlockedLevels,
+  canAccessLesson,
+  getCachedEntitledUnlockedLevels,
+  getUnlockedLevels,
+  type UserUnlockedLevels,
+} from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
 import { getLearningProgress, learningProgressChangedEvent, markStepComplete, updateLearningProgress, type LearningLevel } from "@/lib/learningProgress";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -138,7 +145,13 @@ export default function LearnLessonPage() {
       setAccessStatus("loading");
       const cachedUser = getCachedUser();
       const cachedLevels = getUnlockedLevels();
+      const cachedEntitledLevels = getCachedEntitledUnlockedLevels(cachedUser?.id);
       setSignedIn(Boolean(cachedUser));
+      if (cachedEntitledLevels) {
+        setCurrentAccessLevel(cachedEntitledLevels);
+        setAccessStatus("ready");
+        return;
+      }
       if (cachedLevels.length > 0) setCurrentAccessLevel(cachedLevels);
 
       try {
@@ -170,6 +183,7 @@ export default function LearnLessonPage() {
         if (error) throw error;
 
         const levels = normalizeUnlockedLevels(data?.unlocked_levels);
+        cacheEntitledUnlockedLevels(user.id, levels);
         setCurrentAccessLevel(levels);
         setAccessStatus("ready");
       } catch {
