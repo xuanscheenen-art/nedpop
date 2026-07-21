@@ -119,7 +119,10 @@ export default function LearnLessonPage() {
 
   useEffect(() => {
     let disposed = false;
+    let syncInFlight = false;
     const syncAuthAndAccess = async () => {
+      if (disposed || syncInFlight) return;
+
       const requestId = ++accessRequestId.current;
       const isStale = () => disposed || requestId !== accessRequestId.current;
 
@@ -131,6 +134,7 @@ export default function LearnLessonPage() {
         return;
       }
 
+      syncInFlight = true;
       setAccessStatus("loading");
       const cachedUser = getCachedUser();
       const cachedLevels = getUnlockedLevels();
@@ -170,6 +174,8 @@ export default function LearnLessonPage() {
         setAccessStatus("ready");
       } catch {
         if (!isStale()) setAccessStatus("error");
+      } finally {
+        syncInFlight = false;
       }
     };
     const handleAccessChange = () => void syncAuthAndAccess();
