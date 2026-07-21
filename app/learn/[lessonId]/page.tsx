@@ -85,6 +85,7 @@ export default function LearnLessonPage() {
   const [signedIn, setSignedIn] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
+  const [upgradeLessonId, setUpgradeLessonId] = useState<string | undefined>();
 
   useEffect(() => {
     try {
@@ -94,9 +95,9 @@ export default function LearnLessonPage() {
     }
     let cancelled = false;
     const syncAuthAndAccess = () => {
+      setAccessReady(false);
       setSignedIn(Boolean(getCachedUser()));
       setCurrentAccessLevel(getUnlockedLevels());
-      setAccessReady(true);
       void getCurrentUser().then(async (user) => {
         if (cancelled) return;
         setSignedIn(Boolean(user));
@@ -161,7 +162,15 @@ export default function LearnLessonPage() {
   }
 
   const locked = accessReady && !canAccessLesson(lesson, accessLevel, signedIn);
-  const openUpgrade = (level: CourseLevel) => setUpgradeLevel(level);
+  const openUpgrade = (level: CourseLevel, targetLessonId = lesson.id) => {
+    setUpgradeLevel(level);
+    setUpgradeLessonId(targetLessonId);
+  };
+
+  const closeUpgrade = () => {
+    setUpgradeLevel(undefined);
+    setUpgradeLessonId(undefined);
+  };
 
   if (!accessReady && lesson.level !== "A0") {
     return (
@@ -217,7 +226,7 @@ export default function LearnLessonPage() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => openUpgrade(lesson.level)}
+                  onClick={() => openUpgrade(lesson.level, lesson.id)}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 font-black text-white"
                 >
                   <LockKeyhole size={18} />
@@ -233,7 +242,12 @@ export default function LearnLessonPage() {
             </div>
           </div>
         </section>
-        <UpgradeModal open={Boolean(upgradeLevel)} lockedLevel={upgradeLevel} onClose={() => setUpgradeLevel(undefined)} />
+        <UpgradeModal
+          open={Boolean(upgradeLevel)}
+          lockedLevel={upgradeLevel}
+          continueHref={upgradeLessonId ? `/learn/${upgradeLessonId}` : undefined}
+          onClose={closeUpgrade}
+        />
       </main>
     );
   }
@@ -922,7 +936,7 @@ export default function LearnLessonPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => openUpgrade(nextLesson.level)}
+                    onClick={() => openUpgrade(nextLesson.level, nextLesson.id)}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-skywash px-5 py-3 font-black text-ocean ring-1 ring-blue-100"
                   >
                     <LockKeyhole size={18} />
@@ -969,7 +983,7 @@ export default function LearnLessonPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => openUpgrade(previousLesson.level)}
+                onClick={() => openUpgrade(previousLesson.level, previousLesson.id)}
                 className="rounded-[24px] bg-slate-50 p-4 text-left ring-1 ring-orange-100 transition hover:bg-peach"
               >
                 <p className="inline-flex items-center gap-2 text-xs font-black tracking-[0.12em] text-pop">
@@ -1003,7 +1017,7 @@ export default function LearnLessonPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => openUpgrade(nextLesson.level)}
+                onClick={() => openUpgrade(nextLesson.level, nextLesson.id)}
                 className="rounded-[24px] bg-peach p-4 text-left ring-1 ring-orange-100 transition hover:bg-orange-100"
               >
                 <p className="inline-flex items-center gap-2 text-xs font-black tracking-[0.12em] text-pop">
@@ -1048,7 +1062,7 @@ export default function LearnLessonPage() {
                         {itemLocked ? (
                           <button
                             type="button"
-                            onClick={() => openUpgrade(item.level)}
+                            onClick={() => openUpgrade(item.level, item.id)}
                             className="grid w-full grid-cols-[2.5rem_1fr_auto] items-center gap-3 rounded-2xl bg-white px-3 py-2 text-left text-ocean ring-1 ring-orange-100 transition hover:bg-peach"
                           >
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-peach text-sm font-black text-ocean">
@@ -1079,7 +1093,12 @@ export default function LearnLessonPage() {
           </div>
         </details>
       </section>
-      <UpgradeModal open={Boolean(upgradeLevel)} lockedLevel={upgradeLevel} onClose={() => setUpgradeLevel(undefined)} />
+      <UpgradeModal
+        open={Boolean(upgradeLevel)}
+        lockedLevel={upgradeLevel}
+        continueHref={upgradeLessonId ? `/learn/${upgradeLessonId}` : undefined}
+        onClose={closeUpgrade}
+      />
     </main>
   );
 }

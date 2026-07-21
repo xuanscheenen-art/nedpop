@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { pricingPositioningNote } from "@/data/pricingPlans";
 import {
@@ -21,11 +22,13 @@ import type { CourseLevel } from "@/types/course";
 type UpgradeModalProps = {
   open: boolean;
   lockedLevel?: CourseLevel;
+  continueHref?: string;
   onClose: () => void;
 };
 
-export function UpgradeModal({ open, lockedLevel, onClose }: UpgradeModalProps) {
+export function UpgradeModal({ open, lockedLevel, continueHref, onClose }: UpgradeModalProps) {
   const { language } = useLanguage();
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessLevel, setAccessLevel] = useState<UserUnlockedLevels>([]);
   const [error, setError] = useState("");
@@ -78,6 +81,11 @@ export function UpgradeModal({ open, lockedLevel, onClose }: UpgradeModalProps) 
     }
   };
 
+  const handleContinue = () => {
+    onClose();
+    if (continueHref) router.push(continueHref);
+  };
+
   if (accessUnlocked) {
     return (
       <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -85,7 +93,13 @@ export function UpgradeModal({ open, lockedLevel, onClose }: UpgradeModalProps) 
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-black tracking-[0.16em] text-pop">
-                {language === "zh" ? "体验权限已生效" : "Preview Access Active"}
+                {reviewerLoginActive
+                  ? language === "zh"
+                    ? "开始体验"
+                    : "Start your preview"
+                  : language === "zh"
+                    ? "已解锁全部内容"
+                    : "All content unlocked"}
               </p>
               <h2 className="mt-2 text-3xl font-black leading-tight text-ink">
                 {language === "zh" ? "已解锁，可继续学习" : "Unlocked. Continue learning."}
@@ -102,7 +116,7 @@ export function UpgradeModal({ open, lockedLevel, onClose }: UpgradeModalProps) 
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleContinue}
             className="mt-5 w-full rounded-full bg-ink px-5 py-3 font-black text-white transition hover:bg-ocean"
           >
             {language === "zh" ? "继续学习" : "Continue"}
@@ -180,7 +194,7 @@ export function UpgradeModal({ open, lockedLevel, onClose }: UpgradeModalProps) 
             {reviewerLoginActive ? (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleContinue}
                 className="rounded-[20px] bg-ink px-4 py-4 text-center text-sm font-black text-white transition hover:bg-ocean"
               >
                 {language === "zh" ? "继续学习" : "Continue learning"}
