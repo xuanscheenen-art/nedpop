@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { notFound, useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, Ear, LockKeyhole, MessageCircle, Pencil, Play, Puzzle, Sparkles, Target } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
-import { authChangedEvent, getCachedUser, getCurrentUser } from "@/lib/auth";
+import { normalizeUnlockedLevels } from "@/lib/access-control";
+import { authChangedEvent, getCachedUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
-import { accessLevelChangedEvent, canAccessLesson, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import { accessLevelChangedEvent, canAccessLesson, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
 import { getLearningProgress, learningProgressChangedEvent, markStepComplete, updateLearningProgress, type LearningLevel } from "@/lib/learningProgress";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { CourseLevel } from "@/types/course";
 import type { CourseLessonPracticeItem } from "@/types/lesson";
 
@@ -32,6 +34,24 @@ const lessonSteps = [
 ] as const;
 
 type LessonStepId = (typeof lessonSteps)[number]["id"];
+type AccessStatus = "loading" | "ready" | "error";
+
+const accessRequestTimeoutMs = 5000;
+
+const withAccessTimeout = <T,>(request: PromiseLike<T>) =>
+  new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => reject(new Error("ACCESS_REQUEST_TIMEOUT")), accessRequestTimeoutMs);
+    Promise.resolve(request).then(
+      (value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      },
+    );
+  });
 
 const methodLabels = {
   decode: { zh: "先听会读", en: "Hear and read" },
@@ -83,7 +103,9 @@ export default function LearnLessonPage() {
   const [audioStatus, setAudioStatus] = useState("");
   const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
   const [signedIn, setSignedIn] = useState(false);
-  const [accessReady, setAccessReady] = useState(false);
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>("loading");
+  const [accessRefreshKey, setAccessRefreshKey] = useState(0);
+  const accessRequestId = useRef(0);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
   const [upgradeLessonId, setUpgradeLessonId] = useState<string | undefined>();
 
@@ -93,33 +115,76 @@ export default function LearnLessonPage() {
     } catch {
       setLessons(getBaseCourseLessons());
     }
-    let cancelled = false;
-    const syncAuthAndAccess = () => {
-      setAccessReady(false);
-      setSignedIn(Boolean(getCachedUser()));
-      setCurrentAccessLevel(getUnlockedLevels());
-      void getCurrentUser().then(async (user) => {
-        if (cancelled) return;
-        setSignedIn(Boolean(user));
-        setCurrentAccessLevel(getUnlockedLevels());
-        const level = await getEntitledUnlockedLevels();
-        if (!cancelled) {
-          setCurrentAccessLevel(level);
-          setAccessReady(true);
-        }
-      });
-    };
-    syncAuthAndAccess();
-    window.addEventListener(accessLevelChangedEvent, syncAuthAndAccess);
-    window.addEventListener(authChangedEvent, syncAuthAndAccess);
-    window.addEventListener("storage", syncAuthAndAccess);
-    return () => {
-      window.removeEventListener(accessLevelChangedEvent, syncAuthAndAccess);
-      window.removeEventListener(authChangedEvent, syncAuthAndAccess);
-      window.removeEventListener("storage", syncAuthAndAccess);
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    const syncAuthAndAccess = async () => {
+      const requestId = ++accessRequestId.current;
+      const isStale = () => disposed || requestId !== accessRequestId.current;
+
+      setUpgradeLevel(undefined);
+      setUpgradeLessonId(undefined);
+
+      if (!lesson || lesson.level === "A0") {
+        setAccessStatus("ready");
+        return;
+      }
+
+      setAccessStatus("loading");
+      const cachedUser = getCachedUser();
+      const cachedLevels = getUnlockedLevels();
+      setSignedIn(Boolean(cachedUser));
+      if (cachedLevels.length > 0) setCurrentAccessLevel(cachedLevels);
+
+      try {
+        if (cachedUser && cachedLevels.includes(lesson.level)) {
+          setSignedIn(true);
+          setCurrentAccessLevel(cachedLevels);
+          setAccessStatus("ready");
+          return;
+        }
+
+        const supabase = getSupabaseBrowserClient();
+        const { data: userData, error: userError } = await withAccessTimeout(supabase.auth.getUser());
+        if (isStale()) return;
+        if (userError) throw userError;
+
+        const user = userData.user;
+        if (!user) {
+          setSignedIn(false);
+          setCurrentAccessLevel([]);
+          setAccessStatus("ready");
+          return;
+        }
+
+        setSignedIn(true);
+        const { data, error } = await withAccessTimeout(
+          supabase.from("users").select("unlocked_levels").eq("id", user.id).maybeSingle(),
+        );
+        if (isStale()) return;
+        if (error) throw error;
+
+        const levels = normalizeUnlockedLevels(data?.unlocked_levels);
+        setCurrentAccessLevel(levels);
+        setAccessStatus("ready");
+      } catch {
+        if (!isStale()) setAccessStatus("error");
+      }
+    };
+    const handleAccessChange = () => void syncAuthAndAccess();
+    handleAccessChange();
+    window.addEventListener(accessLevelChangedEvent, handleAccessChange);
+    window.addEventListener(authChangedEvent, handleAccessChange);
+    window.addEventListener("storage", handleAccessChange);
+    return () => {
+      window.removeEventListener(accessLevelChangedEvent, handleAccessChange);
+      window.removeEventListener(authChangedEvent, handleAccessChange);
+      window.removeEventListener("storage", handleAccessChange);
+      disposed = true;
+      accessRequestId.current += 1;
+    };
+  }, [accessRefreshKey, lesson?.level]);
 
   useEffect(() => {
     const requestedStep = new URLSearchParams(queryString).get("step");
@@ -161,7 +226,7 @@ export default function LearnLessonPage() {
     notFound();
   }
 
-  const locked = accessReady && !canAccessLesson(lesson, accessLevel, signedIn);
+  const locked = accessStatus === "ready" && !canAccessLesson(lesson, accessLevel, signedIn);
   const openUpgrade = (level: CourseLevel, targetLessonId = lesson.id) => {
     setUpgradeLevel(level);
     setUpgradeLessonId(targetLessonId);
@@ -172,7 +237,7 @@ export default function LearnLessonPage() {
     setUpgradeLessonId(undefined);
   };
 
-  if (!accessReady && lesson.level !== "A0") {
+  if (accessStatus !== "ready" && lesson.level !== "A0") {
     return (
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-[34px] border border-blue-100 bg-white p-6 shadow-soft sm:p-8">
@@ -186,8 +251,23 @@ export default function LearnLessonPage() {
             </p>
             <h1 className="mt-3 text-3xl font-black text-ink">{lesson.title[language]}</h1>
             <p className="mt-3 font-bold leading-7 text-ocean/70">
-              {language === "zh" ? "正在确认你的课程权益，请稍等。" : "Checking your course access. Please wait."}
+              {accessStatus === "error"
+                ? language === "zh"
+                  ? "暂时没有读到课程权益，请重试。此时不会将课程显示为锁定。"
+                  : "Course access could not be loaded. Retry without treating the lesson as locked."
+                : language === "zh"
+                  ? "正在确认你的课程权益，请稍等。"
+                  : "Checking your course access. Please wait."}
             </p>
+            {accessStatus === "error" ? (
+              <button
+                type="button"
+                onClick={() => setAccessRefreshKey((current) => current + 1)}
+                className="mt-5 rounded-full bg-ink px-5 py-3 font-black text-white"
+              >
+                {language === "zh" ? "重新检查" : "Try again"}
+              </button>
+            ) : null}
           </div>
         </section>
       </main>
