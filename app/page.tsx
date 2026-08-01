@@ -101,19 +101,13 @@ export default function LandingPage() {
           <p className="mt-5 max-w-xl text-xl font-bold leading-9 text-ocean/70">
             {t("landing.description")}
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8">
             <Link
-              href="/dashboard"
+              href="/pronunciation"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-6 py-4 font-black text-white shadow-soft transition hover:bg-ocean"
             >
               {t("landing.cta.start")}
               <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/pronunciation"
-              className="inline-flex items-center justify-center rounded-full bg-skywash px-6 py-4 font-black text-ocean ring-1 ring-blue-100 transition hover:bg-peach"
-            >
-              {t("landing.cta.decoder")}
             </Link>
           </div>
         </div>

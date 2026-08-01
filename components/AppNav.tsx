@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, Menu, Sparkles, X } from "lucide-react";
 import { ContinueLearningButton } from "@/components/ContinueLearningButton";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -9,9 +9,9 @@ import { LoginButton } from "@/components/LoginButton";
 import { useLanguage } from "@/lib/i18n";
 
 const mainNavItems = [
-  { href: "/dashboard", labelKey: "nav.learningPath" },
+  { href: "/word-link", labelKey: "nav.wordLink", highlighted: true },
   { href: "/pronunciation", labelKey: "nav.pronunciation" },
-  { href: "/word-link", labelKey: "nav.wordLink" },
+  { href: "/dashboard", labelKey: "nav.learningPath" },
   { href: "/rules", labelKey: "nav.rules" },
   { href: "/pricing", labelKey: "nav.pricing" },
 ] as const;
@@ -23,9 +23,9 @@ const moreNavItems = [
 ] as const;
 
 const mobileNavItems = [
-  { href: "/dashboard", labelKey: "nav.learningPath" },
+  { href: "/word-link", labelKey: "nav.wordLink", highlighted: true },
   { href: "/pronunciation", labelKey: "nav.pronunciation" },
-  { href: "/word-link", labelKey: "nav.wordLink" },
+  { href: "/dashboard", labelKey: "nav.learningPath" },
   { href: "/rules", labelKey: "nav.rules" },
   { href: "/special-forms", labelKey: "nav.specialForms" },
   { href: "/scenarios", labelKey: "nav.scenarios" },
@@ -33,6 +33,34 @@ const mobileNavItems = [
   { href: "/word-review", labelKey: "nav.reviewPool" },
   { href: "/pricing", labelKey: "nav.pricing" },
 ] as const;
+
+function HighlightedNavLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative inline-flex px-1 py-0.5">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 100 18"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute -inset-x-1 -bottom-0.5 h-4 w-[calc(100%+0.5rem)] -rotate-1 overflow-visible"
+      >
+        <path
+          d="M2 6 C19 3, 37 6, 52 5 C69 4, 83 2, 98 6 L96 14 C78 12, 64 16, 48 13 C31 11, 16 15, 3 12 Z"
+          fill="currentColor"
+          className="text-pop/40"
+        />
+        <path
+          d="M5 14 C26 10, 45 16, 66 12 C78 10, 88 10, 96 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          className="text-pop/75"
+        />
+      </svg>
+      <span className="relative">{children}</span>
+    </span>
+  );
+}
 
 export function AppNav() {
   const { t, language } = useLanguage();
@@ -58,9 +86,17 @@ export function AppNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-ocean transition hover:bg-skywash"
+              className={`whitespace-nowrap text-sm transition ${
+                "highlighted" in item && item.highlighted
+                  ? "px-4 py-2 font-black text-ink hover:text-ocean"
+                  : "rounded-full px-4 py-2 font-semibold text-ocean hover:bg-skywash"
+              }`}
             >
-              {t(item.labelKey)}
+              {"highlighted" in item && item.highlighted ? (
+                <HighlightedNavLabel>{t(item.labelKey)}</HighlightedNavLabel>
+              ) : (
+                t(item.labelKey)
+              )}
             </Link>
           ))}
 
@@ -128,9 +164,17 @@ export function AppNav() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="whitespace-nowrap rounded-2xl px-4 py-3 text-base font-black text-ocean transition hover:bg-skywash"
+                className={`whitespace-nowrap text-base font-black transition ${
+                  "highlighted" in item && item.highlighted
+                    ? "w-fit px-4 py-3 text-ink hover:text-ocean"
+                    : "rounded-2xl px-4 py-3 text-ocean hover:bg-skywash"
+                }`}
               >
-                {t(item.labelKey)}
+                {"highlighted" in item && item.highlighted ? (
+                  <HighlightedNavLabel>{t(item.labelKey)}</HighlightedNavLabel>
+                ) : (
+                  t(item.labelKey)
+                )}
               </Link>
             ))}
             <div className="mt-2 flex flex-wrap items-center gap-3 border-t border-blue-100 pt-4">

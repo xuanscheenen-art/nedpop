@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock3, LockKeyhole, Play, Sparkles } from "lucide-react";
 import { NextStepCard } from "@/components/NextStepCard";
+import { DailyCheckInShare } from "@/components/DailyCheckInShare";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { vocabularyLevelPlans } from "@/data/vocabularyPlan";
 import { authChangedEvent, getCurrentUser } from "@/lib/auth";
@@ -1703,6 +1704,21 @@ function WordLinkContent() {
             </div>
             {isDayComplete ? (
               <div className="mt-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-orange-100 bg-peach/45 px-4 py-3">
+                  <p className="text-sm font-black text-ocean/70">
+                    {language === "zh"
+                      ? `今日已完成 ${packWords.length} 个单词`
+                      : `${packWords.length} words completed today`}
+                  </p>
+                  <DailyCheckInShare
+                    level={activePack.level}
+                    dayNumber={activePack.dayNumber}
+                    packTitle={activePack.title}
+                    words={packWords}
+                    initialWordId={selectedDaily?.wordId ?? selected.id}
+                    language={language}
+                  />
+                </div>
                 <NextStepCard
                   eyebrow={language === "zh" ? "学习接力" : "Learning handoff"}
                   currentLabel={language === "zh" ? "今日单词已完成" : "Today's words complete"}

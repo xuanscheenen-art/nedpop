@@ -131,6 +131,50 @@ export async function signInWithGoogle(next = "/dashboard") {
   });
 }
 
+export async function signInWithEmail(email: string, password: string) {
+  if (!isSupabaseConfigured) {
+    throw new Error("Sign-in is temporarily unavailable.");
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  const response = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  if (response.data.user) {
+    emitAuthChanged(toAuthUser(response.data.user));
+  }
+
+  return response;
+}
+
+export async function signUpWithEmail(email: string, password: string, next = "/dashboard") {
+  if (!isSupabaseConfigured) {
+    throw new Error("Sign-up is temporarily unavailable.");
+  }
+
+  const emailRedirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+      : undefined;
+
+  const supabase = getSupabaseBrowserClient();
+  const response = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: {
+      emailRedirectTo,
+    },
+  });
+
+  if (response.data.session?.user) {
+    emitAuthChanged(toAuthUser(response.data.session.user));
+  }
+
+  return response;
+}
+
 export async function signInAsReviewer() {
   if (!isReviewerLoginEnabled || typeof window === "undefined") {
     throw new Error("Preview sign-in is not enabled.");

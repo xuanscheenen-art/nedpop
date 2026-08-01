@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Play } from "lucide-react";
+import { FormEvent, useState } from "react";
+import { BookOpen, LoaderCircle, Play, Search } from "lucide-react";
 import type { NounEntry } from "@/types/course";
 import { useLanguage } from "@/lib/i18n";
 import { RulePartNavigator } from "@/components/RulePartNavigator";
@@ -76,14 +76,62 @@ const practiceQuestions = [
   { id: "dehet-7", question: "___ Nederlands", answer: "het", explanationZh: "语言作为名词常用 het。", explanationEn: "Languages used as nouns usually take het." },
 ];
 
+type ArticleLookupResult =
+  | {
+      status: "found";
+      matchedAs: "singular" | "plural";
+      word: string;
+      article: "de" | "het";
+      plural?: string;
+      meaning?: { zh: string; en: string };
+      level?: string;
+      source: "course" | "wiktionary";
+      sourceUrl?: string;
+    }
+  | {
+      status: "not-found";
+      query: string;
+      clue?: {
+        likelyArticle: "de" | "het";
+        zh: string;
+        en: string;
+      };
+    };
+
 export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; focusSingular?: string }) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [activePart, setActivePart] = useState<"rules" | "endings" | "practice" | "checklist">("rules");
   const [audioStatus, setAudioStatus] = useState("");
+  const [lookupWord, setLookupWord] = useState(focusSingular ?? "");
+  const [lookupResult, setLookupResult] = useState<ArticleLookupResult | null>(null);
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "loading" | "error">("idle");
   const orderedNouns = focusSingular
     ? [...nouns].sort((a, b) => Number(b.singular === focusSingular) - Number(a.singular === focusSingular))
     : nouns;
+
+  const lookupArticle = async (event?: FormEvent<HTMLFormElement>, suggestedWord?: string) => {
+    event?.preventDefault();
+    const query = (suggestedWord ?? lookupWord).trim();
+    if (!query) {
+      setLookupResult(null);
+      setLookupStatus("error");
+      return;
+    }
+
+    if (suggestedWord) setLookupWord(suggestedWord);
+    setLookupStatus("loading");
+    setLookupResult(null);
+
+    try {
+      const response = await fetch(`/api/article-lookup?q=${encodeURIComponent(query)}`);
+      if (!response.ok) throw new Error("lookup-failed");
+      setLookupResult((await response.json()) as ArticleLookupResult);
+      setLookupStatus("idle");
+    } catch {
+      setLookupStatus("error");
+    }
+  };
 
   const speakDutch = (text: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -121,11 +169,157 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
   );
 
   return (
-    <section className="rounded-[28px] border border-blue-100 bg-white p-5 shadow-soft sm:p-6">
-      <p className="text-sm font-black tracking-[0.18em] text-pop">{t("label.articleDetector")}</p>
-      <h3 className="mt-3 text-4xl font-black leading-tight text-ink">
-        {language === "zh" ? "de 还是 het？先看线索，再背例外" : "de or het? Read the clues before memorizing exceptions"}
-      </h3>
+    <section className="space-y-7">
+      <div className="rounded-[28px] border-2 border-orange-200 bg-peach/45 p-4 shadow-soft sm:p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pop ring-1 ring-orange-200">
+            <Search size={22} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-black tracking-[0.16em] text-pop">
+              {language === "zh" ? "de/het 快查工具" : "de/het quick lookup"}
+            </p>
+            <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">
+              {language === "zh" ? "输入名词，立即查冠词" : "Enter a noun and check its article"}
+            </h3>
+            <p className="mt-1 text-sm font-bold leading-6 text-ocean/70">
+              {language === "zh"
+                ? "支持名词、带 de/het 的词，以及课程词的复数形式。"
+                : "Enter a noun, a noun with de/het, or the plural form of a course word."}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={lookupArticle} className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <label className="flex min-w-0 flex-1 items-center gap-3 rounded-full bg-white px-4 py-3 text-ink">
+            <Search size={20} className="shrink-0 text-pop" />
+            <input
+              value={lookupWord}
+              onChange={(event) => {
+                setLookupWord(event.target.value);
+                setLookupResult(null);
+                setLookupStatus("idle");
+              }}
+              className="min-w-0 flex-1 bg-transparent text-lg font-black outline-none"
+              placeholder={language === "zh" ? "例如：huis、fiets、afspraak" : "Try: huis, fiets, afspraak"}
+              autoComplete="off"
+              spellCheck={false}
+              aria-label={language === "zh" ? "输入荷兰语名词" : "Enter a Dutch noun"}
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={lookupStatus === "loading"}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-6 font-black text-white transition hover:bg-ocean disabled:cursor-wait disabled:opacity-70"
+          >
+            {lookupStatus === "loading" ? <LoaderCircle size={19} className="animate-spin" /> : <Search size={19} />}
+            {language === "zh" ? "查询" : "Look up"}
+          </button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {["huis", "fiets", "meisje", "verzekering"].map((word) => (
+            <button
+              key={word}
+              type="button"
+              onClick={() => void lookupArticle(undefined, word)}
+              className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-ocean ring-1 ring-orange-200 transition hover:bg-orange-100"
+            >
+              {word}
+            </button>
+          ))}
+        </div>
+
+        {lookupStatus === "error" ? (
+          <p className="mt-4 rounded-2xl bg-red-100 px-4 py-3 font-bold text-red-800">
+            {language === "zh" ? "请输入一个荷兰语名词后再查询。" : "Enter a Dutch noun and try again."}
+          </p>
+        ) : null}
+
+        {lookupResult?.status === "found" ? (
+          <div className="mt-4 rounded-[22px] bg-white p-4 text-ink ring-1 ring-orange-200">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`rounded-full px-4 py-2 text-2xl font-black ${lookupResult.article === "de" ? "bg-cyan-100 text-ocean" : "bg-peach text-pop"}`}>
+                {lookupResult.article}
+              </span>
+              <p className="text-3xl font-black">
+                {lookupResult.article} {lookupResult.word}
+              </p>
+              {lookupResult.level ? (
+                <span className="rounded-full bg-skywash px-3 py-1 text-xs font-black text-ocean">
+                  {lookupResult.level}
+                </span>
+              ) : null}
+            </div>
+            {lookupResult.meaning ? (
+              <p className="mt-3 font-bold text-ocean/75">
+                {lookupResult.meaning[language]}
+              </p>
+            ) : null}
+            {lookupResult.matchedAs === "plural" ? (
+              <p className="mt-4 rounded-2xl bg-skywash px-4 py-3 font-black text-ocean">
+                {language === "zh"
+                  ? `你输入的是复数 ${lookupResult.plural}。复数前统一用 de；它的单数是 ${lookupResult.article} ${lookupResult.word}。`
+                  : `You entered the plural ${lookupResult.plural}. Plurals use de; the singular is ${lookupResult.article} ${lookupResult.word}.`}
+              </p>
+            ) : lookupResult.plural ? (
+              <p className="mt-4 text-sm font-black text-ocean/70">
+                {language === "zh" ? `复数：de ${lookupResult.plural}` : `Plural: de ${lookupResult.plural}`}
+              </p>
+            ) : null}
+            {lookupResult.source === "wiktionary" && lookupResult.sourceUrl ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-skywash px-4 py-3 text-sm font-bold text-ocean">
+                <BookOpen size={17} className="shrink-0 text-pop" />
+                <span>{language === "zh" ? "线上词典查询结果：" : "Online dictionary result:"}</span>
+                <a
+                  href={lookupResult.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-black underline decoration-2 underline-offset-4"
+                >
+                  {language === "zh" ? "荷兰语 Wiktionary" : "Dutch Wiktionary"}
+                </a>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {lookupResult?.status === "not-found" ? (
+          <div className="mt-4 rounded-[22px] bg-white p-4 text-ink ring-1 ring-orange-200">
+            <div className="flex items-center gap-3">
+              <BookOpen size={22} className="shrink-0 text-pop" />
+              <p className="text-xl font-black">
+                {language === "zh"
+                  ? `课程词库和线上词典暂未查到“${lookupResult.query}”`
+                  : `No entry for “${lookupResult.query}” was found in the course or online dictionary`}
+              </p>
+            </div>
+            {lookupResult.clue ? (
+              <div className="mt-4 rounded-2xl bg-peach p-4">
+                <p className="text-sm font-black tracking-[0.14em] text-pop">
+                  {language === "zh" ? "规则线索，不是确定答案" : "Rule clue, not a definitive answer"}
+                </p>
+                <p className="mt-2 text-2xl font-black">{lookupResult.clue.likelyArticle} ?</p>
+                <p className="mt-2 font-bold leading-7 text-ocean">{lookupResult.clue[language]}</p>
+              </div>
+            ) : (
+              <p className="mt-4 font-bold leading-7 text-ocean/75">
+                {language === "zh"
+                  ? "免费线上词典没有返回可靠词条。请检查荷兰语拼写，或尝试输入该名词的单数形式。"
+                  : "The free online dictionary did not return a reliable entry. Check the Dutch spelling or try the singular form."}
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-[28px] border border-blue-100 bg-white p-5 shadow-soft sm:p-6">
+        <p className="text-sm font-black tracking-[0.18em] text-pop">
+          {language === "zh" ? "de/het 判断规则" : "de/het rules"}
+        </p>
+        <h3 className="mt-3 text-4xl font-black leading-tight text-ink">
+          {language === "zh" ? "先看线索，再背例外" : "Read the clues before memorizing exceptions"}
+        </h3>
       <div className="mt-5 rounded-[28px] bg-ink p-6 text-white">
         <p className="text-lg font-bold leading-9 text-blue-50">
           {language === "zh"
@@ -421,6 +615,7 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
         </div>
       </section>
       ) : null}
+      </div>
     </section>
   );
 }

@@ -31,7 +31,7 @@ export const translations = {
     "landing.subtitle": "用联想法，从零开始学荷兰语",
     "landing.description":
       "先会读，再懂规则，然后每天背词，最后放进场景里说出来。",
-    "landing.cta.start": "开始学习",
+    "landing.cta.start": "开始学习 · 发音解码",
     "landing.cta.decoder": "试试发音解码",
     "landing.methodTitle": "先解码发音，再联想单词，掌握规则，最后进入场景输出。",
     "landing.methodBody": "NedPop 把荷兰语学习拆成清晰步骤：声音、记忆、规则、场景，一步一步走。",
@@ -184,7 +184,7 @@ export const translations = {
     "landing.subtitle": "Learn Dutch from zero with memory links",
     "landing.description":
       "First read the sounds, then understand the rules, learn words every day, and finally use them in real scenarios.",
-    "landing.cta.start": "Start Learning",
+    "landing.cta.start": "Start Learning · Pronunciation",
     "landing.cta.decoder": "Try Pronunciation Decoder",
     "landing.methodTitle": "Decode sounds, link words, master rules, then speak in real situations.",
     "landing.methodBody":
