@@ -14,7 +14,7 @@ import {
   subscribeToAuth,
   type AuthUser,
 } from "@/lib/auth";
-import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import { accessLevelChangedEvent, canAccessLevel, getCachedEntitledUnlockedLevels, getVerifiedEntitlement, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { CourseLevel } from "@/types/course";
@@ -31,6 +31,8 @@ export function UpgradeModal({ open, lockedLevel, continueHref, onClose }: Upgra
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessLevel, setAccessLevel] = useState<UserUnlockedLevels>([]);
+  const [accessReady, setAccessReady] = useState(false);
+  const [entitledUserId, setEntitledUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -49,26 +51,61 @@ export function UpgradeModal({ open, lockedLevel, continueHref, onClose }: Upgra
 
   useEffect(() => {
     let cancelled = false;
-    const syncAccess = () => {
-      setAccessLevel(getUnlockedLevels());
-      void getEntitledUnlockedLevels().then((levels) => {
-        if (!cancelled) setAccessLevel(levels);
-      });
+    const syncAccess = (forceRefresh = false) => {
+      const cachedUser = getCachedUser();
+      const cachedLevels = getCachedEntitledUnlockedLevels(cachedUser?.id);
+      if (cachedLevels && !forceRefresh) {
+        setAccessLevel(cachedLevels);
+        setEntitledUserId(cachedUser?.id ?? null);
+        setAccessReady(true);
+        return;
+      }
+
+      setAccessReady(false);
+      void getVerifiedEntitlement({ forceRefresh })
+        .then((entitlement) => {
+          if (cancelled) return;
+          setAccessLevel(entitlement.unlockedLevels);
+          setEntitledUserId(entitlement.userId);
+          setAccessReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) setAccessReady(false);
+        });
     };
     syncAccess();
-    window.addEventListener(accessLevelChangedEvent, syncAccess);
-    window.addEventListener("storage", syncAccess);
+    const refreshAccess = () => syncAccess(true);
+    const reuseAccess = () => syncAccess(false);
+    window.addEventListener(accessLevelChangedEvent, refreshAccess);
+    window.addEventListener("storage", reuseAccess);
     return () => {
       cancelled = true;
-      window.removeEventListener(accessLevelChangedEvent, syncAccess);
-      window.removeEventListener("storage", syncAccess);
+      window.removeEventListener(accessLevelChangedEvent, refreshAccess);
+      window.removeEventListener("storage", reuseAccess);
     };
   }, []);
 
   if (!open) return null;
 
+  if (!accessReady) {
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="w-full max-w-md rounded-[30px] bg-white p-6 shadow-soft">
+          <p className="text-sm font-black tracking-[0.16em] text-pop">
+            {language === "zh" ? "正在确认课程权益" : "Checking course access"}
+          </p>
+          <p className="mt-3 font-bold leading-7 text-ocean/70">
+            {language === "zh" ? "确认完成前不会显示锁定状态。" : "The course will not be shown as locked until access is confirmed."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const reviewerLoginActive = isReviewerLoginEnabled && !isSupabaseConfigured;
-  const accessUnlocked = lockedLevel ? canAccessLevel(lockedLevel, accessLevel, Boolean(user)) : accessLevel.length > 0;
+  const accessUnlocked = lockedLevel
+    ? canAccessLevel(lockedLevel, accessLevel, Boolean(entitledUserId || user))
+    : accessLevel.length > 0;
 
   const handleLogin = async () => {
     setError("");

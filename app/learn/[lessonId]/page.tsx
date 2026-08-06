@@ -5,20 +5,17 @@ import { notFound, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, Ear, LockKeyhole, MessageCircle, Pencil, Play, Puzzle, Sparkles, Target } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
-import { normalizeUnlockedLevels } from "@/lib/access-control";
 import { authChangedEvent, getCachedUser } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
 import {
   accessLevelChangedEvent,
-  cacheEntitledUnlockedLevels,
   canAccessLesson,
   getCachedEntitledUnlockedLevels,
-  getUnlockedLevels,
+  getVerifiedEntitlement,
   type UserUnlockedLevels,
 } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
 import { getLearningProgress, learningProgressChangedEvent, markStepComplete, updateLearningProgress, type LearningLevel } from "@/lib/learningProgress";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { CourseLevel } from "@/types/course";
 import type { CourseLessonPracticeItem } from "@/types/lesson";
 
@@ -42,23 +39,6 @@ const lessonSteps = [
 
 type LessonStepId = (typeof lessonSteps)[number]["id"];
 type AccessStatus = "loading" | "ready" | "error";
-
-const accessRequestTimeoutMs = 5000;
-
-const withAccessTimeout = <T,>(request: PromiseLike<T>) =>
-  new Promise<T>((resolve, reject) => {
-    const timeoutId = window.setTimeout(() => reject(new Error("ACCESS_REQUEST_TIMEOUT")), accessRequestTimeoutMs);
-    Promise.resolve(request).then(
-      (value) => {
-        window.clearTimeout(timeoutId);
-        resolve(value);
-      },
-      (error) => {
-        window.clearTimeout(timeoutId);
-        reject(error);
-      },
-    );
-  });
 
 const methodLabels = {
   decode: { zh: "先听会读", en: "Hear and read" },
@@ -108,9 +88,11 @@ export default function LearnLessonPage() {
   const [builtAnswers, setBuiltAnswers] = useState<Record<string, string[]>>({});
   const [activePracticeType, setActivePracticeType] = useState<CourseLessonPracticeItem["type"] | null>(null);
   const [audioStatus, setAudioStatus] = useState("");
-  const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [accessStatus, setAccessStatus] = useState<AccessStatus>("loading");
+  const initialCachedUser = getCachedUser();
+  const initialCachedAccess = getCachedEntitledUnlockedLevels(initialCachedUser?.id);
+  const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>(() => initialCachedAccess ?? []);
+  const [signedIn, setSignedIn] = useState(() => Boolean(initialCachedUser));
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>(() => (initialCachedAccess ? "ready" : "loading"));
   const [accessRefreshKey, setAccessRefreshKey] = useState(0);
   const accessRequestId = useRef(0);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
@@ -126,9 +108,8 @@ export default function LearnLessonPage() {
 
   useEffect(() => {
     let disposed = false;
-    let syncInFlight = false;
-    const syncAuthAndAccess = async () => {
-      if (disposed || syncInFlight) return;
+    const syncAuthAndAccess = async (forceRefresh = false) => {
+      if (disposed) return;
 
       const requestId = ++accessRequestId.current;
       const isStale = () => disposed || requestId !== accessRequestId.current;
@@ -141,59 +122,28 @@ export default function LearnLessonPage() {
         return;
       }
 
-      syncInFlight = true;
-      setAccessStatus("loading");
       const cachedUser = getCachedUser();
-      const cachedLevels = getUnlockedLevels();
       const cachedEntitledLevels = getCachedEntitledUnlockedLevels(cachedUser?.id);
       setSignedIn(Boolean(cachedUser));
-      if (cachedEntitledLevels) {
+      if (cachedEntitledLevels && !forceRefresh) {
         setCurrentAccessLevel(cachedEntitledLevels);
         setAccessStatus("ready");
         return;
       }
-      if (cachedLevels.length > 0) setCurrentAccessLevel(cachedLevels);
+      setAccessStatus("loading");
 
       try {
-        if (cachedUser && cachedLevels.includes(lesson.level)) {
-          setSignedIn(true);
-          setCurrentAccessLevel(cachedLevels);
-          setAccessStatus("ready");
-          return;
-        }
-
-        const supabase = getSupabaseBrowserClient();
-        const { data: userData, error: userError } = await withAccessTimeout(supabase.auth.getUser());
+        const entitlement = await getVerifiedEntitlement({ forceRefresh });
         if (isStale()) return;
-        if (userError) throw userError;
-
-        const user = userData.user;
-        if (!user) {
-          setSignedIn(false);
-          setCurrentAccessLevel([]);
-          setAccessStatus("ready");
-          return;
-        }
-
-        setSignedIn(true);
-        const { data, error } = await withAccessTimeout(
-          supabase.from("users").select("unlocked_levels").eq("id", user.id).maybeSingle(),
-        );
-        if (isStale()) return;
-        if (error) throw error;
-
-        const levels = normalizeUnlockedLevels(data?.unlocked_levels);
-        cacheEntitledUnlockedLevels(user.id, levels);
-        setCurrentAccessLevel(levels);
+        setSignedIn(Boolean(entitlement.userId));
+        setCurrentAccessLevel(entitlement.unlockedLevels);
         setAccessStatus("ready");
       } catch {
         if (!isStale()) setAccessStatus("error");
-      } finally {
-        syncInFlight = false;
       }
     };
-    const handleAccessChange = () => void syncAuthAndAccess();
-    handleAccessChange();
+    const handleAccessChange = () => void syncAuthAndAccess(true);
+    void syncAuthAndAccess(accessRefreshKey > 0);
     window.addEventListener(accessLevelChangedEvent, handleAccessChange);
     window.addEventListener(authChangedEvent, handleAccessChange);
     window.addEventListener("storage", handleAccessChange);

@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpenCheck, Ear, LockKeyhole, MessageCircle, Puzzle } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { firstCourseLessonId } from "@/data/courseLessons";
-import { authChangedEvent, getCurrentUser } from "@/lib/auth";
+import { authChangedEvent } from "@/lib/auth";
 import { getBaseCourseLessons, getEffectiveCourseLessons } from "@/lib/contentStore";
-import { accessLevelChangedEvent, canAccessLesson, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import { accessLevelChangedEvent, canAccessLesson, canAccessLevel, getUnlockedLevels, getVerifiedEntitlement, type UserUnlockedLevels } from "@/lib/entitlements";
 import { useLanguage } from "@/lib/i18n";
 import { getDefaultLearningProgress, getLearningProgress, learningProgressChangedEvent, type LearningProgress } from "@/lib/learningProgress";
 import type { CourseLevel } from "@/types/course";
@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [lessons, setLessons] = useState(() => getBaseCourseLessons());
   const [accessLevel, setCurrentAccessLevel] = useState<UserUnlockedLevels>([]);
   const [signedIn, setSignedIn] = useState(false);
+  const [accessReady, setAccessReady] = useState(false);
   const [upgradeLevel, setUpgradeLevel] = useState<CourseLevel | undefined>();
   const [upgradeLessonId, setUpgradeLessonId] = useState<string | undefined>();
   const [learningProgress, setLearningProgress] = useState<LearningProgress>(() => getDefaultLearningProgress());
@@ -70,7 +71,11 @@ export default function DashboardPage() {
       ? language === "zh"
         ? "免费开放"
         : "FREE"
-      : canAccessLevel(currentLesson.level, accessLevel, signedIn)
+      : !accessReady
+        ? language === "zh"
+          ? "确认中"
+          : "CHECKING"
+        : canAccessLevel(currentLesson.level, accessLevel, signedIn)
         ? language === "zh"
           ? "已解锁"
           : "UNLOCKED"
@@ -78,40 +83,42 @@ export default function DashboardPage() {
           ? "需解锁"
           : "LOCKED";
   useEffect(() => {
-    setCurrentAccessLevel(getUnlockedLevels());
     try {
       setLessons(getEffectiveCourseLessons());
     } catch {
       setLessons(getBaseCourseLessons());
     }
     let cancelled = false;
-    const syncAccess = () => {
-      setCurrentAccessLevel(getUnlockedLevels());
-      void getEntitledUnlockedLevels().then((level) => {
-        if (!cancelled) setCurrentAccessLevel(level);
-      });
+    const syncAccess = (forceRefresh = false) => {
+      if (forceRefresh) setAccessReady(false);
+      const localLevels = getUnlockedLevels();
+      if (localLevels.length > 0) setCurrentAccessLevel(localLevels);
+      void getVerifiedEntitlement({ forceRefresh })
+        .then((entitlement) => {
+          if (cancelled) return;
+          setSignedIn(Boolean(entitlement.userId));
+          setCurrentAccessLevel(entitlement.unlockedLevels);
+          setAccessReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) setAccessReady(false);
+        });
     };
-    const syncUser = () => {
-      void getCurrentUser().then((user) => {
-        if (!cancelled) setSignedIn(Boolean(user));
-      });
-    };
+    const refreshAccess = () => syncAccess(true);
+    const reuseAccess = () => syncAccess(false);
     const syncProgress = () => setLearningProgress(getLearningProgress());
-    syncUser();
-    syncAccess();
+    syncAccess(true);
     syncProgress();
-    window.addEventListener(accessLevelChangedEvent, syncAccess);
-    window.addEventListener(authChangedEvent, syncUser);
+    window.addEventListener(accessLevelChangedEvent, refreshAccess);
+    window.addEventListener(authChangedEvent, refreshAccess);
     window.addEventListener(learningProgressChangedEvent, syncProgress);
-    window.addEventListener("storage", syncAccess);
-    window.addEventListener("storage", syncUser);
+    window.addEventListener("storage", reuseAccess);
     window.addEventListener("storage", syncProgress);
     return () => {
-      window.removeEventListener(accessLevelChangedEvent, syncAccess);
-      window.removeEventListener(authChangedEvent, syncUser);
+      window.removeEventListener(accessLevelChangedEvent, refreshAccess);
+      window.removeEventListener(authChangedEvent, refreshAccess);
       window.removeEventListener(learningProgressChangedEvent, syncProgress);
-      window.removeEventListener("storage", syncAccess);
-      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("storage", reuseAccess);
       window.removeEventListener("storage", syncProgress);
       cancelled = true;
     };
@@ -259,9 +266,9 @@ export default function DashboardPage() {
                   </h3>
                 </div>
                 <span className={`inline-flex min-w-[5.75rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-black ring-1 ${
-                  canAccessLevel(group.level, accessLevel, signedIn) ? "bg-white text-ocean ring-blue-100" : "bg-peach text-ocean ring-orange-100"
+                  !accessReady || canAccessLevel(group.level, accessLevel, signedIn) ? "bg-white text-ocean ring-blue-100" : "bg-peach text-ocean ring-orange-100"
                 }`}>
-                  {canAccessLevel(group.level, accessLevel, signedIn) ? null : <LockKeyhole size={12} />}
+                  {accessReady && !canAccessLevel(group.level, accessLevel, signedIn) ? <LockKeyhole size={12} /> : null}
                   {group.lessons.length} {language === "zh" ? "课" : "lessons"}
                 </span>
               </div>
@@ -269,7 +276,7 @@ export default function DashboardPage() {
                 {levelSummaries[group.level].note[language]}
               </p>
               {group.lessons[0] ? (
-                canAccessLesson(group.lessons[0], accessLevel, signedIn) ? (
+                !accessReady || canAccessLesson(group.lessons[0], accessLevel, signedIn) ? (
                   <Link
                     href={`/learn/${group.lessons[0].id}`}
                     className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-ink px-4 py-3 text-sm font-black text-white"
@@ -290,7 +297,7 @@ export default function DashboardPage() {
               ) : null}
               <ol className="mt-4 grid max-h-80 gap-2 overflow-y-auto pr-1">
                 {group.lessons.map((lesson, index) => {
-                  const locked = !canAccessLesson(lesson, accessLevel, signedIn);
+                  const locked = accessReady && !canAccessLesson(lesson, accessLevel, signedIn);
                   return (
                     <li key={lesson.id}>
                       {locked ? (

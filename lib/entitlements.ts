@@ -7,6 +7,7 @@ import {
   type AccessPlan,
   type UnlockableLevel,
 } from "@/lib/access-control";
+import { getCachedUser } from "@/lib/auth";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { CourseLevel } from "@/types/course";
 import type { CourseLesson } from "@/types/lesson";
@@ -20,8 +21,8 @@ export const accessLevelChangedEvent = "nedpop:access-level-changed";
 
 const accessLevels: UserAccess[] = ["free", "a1", "a2", "b1", "bundle"];
 let memoryUnlockedLevels: UserUnlockedLevels = [];
-let verifiedEntitlementUserId: string | null = null;
-let verifiedUnlockedLevels: UserUnlockedLevels | null = null;
+const verifiedUnlockedLevelsByUser = new Map<string, UserUnlockedLevels>();
+const entitlementRequestsByUser = new Map<string, Promise<UserUnlockedLevels>>();
 const isProductionBuild = process.env.NODE_ENV === "production";
 const localFallbackRequested =
   process.env.NEXT_PUBLIC_ENABLE_LOCAL_ACCESS_FALLBACK === "true" ||
@@ -88,14 +89,23 @@ export function getUnlockedLevels(): UserUnlockedLevels {
 }
 
 export function getCachedEntitledUnlockedLevels(userId: string | null | undefined): UserUnlockedLevels | null {
-  if (!userId || verifiedEntitlementUserId !== userId || !verifiedUnlockedLevels) return null;
-  return [...verifiedUnlockedLevels];
+  if (!userId) return null;
+  const levels = verifiedUnlockedLevelsByUser.get(userId);
+  return levels ? [...levels] : null;
 }
 
 export function cacheEntitledUnlockedLevels(userId: string, levels: UserUnlockedLevels) {
-  verifiedEntitlementUserId = userId;
-  verifiedUnlockedLevels = normalizeUnlockedLevels(levels);
+  verifiedUnlockedLevelsByUser.set(userId, normalizeUnlockedLevels(levels));
 }
+
+export type VerifiedEntitlement = {
+  userId: string | null;
+  unlockedLevels: UserUnlockedLevels;
+};
+
+type EntitlementOptions = {
+  forceRefresh?: boolean;
+};
 
 export function getAccessLevel(): UserAccess {
   return accessPlanFromUnlockedLevels(getStoredUnlockedLevels());
@@ -123,39 +133,84 @@ export function setAccessLevel(level: UserAccess) {
   setUnlockedLevels(planToUnlockedLevels(level));
 }
 
-export async function getEntitledUnlockedLevels(): Promise<UserUnlockedLevels> {
-  const localFallback = isLocalEntitlementFallbackEnabled ? getUnlockedLevels() : [];
-  if (!isSupabaseConfigured) return localFallback;
+async function queryEntitledUnlockedLevels(userId: string): Promise<UserUnlockedLevels> {
+  const cachedRequest = entitlementRequestsByUser.get(userId);
+  if (cachedRequest) return cachedRequest;
 
-  try {
+  const request = (async () => {
     const supabase = getSupabaseBrowserClient();
-    const userResponse = await withEntitlementTimeout(supabase.auth.getUser().catch(() => null), null);
-    if (!userResponse) return localFallback;
-    const { data: userData } = userResponse;
-    const user = userData.user;
-    if (!user) {
-      verifiedEntitlementUserId = null;
-      verifiedUnlockedLevels = null;
-      return localFallback;
-    }
-
     const entitlementResponse = await withEntitlementTimeout(
       Promise.resolve(
         supabase
-        .from("users")
-        .select("unlocked_levels")
-        .eq("id", user.id)
-        .maybeSingle(),
+          .from("users")
+          .select("unlocked_levels")
+          .eq("id", userId)
+          .maybeSingle(),
       ).catch(() => null),
       null,
     );
-    if (!entitlementResponse) return localFallback;
-    const { data, error } = entitlementResponse;
+    if (!entitlementResponse) throw new Error("ENTITLEMENT_REQUEST_TIMEOUT");
 
-    if (error) return localFallback;
-    const levels = mergeUnlockedLevels(localFallback, normalizeUnlockedLevels(data?.unlocked_levels));
-    cacheEntitledUnlockedLevels(user.id, levels);
-    return levels;
+    const { data, error } = entitlementResponse;
+    if (error) throw error;
+
+    const levels = normalizeUnlockedLevels(data?.unlocked_levels);
+    cacheEntitledUnlockedLevels(userId, levels);
+    return [...levels];
+  })();
+
+  entitlementRequestsByUser.set(userId, request);
+  try {
+    return await request;
+  } finally {
+    if (entitlementRequestsByUser.get(userId) === request) {
+      entitlementRequestsByUser.delete(userId);
+    }
+  }
+}
+
+export async function getVerifiedEntitlement(options: EntitlementOptions = {}): Promise<VerifiedEntitlement> {
+  const localFallback = isLocalEntitlementFallbackEnabled ? getUnlockedLevels() : [];
+  if (!isSupabaseConfigured) {
+    const localUser = getCachedUser();
+    return { userId: localUser?.id ?? null, unlockedLevels: localFallback };
+  }
+
+  const cachedUser = getCachedUser();
+  if (cachedUser) {
+    const cachedLevels = getCachedEntitledUnlockedLevels(cachedUser.id);
+    if (cachedLevels && !options.forceRefresh) {
+      return { userId: cachedUser.id, unlockedLevels: cachedLevels };
+    }
+    return {
+      userId: cachedUser.id,
+      unlockedLevels: mergeUnlockedLevels(localFallback, await queryEntitledUnlockedLevels(cachedUser.id)),
+    };
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  const userResponse = await withEntitlementTimeout(supabase.auth.getUser().catch(() => null), null);
+  if (!userResponse) throw new Error("AUTH_REQUEST_TIMEOUT");
+  const { data: userData, error: userError } = userResponse;
+  if (userError) throw userError;
+
+  const user = userData.user;
+  if (!user) return { userId: null, unlockedLevels: localFallback };
+
+  const cachedLevels = getCachedEntitledUnlockedLevels(user.id);
+  if (cachedLevels && !options.forceRefresh) {
+    return { userId: user.id, unlockedLevels: cachedLevels };
+  }
+  return {
+    userId: user.id,
+    unlockedLevels: mergeUnlockedLevels(localFallback, await queryEntitledUnlockedLevels(user.id)),
+  };
+}
+
+export async function getEntitledUnlockedLevels(options: EntitlementOptions = {}): Promise<UserUnlockedLevels> {
+  const localFallback = isLocalEntitlementFallbackEnabled ? getUnlockedLevels() : [];
+  try {
+    return (await getVerifiedEntitlement(options)).unlockedLevels;
   } catch {
     return localFallback;
   }

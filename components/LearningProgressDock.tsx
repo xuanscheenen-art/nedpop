@@ -5,8 +5,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, ChevronUp, LockKeyhole, Route, X } from "lucide-react";
 import { UpgradeModal } from "@/components/UpgradeModal";
-import { authChangedEvent, getCachedUser, getCurrentUser } from "@/lib/auth";
-import { accessLevelChangedEvent, canAccessLevel, getEntitledUnlockedLevels, getUnlockedLevels, type UserUnlockedLevels } from "@/lib/entitlements";
+import { authChangedEvent, getCachedUser } from "@/lib/auth";
+import { accessLevelChangedEvent, canAccessLevel, getCachedEntitledUnlockedLevels, getVerifiedEntitlement, type UserUnlockedLevels } from "@/lib/entitlements";
 import {
   getDefaultLearningProgress,
   getLearningRouteContext,
@@ -347,33 +347,44 @@ function LearningProgressDockContent() {
       setProgress(getLearningProgress());
       setRouteContext(getLearningRouteContext());
     };
-    const syncAuthAndAccess = () => {
-      setSignedIn(Boolean(getCachedUser()));
-      setAccessLevel(getUnlockedLevels());
-      setAccessReady(true);
-      void getCurrentUser().then(async (user) => {
-        setSignedIn(Boolean(user));
-        setAccessLevel(getUnlockedLevels());
-        const levels = await getEntitledUnlockedLevels();
-        setAccessLevel(levels);
+    const syncAuthAndAccess = (forceRefresh = false) => {
+      const cachedUser = getCachedUser();
+      const cachedLevels = getCachedEntitledUnlockedLevels(cachedUser?.id);
+      setSignedIn(Boolean(cachedUser));
+      if (cachedLevels && !forceRefresh) {
+        setAccessLevel(cachedLevels);
         setAccessReady(true);
-      });
+        return;
+      }
+
+      setAccessReady(false);
+      void getVerifiedEntitlement({ forceRefresh })
+        .then((entitlement) => {
+          setSignedIn(Boolean(entitlement.userId));
+          setAccessLevel(entitlement.unlockedLevels);
+          setAccessReady(true);
+        })
+        .catch(() => {
+          setAccessReady(false);
+        });
     };
     sync();
     syncAuthAndAccess();
+    const refreshAuthAndAccess = () => syncAuthAndAccess(true);
+    const reuseAuthAndAccess = () => syncAuthAndAccess(false);
     window.addEventListener(learningProgressChangedEvent, sync);
     window.addEventListener(learningRouteContextChangedEvent, sync);
-    window.addEventListener(accessLevelChangedEvent, syncAuthAndAccess);
-    window.addEventListener(authChangedEvent, syncAuthAndAccess);
+    window.addEventListener(accessLevelChangedEvent, refreshAuthAndAccess);
+    window.addEventListener(authChangedEvent, refreshAuthAndAccess);
     window.addEventListener("storage", sync);
-    window.addEventListener("storage", syncAuthAndAccess);
+    window.addEventListener("storage", reuseAuthAndAccess);
     return () => {
       window.removeEventListener(learningProgressChangedEvent, sync);
       window.removeEventListener(learningRouteContextChangedEvent, sync);
-      window.removeEventListener(accessLevelChangedEvent, syncAuthAndAccess);
-      window.removeEventListener(authChangedEvent, syncAuthAndAccess);
+      window.removeEventListener(accessLevelChangedEvent, refreshAuthAndAccess);
+      window.removeEventListener(authChangedEvent, refreshAuthAndAccess);
       window.removeEventListener("storage", sync);
-      window.removeEventListener("storage", syncAuthAndAccess);
+      window.removeEventListener("storage", reuseAuthAndAccess);
     };
   }, [pathname, searchKey]);
 
