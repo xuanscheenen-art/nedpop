@@ -39,22 +39,30 @@ function HighlightedNavLabel({ children }: { children: ReactNode }) {
     <span className="relative inline-flex px-1 py-0.5">
       <svg
         aria-hidden="true"
-        viewBox="0 0 100 18"
+        viewBox="0 0 120 24"
         preserveAspectRatio="none"
-        className="pointer-events-none absolute -inset-x-1 -bottom-0.5 h-4 w-[calc(100%+0.5rem)] -rotate-1 overflow-visible"
+        className="pointer-events-none absolute -inset-x-2 -bottom-1 h-[1.15rem] w-[calc(100%+1rem)] -rotate-2 overflow-visible text-pop"
       >
         <path
-          d="M2 6 C19 3, 37 6, 52 5 C69 4, 83 2, 98 6 L96 14 C78 12, 64 16, 48 13 C31 11, 16 15, 3 12 Z"
+          d="M4 8 C27 3 55 1 82 2 C96 2 108 3 116 6 C112 8 113 9 118 10 C105 11 93 12 79 14 C52 17 27 20 5 21 C2 17 1 12 4 8 Z"
           fill="currentColor"
-          className="text-pop/40"
+          opacity="0.7"
         />
         <path
-          d="M5 14 C26 10, 45 16, 66 12 C78 10, 88 10, 96 12"
+          d="M87 5 C97 4 105 5 114 7 M91 8 C101 7 109 8 118 9 M86 11 C96 10 104 10 112 11"
+          fill="none"
+          stroke="white"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+        <path
+          d="M105 12 C111 12 116 11 121 10 M101 15 C108 15 114 14 119 14 M96 18 C103 18 109 17 114 17"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.7"
+          strokeWidth="1"
           strokeLinecap="round"
-          className="text-pop/75"
+          opacity="0.58"
         />
       </svg>
       <span className="relative">{children}</span>

@@ -23,13 +23,8 @@ export default function SpecialFormsPage() {
           </h1>
           <p className="mt-4 max-w-4xl text-lg font-bold leading-8 text-ocean/70">
             {language === "zh"
-              ? "查动词怎么变、过去式/完成式怎么写、可分动词怎么拆、形容词怎么比较。这里是查表，不是课程。"
+              ? "免费的荷兰语单词变形查询工具：查动词变位、过去式与完成式、可分动词拆分和形容词变化。"
               : "Look up verb changes, past and perfect forms, separable verbs, and adjective comparisons."}
-          </p>
-          <p className="mt-4 rounded-[22px] bg-white px-5 py-4 text-sm font-bold leading-6 text-ocean/70 ring-1 ring-blue-100">
-            {language === "zh"
-              ? "看到一个词不知道怎么变，就来这里查。"
-              : "When you are not sure how a word changes, check it here."}
           </p>
         </div>
 

@@ -38,7 +38,7 @@ export default function PronunciationPage() {
         <h1 className="mt-3 text-5xl font-black text-ink">{t("pronunciation.title")}</h1>
         <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-ocean/70">
           {language === "zh"
-            ? "零基础先从 26 个字母、长短元音和特殊组合音开始。听得出、读得出，后面才进入单词解码。"
+            ? "荷兰语发音先从 26 个字母、长短元音和特殊组合音开始。先听得出、读得出，再进入单词解码。"
             : "Start from the 26 letters, long and short vowels, and special sound combinations. Once learners can hear and read them, they move into word decoding."}
         </p>
       </section>
@@ -91,6 +91,18 @@ export default function PronunciationPage() {
       </section>
 
       <InteractiveWordDecoder key={initialWord} decoderExamples={decoderExamples} soundCombinations={soundCombinations} initialWord={initialWord} />
+
+      <section className="mt-12 border-t border-blue-100 py-10">
+        <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "发音解码" : "Sound decoding"}</p>
+        <h2 className="mt-2 text-2xl font-black text-ink">
+          {language === "zh" ? "为什么需要荷兰语发音解码？" : "Why decode Dutch pronunciation?"}
+        </h2>
+        <p className="mt-3 max-w-3xl text-base font-bold leading-7 text-ocean/70">
+          {language === "zh"
+            ? "中文学习者容易按熟悉的字母读 ui、eu、ij，也常听不清 g/ch 等荷兰语声音组合。NedPop 发音解码把单词拆成可听、可辨认的声音，让你先看懂声音结构，再开口跟读。"
+            : "Dutch combinations such as ui, eu, ij, and g/ch can be difficult to recognize and reproduce. NedPop breaks words into distinct sounds so learners can see the sound structure before listening and speaking."}
+        </p>
+      </section>
     </main>
   );
 }

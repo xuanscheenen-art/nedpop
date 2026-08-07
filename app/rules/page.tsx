@@ -2049,7 +2049,7 @@ export default function RulesPage() {
         <h1 className="mt-3 text-5xl font-black text-ink">{language === "zh" ? "语法规则" : "Grammar Rules"}</h1>
         <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-ocean/70">
           {language === "zh"
-            ? "先学 A0 生存句需要的最小规则，后面的 de/het、复数、完成时和可分动词都按每日内容遇到再补。"
+            ? "荷兰语语法先从 A0 生存句需要的最小规则学起，de/het、复数、动词变位和句子结构再按每日内容逐步补全。"
             : "Start with the tiny rule base needed for A0 survival sentences. Add de/het, plurals, perfect tense, and separable verbs when daily content needs them."}
         </p>
       </section>
@@ -2146,6 +2146,18 @@ export default function RulesPage() {
             </button>
           </div>
         )}
+      </section>
+
+      <section className="mt-12 border-t border-blue-100 py-10">
+        <p className="text-sm font-black tracking-[0.14em] text-pop">{language === "zh" ? "语法规则" : "Grammar rules"}</p>
+        <h2 className="mt-2 text-2xl font-black text-ink">
+          {language === "zh" ? "中文学习者为什么容易卡在荷兰语语法？" : "Why can Dutch grammar feel difficult?"}
+        </h2>
+        <p className="mt-3 max-w-3xl text-base font-bold leading-7 text-ocean/70">
+          {language === "zh"
+            ? "中文没有 de/het，也不会让动词跟主语变形；荷兰语句子里的动词位置又常和中文不同。NedPop 把这些规则拆成判断线索、结构公式和即时练习，帮助你边用边理解。"
+            : "Dutch articles, verb conjugation, and verb position work differently from Chinese. NedPop breaks them into decision clues, sentence patterns, and focused practice so each rule becomes usable."}
+        </p>
       </section>
     </main>
   );
