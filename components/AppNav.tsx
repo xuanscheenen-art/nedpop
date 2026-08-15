@@ -20,6 +20,7 @@ const moreNavItems = [
   { href: "/special-forms", labelKey: "nav.specialForms" },
   { href: "/scenarios", labelKey: "nav.scenarios" },
   { href: "/exam-practice", labelKey: "nav.examPractice" },
+  { href: "/about", labelKey: "nav.about" },
 ] as const;
 
 const mobileNavItems = [
@@ -32,6 +33,7 @@ const mobileNavItems = [
   { href: "/exam-practice", labelKey: "nav.examPractice" },
   { href: "/word-review", labelKey: "nav.reviewPool" },
   { href: "/pricing", labelKey: "nav.pricing" },
+  { href: "/about", labelKey: "nav.about" },
 ] as const;
 
 function HighlightedNavLabel({ children }: { children: ReactNode }) {

@@ -41,6 +41,15 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "NedPop",
+  alternateName: "内德泡泡",
+  url: "https://nedpop.com",
+  description: "中文学习者的荷兰语学习平台，提供荷兰语发音、词汇、语法和NT2学习资源。",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,6 +58,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationStructuredData).replace(/</g, "\\u003c"),
+          }}
+        />
         <LanguageProvider>
           <AppNav />
           {children}

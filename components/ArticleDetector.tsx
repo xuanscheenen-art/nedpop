@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { BookOpen, LoaderCircle, Play, Search } from "lucide-react";
 import type { NounEntry } from "@/types/course";
 import { useLanguage } from "@/lib/i18n";
@@ -83,10 +83,14 @@ type ArticleLookupResult =
       word: string;
       article: "de" | "het";
       plural?: string;
-      meaning?: { zh: string; en: string };
+      meaning?: { zh?: string; en: string };
       level?: string;
       source: "course" | "wiktionary";
       sourceUrl?: string;
+      meaningSourceUrl?: string;
+      meaningLicense?: { name: string; url: string };
+      translatedFrom?: string;
+      alternatives?: Array<{ word: string; article: "de" | "het" }>;
     }
   | {
       status: "not-found";
@@ -106,6 +110,8 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
   const [lookupWord, setLookupWord] = useState(focusSingular ?? "");
   const [lookupResult, setLookupResult] = useState<ArticleLookupResult | null>(null);
   const [lookupStatus, setLookupStatus] = useState<"idle" | "loading" | "error">("idle");
+  const lookupRequestId = useRef(0);
+  const lookupAbortController = useRef<AbortController | null>(null);
   const orderedNouns = focusSingular
     ? [...nouns].sort((a, b) => Number(b.singular === focusSingular) - Number(a.singular === focusSingular))
     : nouns;
@@ -120,15 +126,26 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
     }
 
     if (suggestedWord) setLookupWord(suggestedWord);
+    const requestId = lookupRequestId.current + 1;
+    lookupRequestId.current = requestId;
+    lookupAbortController.current?.abort();
+    const controller = new AbortController();
+    lookupAbortController.current = controller;
     setLookupStatus("loading");
     setLookupResult(null);
 
     try {
-      const response = await fetch(`/api/article-lookup?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/article-lookup?q=${encodeURIComponent(query)}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
       if (!response.ok) throw new Error("lookup-failed");
-      setLookupResult((await response.json()) as ArticleLookupResult);
+      const result = (await response.json()) as ArticleLookupResult;
+      if (requestId !== lookupRequestId.current) return;
+      setLookupResult(result);
       setLookupStatus("idle");
     } catch {
+      if (controller.signal.aborted || requestId !== lookupRequestId.current) return;
       setLookupStatus("error");
     }
   };
@@ -251,10 +268,43 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
                 </span>
               ) : null}
             </div>
+            {lookupResult.translatedFrom ? (
+              <div className="mt-4 rounded-2xl bg-skywash px-4 py-3 font-bold leading-6 text-ocean">
+                <p>
+                  {language === "zh"
+                    ? `你输入的是英文 ${lookupResult.translatedFrom}；对应的荷兰语是 ${lookupResult.article} ${lookupResult.word}。`
+                    : `You entered the English word ${lookupResult.translatedFrom}; the Dutch word is ${lookupResult.article} ${lookupResult.word}.`}
+                </p>
+                {lookupResult.alternatives?.length ? (
+                  <p className="mt-1 text-sm text-ocean/70">
+                    {language === "zh" ? "其他常用说法：" : "Other common translations: "}
+                    {lookupResult.alternatives
+                      .map((item) => `${item.article} ${item.word}`)
+                      .join("、")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {lookupResult.meaning ? (
-              <p className="mt-3 font-bold text-ocean/75">
-                {lookupResult.meaning[language]}
-              </p>
+              <div className="mt-4 rounded-2xl bg-peach/55 px-4 py-3">
+                <p className="text-xs font-black tracking-[0.14em] text-pop">
+                  {language === "zh" ? "词义" : "Meaning"}
+                </p>
+                <p className="mt-1 text-lg font-black leading-7 text-ocean">
+                  {language === "zh" && lookupResult.meaning.zh
+                    ? lookupResult.meaning.zh
+                    : lookupResult.meaning.en}
+                </p>
+                {language === "zh" && lookupResult.meaning.zh ? (
+                  <p className="mt-1 text-sm font-bold leading-6 text-ocean/65">
+                    {lookupResult.meaning.en}
+                  </p>
+                ) : language === "zh" ? (
+                  <p className="mt-1 text-xs font-bold text-ocean/55">
+                    免费词典暂未提供中文翻译，以上为英文释义。
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             {lookupResult.matchedAs === "plural" ? (
               <p className="mt-4 rounded-2xl bg-skywash px-4 py-3 font-black text-ocean">
@@ -280,6 +330,19 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
                   {language === "zh" ? "荷兰语 Wiktionary" : "Dutch Wiktionary"}
                 </a>
               </div>
+            ) : null}
+            {lookupResult.meaningLicense ? (
+              <p className="mt-2 text-xs font-bold text-ocean/50">
+                {language === "zh" ? "词义许可：" : "Meaning license: "}
+                <a
+                  href={lookupResult.meaningLicense.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  {lookupResult.meaningLicense.name}
+                </a>
+              </p>
             ) : null}
           </div>
         ) : null}

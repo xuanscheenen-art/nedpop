@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Volume2 } from "lucide-react";
 import type { DecoderExamples } from "@/data/soundLessons";
 import { useLanguage } from "@/lib/i18n";
@@ -10,6 +10,19 @@ type DecodedChunk = {
   match: boolean;
   soundKey?: string;
 };
+
+type MeaningLookup =
+  | {
+      status: "found";
+      word: string;
+      meaning: { zh?: string; en: string };
+      correctedFrom?: string;
+      source: "course" | "reference" | "wiktionary";
+      sourceUrl?: string;
+      license?: { name: string; url: string };
+    }
+  | { status: "not-found"; query: string; reason?: "no-dutch-entry" }
+  | { status: "unavailable"; query: string };
 
 const sandboxSounds = [
   "sch",
@@ -181,6 +194,8 @@ export function InteractiveWordDecoder({
   const { t, language } = useLanguage();
   const [word, setWord] = useState(initialWord);
   const [voiceStatus, setVoiceStatus] = useState("");
+  const [meaningResult, setMeaningResult] = useState<MeaningLookup | null>(null);
+  const [meaningLoading, setMeaningLoading] = useState(false);
   const chunks = useMemo(() => decodeWord(word, soundCombinations), [word, soundCombinations]);
   const soundKeys = useMemo(() => uniqueSoundKeys(chunks), [chunks]);
   const pronunciationHints = soundKeys
@@ -189,10 +204,38 @@ export function InteractiveWordDecoder({
   const supportedWords = Object.keys(decoderExamples);
   const hasHighlightedChunks = chunks.some((chunk) => chunk.match);
 
-  const sandboxHint =
-    language === "zh"
-      ? "这里不解释词义，只帮你先把词读出来。例句和词义去每日单词泡泡里看。"
-      : "This tool does not explain meanings. It helps you read the word first; examples and meanings live in Word Bubbles.";
+  useEffect(() => {
+    const query = word.trim();
+    if (!query) {
+      setMeaningResult(null);
+      setMeaningLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setMeaningLoading(true);
+      try {
+        const response = await fetch(`/api/word-meaning?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
+        const result = (await response.json()) as MeaningLookup;
+        if (!response.ok && result.status !== "unavailable") throw new Error("meaning-lookup-failed");
+        setMeaningResult(result);
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setMeaningResult({ status: "unavailable", query });
+        }
+      } finally {
+        if (!controller.signal.aborted) setMeaningLoading(false);
+      }
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [word]);
 
   const speakDutchWord = (text: string) => {
     const cleanText = text.trim();
@@ -347,9 +390,74 @@ export function InteractiveWordDecoder({
           </div>
         </div>
       </div>
-      <p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold leading-6 text-blue-50">
-        {sandboxHint}
-      </p>
+      <div className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold leading-6 text-blue-50">
+        <span className="mr-3 text-orange-200">{language === "zh" ? "词义" : "Meaning"}</span>
+        {meaningLoading ? (
+          <span>{language === "zh" ? "正在查询…" : "Looking up…"}</span>
+        ) : meaningResult?.status === "found" ? (
+          <span className="inline-flex flex-wrap items-baseline gap-x-2">
+            {meaningResult.correctedFrom ? (
+              <span className="text-orange-100">
+                {language === "zh"
+                  ? `正确拼写是 ${meaningResult.word}：`
+                  : `Correct spelling: ${meaningResult.word}. `}
+              </span>
+            ) : null}
+            {language === "zh" && !meaningResult.meaning.zh ? (
+              <>
+                <span className="text-orange-100">在线词典英文释义：</span>
+                <span>{meaningResult.meaning.en}</span>
+              </>
+            ) : (
+              <>
+                <span>{meaningResult.meaning[language] ?? meaningResult.meaning.en}</span>
+                {meaningResult.meaning.zh ? (
+                  <span className="text-blue-200">
+                    / {meaningResult.meaning[language === "zh" ? "en" : "zh"]}
+                  </span>
+                ) : null}
+              </>
+            )}
+            {meaningResult.source === "wiktionary" && meaningResult.sourceUrl ? (
+              <span className="inline-flex items-baseline gap-1 text-xs text-blue-200">
+                <a
+                  href={meaningResult.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-2 underline-offset-4"
+                >
+                  {language === "zh" ? "来源：Wiktionary" : "Source: Wiktionary"}
+                </a>
+                {meaningResult.license ? (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <a
+                      href={meaningResult.license.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline decoration-2 underline-offset-4"
+                    >
+                      {meaningResult.license.name}
+                    </a>
+                  </>
+                ) : null}
+              </span>
+            ) : null}
+          </span>
+        ) : meaningResult?.status === "unavailable" ? (
+          <span>
+            {language === "zh"
+              ? "在线词典暂时没有响应；发音拆解仍可正常使用。"
+              : "The online dictionary is temporarily unavailable; pronunciation decoding still works."}
+          </span>
+        ) : (
+          <span>
+            {language === "zh"
+              ? "没有查到对应的荷兰语词条。请确认输入的是荷兰语单词；发音拆解仍可正常使用。"
+              : "No matching Dutch entry was found. Check that the input is a Dutch word; pronunciation decoding still works."}
+          </span>
+        )}
+      </div>
     </section>
   );
 }

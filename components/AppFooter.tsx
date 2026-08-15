@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 
 const legalLinks = [
+  { href: "/about", zh: "关于 NedPop", en: "About NedPop" },
   { href: "/privacy", zh: "隐私政策", en: "Privacy" },
   { href: "/terms", zh: "使用条款", en: "Terms" },
   { href: "/refund", zh: "退款说明", en: "Refunds" },
