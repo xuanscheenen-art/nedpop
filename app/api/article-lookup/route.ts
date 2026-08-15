@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { wordItems } from "@/data/vocabularyPlan";
+import { translateDutchWordToChinese } from "@/lib/googleTranslate";
 import { lookupWordMeaning } from "@/lib/wordMeaningLookup";
 
 const normalizeWord = (value: string) =>
@@ -340,8 +341,16 @@ export async function GET(request: NextRequest) {
     const meaningMatch = onlineMatch.meaning
       ? undefined
       : await lookupWordMeaning(onlineMatch.word);
-    const meaning = onlineMatch.meaning ??
+    const dictionaryMeaning = onlineMatch.meaning ??
       (meaningMatch?.status === "found" ? meaningMatch.meaning : undefined);
+    const googleMeaning = !dictionaryMeaning?.zh
+      ? await translateDutchWordToChinese(onlineMatch.word)
+      : undefined;
+    const meaning = googleMeaning && dictionaryMeaning
+      ? { ...dictionaryMeaning, zh: googleMeaning }
+      : googleMeaning
+        ? { zh: googleMeaning, en: "" }
+      : dictionaryMeaning;
     return NextResponse.json({
       status: "found",
       matchedAs: "singular",
@@ -364,12 +373,22 @@ export async function GET(request: NextRequest) {
   const translatedMatches = await lookupDutchTranslations(query);
   const translatedMatch = translatedMatches[0];
   if (translatedMatch) {
+    // The raw query may be English. Only translate the Dutch noun after
+    // Wiktionary has resolved and validated it as a Dutch entry.
+    const dictionaryMeaning = translatedMatch.meaning ?? { en: query };
+    const googleMeaning = !dictionaryMeaning.zh
+      ? await translateDutchWordToChinese(translatedMatch.word)
+      : undefined;
+    const meaning = googleMeaning
+      ? { ...dictionaryMeaning, zh: googleMeaning }
+      : dictionaryMeaning;
+
     return NextResponse.json({
       status: "found",
       matchedAs: "singular",
       word: translatedMatch.word,
       article: translatedMatch.article,
-      meaning: translatedMatch.meaning ?? { en: query },
+      meaning,
       source: "wiktionary",
       sourceUrl: translatedMatch.sourceUrl,
       translatedFrom: query,

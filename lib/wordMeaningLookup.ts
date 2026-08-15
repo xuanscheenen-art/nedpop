@@ -1,4 +1,5 @@
 import { wordItems } from "@/data/vocabularyPlan";
+import { translateDutchWordToChinese } from "@/lib/googleTranslate";
 
 export const normalizeDictionaryWord = (value: string) =>
   value
@@ -160,7 +161,17 @@ export async function lookupWordMeaning(value: string): Promise<WordMeaningLooku
   }
 
   const external = await lookupExternalMeaning(lookupWord);
-  return external.status === "found" && correctedWord
-    ? { ...external, correctedFrom: query }
+  if (external.status !== "found") return external;
+
+  const googleMeaning = external.meaning.zh
+    ? undefined
+    : await translateDutchWordToChinese(external.word);
+  const result = googleMeaning
+    ? {
+        ...external,
+        meaning: { ...external.meaning, zh: googleMeaning },
+      }
     : external;
+
+  return correctedWord ? { ...result, correctedFrom: query } : result;
 }
