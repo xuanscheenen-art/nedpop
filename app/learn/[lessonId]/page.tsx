@@ -139,18 +139,30 @@ export default function LearnLessonPage() {
         setCurrentAccessLevel(entitlement.unlockedLevels);
         setAccessStatus("ready");
       } catch {
-        if (!isStale()) setAccessStatus("error");
+        if (isStale()) return;
+
+        // A request can fail while another mounted component has already
+        // verified and cached this user's access. Prefer that known result
+        // instead of leaving a purchased course behind the loading screen.
+        const latestUser = getCachedUser();
+        const latestCachedLevels = getCachedEntitledUnlockedLevels(latestUser?.id);
+        if (latestUser && latestCachedLevels) {
+          setSignedIn(true);
+          setCurrentAccessLevel(latestCachedLevels);
+          setAccessStatus("ready");
+          return;
+        }
+
+        setAccessStatus("error");
       }
     };
-    const handleAccessChange = () => void syncAuthAndAccess(true);
+    const handleAccessChange = () => void syncAuthAndAccess(false);
     void syncAuthAndAccess(accessRefreshKey > 0);
     window.addEventListener(accessLevelChangedEvent, handleAccessChange);
     window.addEventListener(authChangedEvent, handleAccessChange);
-    window.addEventListener("storage", handleAccessChange);
     return () => {
       window.removeEventListener(accessLevelChangedEvent, handleAccessChange);
       window.removeEventListener(authChangedEvent, handleAccessChange);
-      window.removeEventListener("storage", handleAccessChange);
       disposed = true;
       accessRequestId.current += 1;
     };
