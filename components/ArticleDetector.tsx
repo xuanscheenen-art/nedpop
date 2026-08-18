@@ -89,8 +89,6 @@ type ArticleLookupResult =
       sourceUrl?: string;
       meaningSourceUrl?: string;
       meaningLicense?: { name: string; url: string };
-      translatedFrom?: string;
-      alternatives?: Array<{ word: string; article: "de" | "het" }>;
     }
   | {
       status: "not-found";
@@ -268,23 +266,6 @@ export function ArticleDetector({ nouns, focusSingular }: { nouns: NounEntry[]; 
                 </span>
               ) : null}
             </div>
-            {lookupResult.translatedFrom ? (
-              <div className="mt-4 rounded-2xl bg-skywash px-4 py-3 font-bold leading-6 text-ocean">
-                <p>
-                  {language === "zh"
-                    ? `你输入的是英文 ${lookupResult.translatedFrom}；对应的荷兰语是 ${lookupResult.article} ${lookupResult.word}。`
-                    : `You entered the English word ${lookupResult.translatedFrom}; the Dutch word is ${lookupResult.article} ${lookupResult.word}.`}
-                </p>
-                {lookupResult.alternatives?.length ? (
-                  <p className="mt-1 text-sm text-ocean/70">
-                    {language === "zh" ? "其他常用说法：" : "Other common translations: "}
-                    {lookupResult.alternatives
-                      .map((item) => `${item.article} ${item.word}`)
-                      .join("、")}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
             {lookupResult.meaning ? (
               <div className="mt-4 rounded-2xl bg-peach/55 px-4 py-3">
                 <p className="text-xs font-black tracking-[0.14em] text-pop">

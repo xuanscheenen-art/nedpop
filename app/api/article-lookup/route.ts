@@ -24,7 +24,6 @@ const nounsByPlural = new Map(
 );
 
 const WIKTIONARY_API = "https://nl.wiktionary.org/w/api.php";
-const ENGLISH_WIKTIONARY_API = "https://en.wiktionary.org/w/api.php";
 
 type WiktionaryEntry = {
   title: string;
@@ -57,22 +56,7 @@ const fetchWiktionaryJson = async (
   return undefined;
 };
 
-const fetchWiktionarySearchTitles = async (params: URLSearchParams) => {
-  const result = (await fetchWiktionaryJson(params)) as
-    | { query?: { search?: Array<{ title?: string }> } }
-    | undefined;
-  return (result?.query?.search ?? [])
-    .map((item) => item.title)
-    .filter((title): title is string => Boolean(title));
-};
-
-const fetchWiktionaryWikitext = async (
-  word: string,
-  apiUrl = WIKTIONARY_API,
-) => {
-  // Revisions is markedly faster and more reliable than MediaWiki's parse
-  // endpoint for dictionary pages. This matters for English -> Dutch fallback:
-  // several candidate nouns may need their article checked in parallel.
+const fetchWiktionaryWikitext = async (word: string) => {
   const revisionParams = new URLSearchParams({
     action: "query",
     titles: word,
@@ -84,7 +68,7 @@ const fetchWiktionaryWikitext = async (
     redirects: "1",
   });
 
-  const data = (await fetchWiktionaryJson(revisionParams, apiUrl)) as
+  const data = (await fetchWiktionaryJson(revisionParams)) as
     | {
         query?: {
           pages?: Array<{
@@ -124,24 +108,6 @@ const extractTranslations = (wikitext: string, languageCodes: string[]) => {
     .filter(Boolean);
 
   return [...new Set(matches)].slice(0, 6);
-};
-
-const extractEnglishWiktionaryTranslations = (
-  wikitext: string,
-  languageCode: string,
-) => {
-  const matches = [
-    ...wikitext.matchAll(
-      new RegExp(
-        `\\{\\{(?:t|t\\+|tt|tt\\+|trad)\\|${languageCode}\\|([^}|]+)`,
-        "gi",
-      ),
-    ),
-  ]
-    .map((match) => normalizeWord(cleanTranslation(match[1])))
-    .filter(Boolean);
-
-  return [...new Set(matches)].slice(0, 8);
 };
 
 const lookupWiktionaryArticle = async (word: string) => {
@@ -188,86 +154,6 @@ const lookupWiktionaryArticle = async (word: string) => {
   } catch {
     return undefined;
   }
-};
-
-const editDistance = (left: string, right: string) => {
-  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
-
-  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
-    const current = [leftIndex];
-    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
-      current[rightIndex] = Math.min(
-        current[rightIndex - 1] + 1,
-        previous[rightIndex] + 1,
-        previous[rightIndex - 1] +
-          (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
-      );
-    }
-    previous.splice(0, previous.length, ...current);
-  }
-
-  return previous[right.length];
-};
-
-const lookupDutchTranslations = async (englishWord: string) => {
-  if (!/^[a-z][a-z '-]{1,60}$/i.test(englishWord)) return [];
-
-  const exactSearchParams = new URLSearchParams({
-    action: "query",
-    list: "search",
-    srsearch: `insource:"{{trad|en|${englishWord}}}"`,
-    srnamespace: "0",
-    srlimit: "6",
-    format: "json",
-    formatversion: "2",
-  });
-  const broadSearchParams = new URLSearchParams({
-    action: "query",
-    list: "search",
-    srsearch: `insource:"${englishWord}"`,
-    srnamespace: "0",
-    srlimit: "8",
-    format: "json",
-    formatversion: "2",
-  });
-
-  // English Wiktionary exposes Dutch translations directly. Dutch
-  // Wiktionary search runs alongside it as a fallback for entries whose
-  // translation template differs from the usual spelling.
-  const [englishEntry, exactSearchTitles] = await Promise.all([
-    fetchWiktionaryWikitext(englishWord, ENGLISH_WIKTIONARY_API),
-    fetchWiktionarySearchTitles(exactSearchParams),
-  ]);
-  const directCandidates = englishEntry
-    ? extractEnglishWiktionaryTranslations(englishEntry.wikitext, "nl")
-    : [];
-  const primaryTitles = [
-    ...new Set([
-      ...directCandidates,
-      ...exactSearchTitles,
-    ].map(normalizeWord)),
-  ].slice(0, 12);
-  const validateTitles = async (titles: string[]) => {
-    const matches = await Promise.all(
-      titles.map((title) => lookupWiktionaryArticle(normalizeWord(title))),
-    );
-    return matches
-      .filter((match): match is NonNullable<typeof match> => Boolean(match))
-      .sort(
-        (left, right) =>
-          editDistance(englishWord, left.word) - editDistance(englishWord, right.word),
-      );
-  };
-
-  const primaryMatches = await validateTitles(primaryTitles);
-  if (primaryMatches.length) return primaryMatches;
-
-  // Broad full-text search is intentionally last. It can rescue uncommon
-  // template spellings, but only its strongest validated noun is returned so
-  // loosely related dictionary pages never appear as translation alternatives.
-  const broadSearchTitles = await fetchWiktionarySearchTitles(broadSearchParams);
-  const broadMatches = await validateTitles(broadSearchTitles);
-  return broadMatches.slice(0, 1);
 };
 
 const clueFor = (word: string) => {
@@ -367,35 +253,6 @@ export async function GET(request: NextRequest) {
         meaningMatch?.status === "found" && meaningMatch.source === "wiktionary"
           ? meaningMatch.license
           : undefined,
-    });
-  }
-
-  const translatedMatches = await lookupDutchTranslations(query);
-  const translatedMatch = translatedMatches[0];
-  if (translatedMatch) {
-    // The raw query may be English. Only translate the Dutch noun after
-    // Wiktionary has resolved and validated it as a Dutch entry.
-    const dictionaryMeaning = translatedMatch.meaning ?? { en: query };
-    const googleMeaning = !dictionaryMeaning.zh
-      ? await translateDutchWordToChinese(translatedMatch.word)
-      : undefined;
-    const meaning = googleMeaning
-      ? { ...dictionaryMeaning, zh: googleMeaning }
-      : dictionaryMeaning;
-
-    return NextResponse.json({
-      status: "found",
-      matchedAs: "singular",
-      word: translatedMatch.word,
-      article: translatedMatch.article,
-      meaning,
-      source: "wiktionary",
-      sourceUrl: translatedMatch.sourceUrl,
-      translatedFrom: query,
-      alternatives: translatedMatches.slice(1, 4).map((match) => ({
-        word: match.word,
-        article: match.article,
-      })),
     });
   }
 
