@@ -414,10 +414,28 @@ export function PronunciationSoundBoard() {
   const [currentAudioSrc, setCurrentAudioSrc] = useState("");
   const [activePanel, setActivePanel] = useState<ActivePanel>("alphabet");
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
-  const play = (src: string, label: string) => {
+  const play = async (src: string, label: string) => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    try {
+      const context = audioContextRef.current ?? new AudioContext();
+      audioContextRef.current = context;
+      if (!mediaSourceRef.current) {
+        const source = context.createMediaElementSource(audio);
+        source.connect(context.destination);
+        mediaSourceRef.current = source;
+      }
+      if (context.state === "suspended") {
+        await context.resume();
+      }
+    } catch {
+      // Keep native media playback as a fallback when Web Audio is unavailable.
+    }
+
     const versionedSrc = `${src}?v=20260731-broadcast-1`;
     audio.pause();
     audio.currentTime = 0;
