@@ -140,6 +140,8 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
     onSelectPlan?.(level);
   };
 
+  const Heading = compact ? "h2" : "h1";
+
   return (
     <section className={compact ? "" : "mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8"}>
       <div>
@@ -147,9 +149,9 @@ export function PricingSection({ compact = false, onSelectPlan }: PricingSection
           <p className="text-sm font-black tracking-[0.16em] text-pop">
             {language === "zh" ? "一次购买 · 按级别解锁" : "One-time purchase · Unlock by level"}
           </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight text-ink">
+          <Heading className="mt-3 text-4xl font-black leading-tight text-ink">
             {language === "zh" ? "从听懂，到能在荷兰生活里真正开口" : "From decoding Dutch to using it in real life"}
-          </h2>
+          </Heading>
           <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-ocean/70">
             {language === "zh"
               ? "为中文母语者设计的荷兰语学习系统。A0 免费开始；付费课程一次购买、不自动续费，权益绑定你的账户。"

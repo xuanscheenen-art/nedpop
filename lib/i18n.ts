@@ -341,6 +341,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+  }, [language]);
+
   const setLanguage = (nextLanguage: Language) => {
     setLanguageState(nextLanguage);
     window.localStorage.setItem("nedpop-language", nextLanguage);

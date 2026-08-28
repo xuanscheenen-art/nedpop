@@ -41,6 +41,15 @@ export const metadata: Metadata = {
     description,
     locale: "zh_CN",
   },
+  twitter: {
+    card: "summary",
+    title,
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const stages = [

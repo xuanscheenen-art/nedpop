@@ -3,7 +3,9 @@ import type { MetadataRoute } from "next";
 const baseUrl = "https://nedpop.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
+  // Keep this truthful and stable. Using `new Date()` here would claim every
+  // public page changed whenever a crawler requests the sitemap.
+  const lastModified = new Date("2026-08-28T00:00:00.000Z");
 
   return [
     {
@@ -37,6 +39,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/word-link`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/rules`,
       lastModified,
       changeFrequency: "weekly",
@@ -47,6 +55,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/scenarios`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/exam-practice`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
   ];
 }
