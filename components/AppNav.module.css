@@ -1,0 +1,119 @@
+.featuredNavLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  overflow: visible;
+  border-radius: 0.45rem;
+  padding: 0.42rem 0.72rem 0.46rem 0.48rem;
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.featuredNavLink:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.12);
+}
+
+.featuredNavLink:focus-visible {
+  outline: 3px solid rgb(18 51 97 / 24%);
+  outline-offset: 3px;
+}
+
+.featuredNavLabel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  color: #123361;
+  font-size: 0.92rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.featuredNavText {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+.featuredNavText::before {
+  position: absolute;
+  z-index: -1;
+  right: -0.42rem;
+  bottom: -0.18rem;
+  left: -0.4rem;
+  height: 0.68rem;
+  border-radius: 52% 44% 48% 38%;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgb(255 250 180 / 92%) 0 5%, transparent 18%),
+    radial-gradient(ellipse at 76% 72%, rgb(222 89 0 / 34%) 0 12%, transparent 35%),
+    linear-gradient(180deg, #ffdb62 0%, #ffb323 35%, #ff8a00 72%, #ec6b00 100%);
+  box-shadow:
+    inset 0 0.11rem 0.12rem rgb(255 255 255 / 52%),
+    inset 0 -0.09rem 0.12rem rgb(169 64 0 / 22%),
+    0 0.08rem 0.12rem rgb(209 91 0 / 18%);
+  content: "";
+  transform: rotate(-2deg) skewX(-7deg);
+}
+
+.featuredNavSparkles {
+  position: absolute;
+  z-index: 2;
+  top: -0.16rem;
+  right: -0.44rem;
+  width: 1.14rem;
+  height: 1.14rem;
+  pointer-events: none;
+}
+
+.featuredNavSparkleLarge,
+.featuredNavSparkleSmall {
+  position: absolute;
+  display: block;
+  clip-path: polygon(50% 0%, 61% 37%, 100% 50%, 61% 63%, 50% 100%, 39% 63%, 0% 50%, 39% 37%);
+  background:
+    radial-gradient(circle at 36% 30%, #fffbd5 0 9%, transparent 11%),
+    linear-gradient(145deg, #fff47a 4%, #ffd629 42%, #f4a900 72%, #dd7900 100%);
+  filter: drop-shadow(0 0.1rem 0.08rem rgb(167 94 0 / 30%));
+}
+
+.featuredNavSparkleLarge::after,
+.featuredNavSparkleSmall::after {
+  position: absolute;
+  inset: 15% 48% 48% 15%;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 72%);
+  content: "";
+  transform: rotate(-28deg);
+}
+
+.featuredNavSparkleLarge {
+  top: 0;
+  left: 0;
+  width: 0.76rem;
+  height: 0.76rem;
+  transform: rotate(-8deg);
+}
+
+.featuredNavSparkleSmall {
+  right: 0;
+  bottom: 0;
+  width: 0.44rem;
+  height: 0.44rem;
+  transform: rotate(8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .featuredNavLink,
+  .featuredNavText::before {
+    transition: none;
+  }
+}
+
+@media (max-width: 79.999rem) {
+  .featuredNavLabel {
+    font-size: 1.05rem;
+  }
+}
