@@ -8,3 +8,7 @@ out/
 
 .DS_Store
 tsconfig.tsbuildinfo
+tmp/
+output/video/
+scripts/render_case_frames.py
+scripts/generate_case_soundtrack.py

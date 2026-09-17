@@ -1,7 +1,7 @@
 "use client";
 
 import { Volume2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 
 type ActivePanel = "contrast" | "special" | "alphabet";
@@ -415,40 +415,100 @@ export function PronunciationSoundBoard() {
   const [activePanel, setActivePanel] = useState<ActivePanel>("alphabet");
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioBufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
+  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const playRequestRef = useRef(0);
+
+  const stopActiveSource = () => {
+    const source = activeSourceRef.current;
+    if (!source) return;
+
+    source.onended = null;
+    try {
+      source.stop();
+    } catch {
+      // The source may already have ended.
+    }
+    source.disconnect();
+    activeSourceRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      stopActiveSource();
+      const context = audioContextRef.current;
+      if (context && context.state !== "closed") {
+        void context.close();
+      }
+    };
+  }, []);
 
   const play = async (src: string, label: string) => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    const requestId = ++playRequestRef.current;
+    const versionedSrc = `${src}?v=20260917-crossbrowser-1`;
+    stopActiveSource();
+    window.speechSynthesis?.cancel();
+    audio.pause();
+    audio.src = versionedSrc;
+    audio.load();
+    setCurrentAudioSrc(versionedSrc);
+    setLastPlayed(language === "zh" ? `正在播放：${label}` : `Playing: ${label}`);
+
     try {
-      const context = audioContextRef.current ?? new AudioContext();
-      audioContextRef.current = context;
-      if (!mediaSourceRef.current) {
-        const source = context.createMediaElementSource(audio);
-        source.connect(context.destination);
-        mediaSourceRef.current = source;
+      const AudioContextConstructor =
+        window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextConstructor) {
+        throw new Error("Web Audio is unavailable");
       }
+
+      const context = audioContextRef.current ?? new AudioContextConstructor();
+      audioContextRef.current = context;
       if (context.state === "suspended") {
         await context.resume();
       }
-    } catch {
-      // Keep native media playback as a fallback when Web Audio is unavailable.
-    }
 
-    const versionedSrc = `${src}?v=20260731-broadcast-1`;
-    audio.pause();
-    audio.currentTime = 0;
-    audio.src = versionedSrc;
-    setCurrentAudioSrc(versionedSrc);
-    setLastPlayed(language === "zh" ? `正在播放：${label}` : `Playing: ${label}`);
-    void audio.play().catch(() => {
-      setLastPlayed(
-        language === "zh"
-          ? `音频没有播出来：${label}。请再点一次，或检查浏览器/系统音量。`
-          : `Audio did not play: ${label}. Please click again or check browser/system volume.`,
-      );
-    });
+      let buffer = audioBufferCacheRef.current.get(src);
+      if (!buffer) {
+        const response = await fetch(versionedSrc, { cache: "force-cache" });
+        if (!response.ok) {
+          throw new Error(`Audio request failed with ${response.status}`);
+        }
+        buffer = await context.decodeAudioData(await response.arrayBuffer());
+        audioBufferCacheRef.current.set(src, buffer);
+      }
+
+      if (requestId !== playRequestRef.current) return;
+
+      const sourceNode = context.createBufferSource();
+      sourceNode.buffer = buffer;
+      sourceNode.connect(context.destination);
+      activeSourceRef.current = sourceNode;
+      sourceNode.onended = () => {
+        if (activeSourceRef.current === sourceNode) {
+          activeSourceRef.current = null;
+        }
+        sourceNode.disconnect();
+      };
+      sourceNode.start(0);
+    } catch {
+      if (requestId !== playRequestRef.current) return;
+
+      // Native playback remains available if Web Audio is unavailable or decoding fails.
+      audio.currentTime = 0;
+      try {
+        await audio.play();
+      } catch {
+        setLastPlayed(
+          language === "zh"
+            ? `音频没有播出来：${label}。请再点一次，或检查浏览器/系统音量。`
+            : `Audio did not play: ${label}. Please click again or check browser/system volume.`,
+        );
+      }
+    }
   };
 
   const speakExampleWord = (text: string, mode: "example" | "pronunciation" = "example") => {
@@ -460,6 +520,8 @@ export function PronunciationSoundBoard() {
       );
       return;
     }
+    ++playRequestRef.current;
+    stopActiveSource();
     audioRef.current?.pause();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text.replace(",", "."));
@@ -558,9 +620,13 @@ export function PronunciationSoundBoard() {
           (language === "zh"
       ? "每张卡都有两个试听：字母区听字母名和例词；组合音区先听读音，再听例词。"
       : "Each card has two audio actions: letters play letter names and example words; sound chunks play the pronunciation first, then an example word.")}
-        <audio ref={audioRef} controls className="mt-3 w-full" preload="auto">
-          {currentAudioSrc && <source src={currentAudioSrc} type="audio/wav" />}
-        </audio>
+        <audio
+          ref={audioRef}
+          controls
+          className="mt-3 w-full"
+          preload="metadata"
+          src={currentAudioSrc || undefined}
+        />
       </div>
 
       <div className="mt-6 grid gap-3 lg:grid-cols-3">
