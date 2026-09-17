@@ -12,3 +12,5 @@ tmp/
 output/video/
 scripts/render_case_frames.py
 scripts/generate_case_soundtrack.py
+scripts/render-case-video.sh
+scripts/render-case-video.sh
