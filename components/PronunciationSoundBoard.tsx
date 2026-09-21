@@ -411,7 +411,6 @@ const specialSoundStories: Record<
 export function PronunciationSoundBoard() {
   const { language } = useLanguage();
   const [lastPlayed, setLastPlayed] = useState("");
-  const [currentAudioSrc, setCurrentAudioSrc] = useState("");
   const [activePanel, setActivePanel] = useState<ActivePanel>("alphabet");
   const audioRef = useRef<HTMLAudioElement>(null);
   const playRequestRef = useRef(0);
@@ -425,23 +424,26 @@ export function PronunciationSoundBoard() {
     const selectedRate = audio.playbackRate;
     window.speechSynthesis?.cancel();
     audio.pause();
-    audio.src = versionedSrc;
-    audio.load();
+    const isSameSource = audio.getAttribute("src") === versionedSrc;
+    if (isSameSource) {
+      audio.currentTime = 0;
+    } else {
+      audio.src = versionedSrc;
+    }
     audio.playbackRate = selectedRate;
     audio.defaultPlaybackRate = selectedRate;
-    setCurrentAudioSrc(versionedSrc);
     setLastPlayed(language === "zh" ? `正在播放：${label}` : `Playing: ${label}`);
 
     try {
       if (requestId !== playRequestRef.current) return;
-      audio.currentTime = 0;
       await audio.play();
-    } catch {
+    } catch (error) {
       if (requestId !== playRequestRef.current) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setLastPlayed(
         language === "zh"
-          ? `音频没有播出来：${label}。请再点一次，或检查浏览器/系统音量。`
-          : `Audio did not play: ${label}. Please click again or check browser/system volume.`,
+          ? `音频没有播出来：${label}。请检查浏览器或系统音量。`
+          : `Audio did not play: ${label}. Please check browser or system volume.`,
       );
     }
   };
@@ -462,7 +464,6 @@ export function PronunciationSoundBoard() {
     utterance.lang = "nl-NL";
     const selectedRate = audioRef.current?.playbackRate ?? 1;
     utterance.rate = Math.max(0.25, Math.min(2, 0.78 * selectedRate));
-    setCurrentAudioSrc("");
     setLastPlayed(
       language === "zh"
         ? `正在播放${mode === "example" ? "例词" : "读音"}：${text}`
@@ -560,7 +561,6 @@ export function PronunciationSoundBoard() {
           controls
           className="mt-3 w-full"
           preload="metadata"
-          src={currentAudioSrc || undefined}
         />
       </div>
 
