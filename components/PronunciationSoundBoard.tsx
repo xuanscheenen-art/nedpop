@@ -1,7 +1,7 @@
 "use client";
 
 import { Volume2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 
 type ActivePanel = "contrast" | "special" | "alphabet";
@@ -414,100 +414,35 @@ export function PronunciationSoundBoard() {
   const [currentAudioSrc, setCurrentAudioSrc] = useState("");
   const [activePanel, setActivePanel] = useState<ActivePanel>("alphabet");
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const audioBufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
-  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const playRequestRef = useRef(0);
-
-  const stopActiveSource = () => {
-    const source = activeSourceRef.current;
-    if (!source) return;
-
-    source.onended = null;
-    try {
-      source.stop();
-    } catch {
-      // The source may already have ended.
-    }
-    source.disconnect();
-    activeSourceRef.current = null;
-  };
-
-  useEffect(() => {
-    return () => {
-      stopActiveSource();
-      const context = audioContextRef.current;
-      if (context && context.state !== "closed") {
-        void context.close();
-      }
-    };
-  }, []);
 
   const play = async (src: string, label: string) => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const requestId = ++playRequestRef.current;
-    const versionedSrc = `${src}?v=20260917-crossbrowser-1`;
-    stopActiveSource();
+    const versionedSrc = `${src}?v=20260921-natural-rate-1`;
+    const selectedRate = audio.playbackRate;
     window.speechSynthesis?.cancel();
     audio.pause();
     audio.src = versionedSrc;
     audio.load();
+    audio.playbackRate = selectedRate;
+    audio.defaultPlaybackRate = selectedRate;
     setCurrentAudioSrc(versionedSrc);
     setLastPlayed(language === "zh" ? `正在播放：${label}` : `Playing: ${label}`);
 
     try {
-      const AudioContextConstructor =
-        window.AudioContext ??
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextConstructor) {
-        throw new Error("Web Audio is unavailable");
-      }
-
-      const context = audioContextRef.current ?? new AudioContextConstructor();
-      audioContextRef.current = context;
-      if (context.state === "suspended") {
-        await context.resume();
-      }
-
-      let buffer = audioBufferCacheRef.current.get(src);
-      if (!buffer) {
-        const response = await fetch(versionedSrc, { cache: "force-cache" });
-        if (!response.ok) {
-          throw new Error(`Audio request failed with ${response.status}`);
-        }
-        buffer = await context.decodeAudioData(await response.arrayBuffer());
-        audioBufferCacheRef.current.set(src, buffer);
-      }
-
       if (requestId !== playRequestRef.current) return;
-
-      const sourceNode = context.createBufferSource();
-      sourceNode.buffer = buffer;
-      sourceNode.connect(context.destination);
-      activeSourceRef.current = sourceNode;
-      sourceNode.onended = () => {
-        if (activeSourceRef.current === sourceNode) {
-          activeSourceRef.current = null;
-        }
-        sourceNode.disconnect();
-      };
-      sourceNode.start(0);
+      audio.currentTime = 0;
+      await audio.play();
     } catch {
       if (requestId !== playRequestRef.current) return;
-
-      // Native playback remains available if Web Audio is unavailable or decoding fails.
-      audio.currentTime = 0;
-      try {
-        await audio.play();
-      } catch {
-        setLastPlayed(
-          language === "zh"
-            ? `音频没有播出来：${label}。请再点一次，或检查浏览器/系统音量。`
-            : `Audio did not play: ${label}. Please click again or check browser/system volume.`,
-        );
-      }
+      setLastPlayed(
+        language === "zh"
+          ? `音频没有播出来：${label}。请再点一次，或检查浏览器/系统音量。`
+          : `Audio did not play: ${label}. Please click again or check browser/system volume.`,
+      );
     }
   };
 
@@ -521,12 +456,12 @@ export function PronunciationSoundBoard() {
       return;
     }
     ++playRequestRef.current;
-    stopActiveSource();
     audioRef.current?.pause();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text.replace(",", "."));
     utterance.lang = "nl-NL";
-    utterance.rate = 0.78;
+    const selectedRate = audioRef.current?.playbackRate ?? 1;
+    utterance.rate = Math.max(0.25, Math.min(2, 0.78 * selectedRate));
     setCurrentAudioSrc("");
     setLastPlayed(
       language === "zh"
