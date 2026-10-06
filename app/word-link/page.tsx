@@ -427,7 +427,6 @@ const memoryBubbleTypeOrder = [
   "compound-part",
   "compound-family",
   "part-related",
-  "verb-form",
   "verb-noun-pair",
   "word-family",
   "synonym",
@@ -440,7 +439,6 @@ const memoryBubbleTypeOrder = [
   "action-object",
   "state-action",
   "confusion-pair",
-  "english-bridge",
   "compound-parent",
 ];
 

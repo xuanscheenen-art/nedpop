@@ -512,6 +512,12 @@ function uniquePairKey(a, b) {
   return [normalize(a), normalize(b)].sort().join("|");
 }
 
+const knownNonSynonymPairs = new Set([
+  uniquePairKey("afval", "grofvuil"),
+  uniquePairKey("gesprek", "interview"),
+  uniquePairKey("samenvatting", "conclusie"),
+]);
+
 function relationPair(sourceKey, targetKey) {
   return [displayFor(sourceKey), displayFor(targetKey)];
 }
@@ -596,6 +602,7 @@ async function main() {
       const targetKey = normalize(target);
       if (!isValidRelationTerm(sourceKey, targetKey, "synonym")) continue;
       const key = uniquePairKey(sourceKey, targetKey);
+      if (knownNonSynonymPairs.has(key)) continue;
       synonymPairs.set(key, relationPair(sourceKey, targetKey));
       relationSources[key] = Array.from(new Set([...(relationSources[key] ?? []), ...(record.sources ?? []).filter((source) => /^https?:\/\//.test(source))]));
     }

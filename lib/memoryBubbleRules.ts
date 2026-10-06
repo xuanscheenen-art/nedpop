@@ -31,7 +31,6 @@ const manualLinkTypeMap: Partial<Record<MemoryLinkType, MemoryBubbleRelationType
   "word-family": "word-family",
   derivation: "word-family",
   "number-family": "word-family",
-  "verb-form": "verb-form",
   "verb-noun-pair": "verb-noun-pair",
   synonym: "synonym",
   opposite: "opposite",
@@ -1438,12 +1437,7 @@ function orderedFocusedTargets(categoryId: string, source: string, targets: stri
   const priority = focusedCategoryTargets[normalizeWordText(categoryId)]?.[source];
   if (!priority?.length) return targets;
   const available = new Set(targets.map(normalizeWordText));
-  const prioritized = priority.filter((target) => available.has(normalizeWordText(target)));
-  const prioritizedKeys = new Set(prioritized.map(normalizeWordText));
-  return [
-    ...prioritized,
-    ...targets.filter((target) => !prioritizedKeys.has(normalizeWordText(target))),
-  ];
+  return priority.filter((target) => available.has(normalizeWordText(target)));
 }
 
 export function generateCategoryRelations(analysis: WordAnalysis, allWords: WordItem[]) {
@@ -1457,6 +1451,11 @@ export function generateCategoryRelations(analysis: WordAnalysis, allWords: Word
     const hasRoleAwareScenario = relationLexicons.scenarioRelations.some(([from]) => normalizeWordText(from) === source);
     if (hasRoleAwareScenario) return [];
     if (shouldSuppressBroadCategoryRelation(analysis, category.id, sourceIsHead)) return [];
+    const isBroadMemberGroup = category.members.length > 8;
+    const sourceHasFocus = Boolean(focusedCategoryTargets[normalizeWordText(category.id)]?.[source]?.length);
+    // A large category is only useful from a member when that word has a curated,
+    // source-specific set of peers. Otherwise unrelated co-members leak into bubbles.
+    if (sourceIsMember && isBroadMemberGroup && !sourceHasFocus) return [];
     const sourceHasActionObjects = Boolean(relationLexicons.actionObjects[analysis.baseForm] ?? relationLexicons.actionObjects[analysis.normalizedForm]);
     const targets = sourceIsHead
       ? [
@@ -1496,6 +1495,7 @@ export function generateSameCategoryFallbackRelations(analysis: WordAnalysis, al
     const heads = category.heads.map(normalizeWordText);
     const members = category.members.map(normalizeWordText);
     if (!heads.includes(source) && !members.includes(source)) return [];
+    if (category.members.length > 8 && !focusedCategoryTargets[normalizeWordText(category.id)]?.[source]?.length) return [];
     const categoryKeys = new Set([category.id, ...category.tags].map(normalizeWordText));
     if (![...contextTags].some((tag) => categoryKeys.has(tag))) return [];
     const targets = [...category.heads, ...category.members]
@@ -1520,16 +1520,202 @@ export function generateSameCategoryFallbackRelations(analysis: WordAnalysis, al
 
 export function generateScenarioRelations(analysis: WordAnalysis, allWords: WordItem[]) {
   const source = analysis.normalizedForm;
+  const reviewedA2Reasons: Record<string, { zh: string; en: string }> = {
+    "kom|bord": { zh: "这里的 kom 指盛食物的碗，和 bord（盘子）是同一套餐具。", en: "Here kom means a bowl; it belongs with bord (plate) as tableware." },
+    "kom|lepel": { zh: "这里的 kom 是餐桌上的碗，常和 lepel（勺子）一起使用。", en: "Here kom is a table bowl, commonly used with a lepel (spoon)." },
+    "kom|glas": { zh: "这里的 kom 指碗，和 glas（玻璃杯）都是餐桌上的器具。", en: "Here kom means bowl; it and glas (drinking glass) are tableware." },
+    "kilo|gram": { zh: "kilo 和 gram 都是重量单位；1 公斤等于 1000 克，是购物称重时会遇到的单位换算。", en: "Kilo and gram are weight units; one kilogram equals 1,000 grams, a conversion used when weighing groceries." },
+    "liter|fles": { zh: "liter 是容量单位，fles（瓶子）常标出以 liter 计的容量。", en: "Liter is a unit of volume, and a fles (bottle) often shows its capacity in liters." },
+    "invullen|formulier": { zh: "formulier 是需要填写的表格，invullen 是填写其中的信息。", en: "A formulier is a form to complete; invullen is the action of filling in its information." },
+    "invullen|adres": { zh: "搬家或登记时，常要把新地址 invullen（填写）在表格上。", en: "When registering or moving, you often invullen (fill in) your new adres on a form." },
+    "regelen|afspraak": { zh: "afspraak maken/regelen 是常见搭配：安排或确认一次预约。", en: "Afspraak maken/regelen is a common collocation: arrange or confirm an appointment." },
+    "besparen|geld": { zh: "besparen betekent minder uitgeven zodat je geld overhoudt.", en: "Besparen means spending less so that you keep more geld (money)." },
+    "aanbieden|hulp": { zh: "hulp aanbieden 是“主动提供帮助”的常用搭配。", en: "Hulp aanbieden is a common collocation meaning to offer help." },
+    "aanbieden|oplossing": { zh: "Een oplossing aanbieden 是提供解决办法的自然搭配。", en: "Een oplossing aanbieden is a natural collocation meaning to offer a solution." },
+    "regel|boete": { zh: "违反某条 regel（规则）可能会得到 boete（罚款）；这是规则与后果的联系，不是同义词。", en: "Breaking a regel (rule) can lead to a boete (fine): this is a rule-and-consequence link, not a synonym." },
+    "regel|lezen": { zh: "de regel lezen 是词条里的常用搭配：阅读并理解规则。", en: "De regel lezen is a useful collocation: read and understand the rule." },
+    "regel|uitleggen": { zh: "de regel uitleggen 是常见搭配：把规则解释清楚。", en: "De regel uitleggen is a common collocation: explain the rule clearly." },
+    "regel|regeling": { zh: "regel 是一条规则；regeling 常指一套规定或安排。二者同词根、词义相关，但不是可互换的同义词。", en: "Regel is a rule; regeling often means a set of regulations or an arrangement. They share a root and related meaning, but are not interchangeable synonyms." },
+    "postkantoor|pakket": { zh: "postkantoor（邮局）是寄送或领取 pakket（包裹）的地点。", en: "A postkantoor (post office) is a place to send or collect a pakket (parcel)." },
+    "DigiD-app|privacy": { zh: "使用 DigiD-app 办理身份验证时，也要保护个人 privacy（隐私）。", en: "When using the DigiD app for authentication, personal privacy must also be protected." },
+    "besluit|gemeente": { zh: "gemeente（市政厅）会对申请作出正式 besluit（决定）。", en: "A gemeente (municipality) makes a formal besluit (decision) on an application." },
+    "afzeggen|afspraak": { zh: "afspraak afzeggen 是词典和预约场景中的固定搭配：取消预约。", en: "Afspraak afzeggen is a standard dictionary and appointment collocation: cancel an appointment." },
+    "veranderen|adres": { zh: "mijn adres veranderen 是常见搭配：更改地址。", en: "Mijn adres veranderen is a common collocation: change one's address." },
+    "treinverkeer|vertraging": { zh: "treinverkeer 遇到 verstoring 时常会有 vertraging（延误）；二者属于列车运行信息场景。", en: "Disruptions in treinverkeer often cause vertraging (delays); both belong to train travel information." },
+    "buslijn|halte": { zh: "buslijn 会经过不同的 halte（站点）；线路通知也常说明哪些站点停靠或取消。", en: "A buslijn serves different haltes (stops); route notices often say which stops are served or cancelled." },
+    "betaalverzoek|rekening": { zh: "betaalverzoek 是请求支付款项，rekening 是需要支付的账单；两者常出现在付款流程中。", en: "A betaalverzoek requests a payment, while a rekening is a bill to pay; both occur in payment workflows." },
+    "kwijt|paspoort": { zh: "paspoort kwijt 是“护照丢了”的常用说法；kwijt 常和重要证件搭配。", en: "Paspoort kwijt is a common way to say that a passport is missing; kwijt often pairs with important documents." },
+    "kwijt|rijbewijs": { zh: "rijbewijs kwijt 是“驾照丢了”的常用说法。", en: "Rijbewijs kwijt is a common way to say that a driving licence is missing." },
+    "gevonden|paspoort": { zh: "护照丢失后也可能被 gevonden（找到）；和 kwijt 构成一组失物状态。", en: "A missing passport may later be gevonden (found), contrasting with kwijt (lost)." },
+    "gevonden|rijbewijs": { zh: "驾照丢失后也可能被 gevonden（找到）；和 kwijt 构成一组失物状态。", en: "A missing driving licence may later be gevonden (found), contrasting with kwijt (lost)." },
+    "verplicht|formulier": { zh: "表格会标出哪些信息是 verplicht（必填/必须提供）。", en: "A form indicates which information is verplicht (required)." },
+    "verplicht|vakje": { zh: "表格里的 vakje 可能是 verplicht（必须勾选或填写）的项目。", en: "A vakje (field/box) on a form may be verplicht (required)." },
+    "optioneel|vakje": { zh: "表格里的 vakje 也可能是 optioneel（可选）的项目。", en: "A vakje (field/box) on a form may be optioneel (optional)." },
+    "optioneel|keuzelijst": { zh: "keuzelijst（下拉选择列表）里的项目有时是可选的。", en: "An item in a keuzelijst (selection list) may be optional." },
+    "jaarlijks|maandelijks": { zh: "jaarlijks 是每年，maandelijks 是每月；对照频率记，不是反义词。", en: "Jaarlijks means yearly and maandelijks means monthly; compare the frequency, not as opposites." },
+    "maandelijks|jaarlijks": { zh: "maandelijks 是每月，jaarlijks 是每年；对照频率记，不是反义词。", en: "Maandelijks means monthly and jaarlijks means yearly; compare the frequency, not as opposites." },
+    "dossier|huisarts": { zh: "huisarts（家庭医生）会建立并查看患者的 dossier（病历/档案）。", en: "A huisarts (GP) keeps and consults a patient's dossier (file/medical record)." },
+    "dossier|controle": { zh: "就诊或复查时，医生可能会查看 dossier（病历/档案）。", en: "During a check-up, a clinician may consult the dossier (record)." },
+    "mobiel|bellen": { zh: "mobiel 在这里指手机；mobiel bellen 就是用手机打电话。", en: "Mobiel here means mobile phone; mobiel bellen means making a call on a mobile." },
+    "inschrijving|formulier": { zh: "办理 inschrijving（登记）时，通常要填写 formulier（表格）。", en: "An inschrijving (registration) commonly involves completing a formulier (form)." },
+    "inschrijving|gemeente": { zh: "很多住址登记要在 gemeente（市政厅）办理。", en: "Many address registrations are handled by the gemeente (municipality)." },
+    "balie|medewerker": { zh: "balie 是办事柜台，medewerker 是在柜台提供帮助的工作人员。", en: "A balie is a service counter; a medewerker is the staff member who helps there." },
+    "balie|informatie": { zh: "去 balie 常是为了询问或领取 informatie（信息）。", en: "People often go to a balie to ask for or receive informatie (information)." },
+    "nodig|hulp": { zh: "hulp nodig hebben 是“需要帮助”的常用搭配；nodig 不等于 belangrijk。", en: "Hulp nodig hebben is a common phrase meaning to need help; nodig is not the same as belangrijk." },
+    "nodig|afspraak": { zh: "预约事项里常会说明是否 afspraak（预约） nodig is（需要）。", en: "Appointment information often says whether an afspraak (appointment) is nodig (needed)." },
+    "duidelijk|uitleggen": { zh: "uitleggen（解释）是让信息 duidelijk（清楚）的常用办法。", en: "Uitleggen (explaining) is a common way to make information duidelijk (clear)." },
+    "dosering|bijsluiter": { zh: "bijsluiter（药品说明书）会说明药物的 dosering（剂量/用法）。", en: "A bijsluiter (medicine leaflet) explains the dosering (dosage)." },
+    "dosering|medicijn": { zh: "dosering 指 medicijn（药物）应该使用的剂量。", en: "Dosering is the amount of a medicijn (medicine) to use." },
+    "dosis|medicijn": { zh: "dosis 是一次使用的药量；medicijn 是药物本身。", en: "Dosis is an amount taken at one time; medicijn is the medicine itself." },
+    "dosis|bijsluiter": { zh: "bijsluiter 会告诉你每次的 dosis（剂量）。", en: "The bijsluiter tells you the dosis (dose) to take." },
+    "hersteldatum|verzuim": { zh: "hersteldatum 是缺勤/病假（verzuim）后预计恢复工作的日期。", en: "A hersteldatum is the expected return date after verzuim (absence/sick leave)." },
+    "hersteldatum|bedrijfsarts": { zh: "需要评估复工时间时，bedrijfsarts（职业医生）可能会讨论 hersteldatum。", en: "A bedrijfsarts (occupational physician) may discuss a hersteldatum when assessing return to work." },
+    "betaalverzoek|iban": { zh: "电子 betaalverzoek 通常会使用收款方的 IBAN。", en: "An electronic betaalverzoek commonly uses the recipient's IBAN." },
+    "betaalverzoek|overschrijving": { zh: "收到 betaalverzoek 后，可以通过 overschrijving（银行转账）付款。", en: "After receiving a betaalverzoek, you can pay by overschrijving (bank transfer)." },
+    "eindbestemming|tussenstop": { zh: "旅行路线从 tussenstop（中途停靠）继续到 eindbestemming（最终目的地）。", en: "A route continues from a tussenstop (intermediate stop) to the eindbestemming (final destination)." },
+    "eindbestemming|aansluiting": { zh: "规划到 eindbestemming 的路线时，可能需要留意换乘 aansluiting。", en: "When planning a route to the eindbestemming, you may need to check a connecting service (aansluiting)." },
+    "tussenstop|aansluiting": { zh: "在 tussenstop 换乘时，可能需要赶上下一班 aansluiting（接续交通）。", en: "At a tussenstop, you may need to catch the next aansluiting (connecting service)." },
+    "vervoerbewijs|controleur": { zh: "controleur 会检查乘客是否持有有效 vervoerbewijs。", en: "A controleur checks whether passengers have a valid vervoerbewijs (travel ticket)." },
+    "vervoerbewijs|dagkaart": { zh: "dagkaart 是一种可在当天使用的 vervoerbewijs。", en: "A dagkaart (day ticket) is one type of vervoerbewijs (travel ticket)." },
+    "vervoerbewijs|abonnement": { zh: "abonnement 是长期/定期使用的 vervoerbewijs 形式之一。", en: "An abonnement (pass/subscription) is one type of ongoing vervoerbewijs." },
+    "bereikbaarheid|voicemail": { zh: "联系不到某人时，电话可能转到 voicemail（语音信箱）。", en: "If someone is not reachable, a call may go to voicemail." },
+    "bereikbaarheid|terugbelverzoek": { zh: "无法接通时，可以留下 terugbelverzoek（回电请求）。", en: "If someone cannot be reached, you can leave a terugbelverzoek (call-back request)." },
+    "bereikbaarheid|telefoonnummer": { zh: "想确认一个人是否 bereikbaar，通常需要他的 telefoonnummer。", en: "To check whether someone is reachable, you usually need their telefoonnummer (phone number)." },
+    "verbinding|opnemen": { zh: "电话 verbinding 接通后，对方可以 opnemen（接听）。", en: "Once the phoneverbinding is established, the other person can opnemen (answer the call)." },
+    "verbinding|voicemail": { zh: "电话 verbinding 无法建立时，可能会进入 voicemail。", en: "If a phoneverbinding cannot be established, the call may go to voicemail." },
+    "voorkeur|beschikbaarheid": { zh: "安排时间时，要把自己的 voorkeur 和对方的 beschikbaarheid（可用时间）对上。", en: "When scheduling, match your voorkeur (preference) with the other person's beschikbaarheid (availability)." },
+    "aanvraagstatus|afwijzing": { zh: "aanvraagstatus 会显示申请是否被 afwijzing（拒绝）。", en: "The aanvraagstatus shows whether an application resulted in an afwijzing (rejection)." },
+    "aanvraagstatus|goedkeuring": { zh: "aanvraagstatus 会显示申请是否得到 goedkeuring（批准）。", en: "The aanvraagstatus shows whether an application received goedkeuring (approval)." },
+    "aanvraagstatus|beslistermijn": { zh: "beslistermijn 是等待 aanvraagstatus / 正式决定的处理期限。", en: "The beslistermijn is the processing period for receiving an application status or decision." },
+    "aanvraagstatus|toeslagen": { zh: "toeslagen 申请页面会显示每项申请的 aanvraagstatus。", en: "A toeslagen (benefits) portal shows the aanvraagstatus of each application." },
+    "klantenbalie|artikelnummer": { zh: "退换商品时，klantenbalie 可能会询问商品的 artikelnummer。", en: "At a returns counter, staff may ask for the item's artikelnummer (item number)." },
+    "klantenbalie|aankoopdatum": { zh: "办理退换货时，klantenbalie 可能需要 aankoopdatum（购买日期）。", en: "At a customer-service counter, staff may need the aankoopdatum (purchase date) for a return." },
+    "DigiD-app|machtigingscode": { zh: "DigiD-app 登录或授权流程可能要求输入 machtigingscode（授权码）。", en: "A DigiD-app sign-in or authorization flow may ask for a machtigingscode (authorization code)." },
+    "DigiD-app|beveiliging": { zh: "beveiliging（安全保护）是 DigiD-app 身份验证的重要部分。", en: "Beveiliging (security) is an important part of authentication in the DigiD app." },
+    "DigiD-app|privacyverklaring": { zh: "使用 DigiD-app 时，privacyverklaring 说明个人数据如何处理。", en: "The privacyverklaring (privacy statement) explains how personal data is handled when using the DigiD app." },
+    "gebruik|medicijn": { zh: "medicijngebruik 指药物的使用方式；药盒或说明书会解释如何使用。", en: "Medicijngebruik means the use of medicine; the package or leaflet explains how to use it." },
+    "hoofdpijn|koorts": { zh: "头痛（hoofdpijn）和发烧（koorts）都是常见症状，但彼此不同。", en: "Hoofdpijn (headache) and koorts (fever) are common but distinct symptoms." },
+    "buikpijn|hoesten": { zh: "buikpijn 和 hoesten 都是看病时可能要说明的症状。", en: "Buikpijn (stomach ache) and hoesten (coughing) are symptoms a patient may report." },
+    "keelpijn|duizelig": { zh: "看病时可以分别描述 keelpijn（喉咙痛）和 duizelig（头晕）。", en: "At a medical visit, you may report keelpijn (sore throat) and duizeligheid (dizziness)." },
+    "wijkteam|inburgering": { zh: "wijkteam 可协助居民了解本地的 inburgering（融入/公民教育）支持。", en: "A wijkteam may help residents find local inburgering (civic integration) support." },
+    "wijkteam|taalcursus": { zh: "wijkteam 可以帮助居民找到合适的 taalcursus（语言课程）。", en: "A wijkteam may help residents find a suitable taalcursus (language course)." },
+    "wijkteam|schoolarts": { zh: "涉及儿童和家庭的问题，wijkteam 有时会与 schoolarts（校医）协作。", en: "For issues involving children and families, a wijkteam may coordinate with a schoolarts (school doctor)." },
+    "inburgering|taalcursus": { zh: "taalcursus（语言课）是 inburgering（融入学习）中常见的一部分。", en: "A taalcursus (language course) is a common part of inburgering (civic integration)." },
+    "informatiebalie|servicepunt": { zh: "informatiebalie 和 servicepunt 都是获取公共服务信息的地点。", en: "An information desk and a service point are both places to get public-service information." },
+    "informatiebalie|medewerker": { zh: "在 informatiebalie，medewerker 会回答问题或指引办事流程。", en: "At an information desk, a medewerker (staff member) answers questions or guides you through a process." },
+    "doktersverklaring|verzuim": { zh: "doktersverklaring 可能用于说明病假或其他 verzuim（缺勤）。", en: "A doktersverklaring (doctor's note) may document sick leave or other verzuim (absence)." },
+    "doktersverklaring|privacy": { zh: "doktersverklaring 涉及健康信息，因此也要注意 privacy（隐私）。", en: "A doctor's note contains health information, so privacy matters too." },
+    "contract|huur": { zh: "租房 contract 会写明 huur（租金）及其他租赁条件。", en: "A rental contract specifies the huur (rent) and other lease conditions." },
+    "contract|verhuurder": { zh: "verhuurder（房东）是租赁 contract 的一方。", en: "The verhuurder (landlord) is one party to a rental contract." },
+    "contract|reparatie": { zh: "住房 contract 会说明出现 reparatie（维修）问题时房东和租客的责任。", en: "A housing contract describes tenant and landlord responsibilities for repairs." },
+    "vertrekken|trein": { zh: "trein vertrekken 是描述火车出发的常用搭配。", en: "Trein vertrekken is a common way to describe a train leaving." },
+    "vertrekken|vertraging": { zh: "trein vertraging 可能影响原定的 vertrekken（出发）时间。", en: "A train vertraging (delay) may affect the planned departure time." },
+    "aankomen|station": { zh: "火车或乘客会在 station aankomen（到站/到达）。", en: "A train or passenger can aankomen (arrive) at a station." },
+    "aankomen|bestemming": { zh: "aankomen 描述抵达 bestemming（目的地）。", en: "Aankomen means to arrive at a bestemming (destination)." },
+    "loket|informatie": { zh: "去 loket 常是为了询问或领取 informatie（信息）。", en: "People often go to a loket to ask for or receive information." },
+    "loket|bewijs": { zh: "办理业务时，loket 可能要求出示 bewijs（证明）。", en: "At a service counter, you may be asked to show a bewijs (proof/document)." },
+    "loket|kopie": { zh: "有些手续需要把 kopie（复印件）交到 loket。", en: "Some procedures require handing in a kopie (copy) at the service counter." },
+    "kopie|bewijs": { zh: "kopie van een bewijs 是证明文件的复印件。", en: "A kopie van een bewijs is a copy of a supporting document." },
+    "kopie|handtekening": { zh: "办理手续时，kopie 可能要和签好的 handtekening 一起提交。", en: "An administrative copy may need to be submitted with a signed handtekening (signature)." },
+    "kopie|paspoort": { zh: "paspoort 的 kopie 是常见的身份材料复印件。", en: "A kopie van een paspoort is a common copy of an identity document." },
+    "veilig|privacy": { zh: "保护个人信息时，veiligheid 和 privacy 都很重要，但含义不同。", en: "When protecting personal information, safety and privacy both matter, but mean different things." },
+    "bijwerking|medicijn": { zh: "bijwerking 是 medicijn（药物）可能带来的副作用。", en: "A bijwerking is a possible side effect of a medicijn (medicine)." },
+    "verhuizen|inschrijving": { zh: "搬家后通常要办理新地址的 inschrijving（登记）。", en: "After moving, you usually need to complete an inschrijving (registration) at your new address." },
+    "verhuizen|gemeente": { zh: "在荷兰，搬家后的地址变更通常要向 gemeente（市政厅）申报。", en: "In the Netherlands, an address change after moving is usually reported to the gemeente (municipality)." },
+    "e-mailadres|telefoonnummer": { zh: "e-mailadres 和 telefoonnummer 都是联系表格中常见的联系方式。", en: "An e-mailadres and telefoonnummer are both common contact details on forms." },
+    "e-mailadres|bijlage": { zh: "通过 e-mail 发送文件时，文件会作为 bijlage（附件）添加。", en: "When sending a file by email, it is added as a bijlage (attachment)." },
+    "leidinggevende|rooster": { zh: "rooster（排班表）有变化时，通常要联系 leidinggevende（主管）。", en: "When a work roster changes, you usually contact your leidinggevende (supervisor)." },
+    "leidinggevende|werktijd": { zh: "werktijd（工作时间）常由员工和 leidinggevende 协商。", en: "Werktijd (working hours) is often discussed with a leidinggevende (supervisor)." },
+    "beterschap|ziekmelding": { zh: "ziekmelding 是报告生病；beterschap 是祝对方早日康复。", en: "Ziekmelding means reporting sick; beterschap is a wish for a speedy recovery." },
+    "beterschap|afwezig": { zh: "生病 afwezig（缺席）时，同事常说 beterschap（祝早日康复）。", en: "When someone is absent due to illness, colleagues often say beterschap (get well soon)." },
+    "beterschap|terugkomen": { zh: "beterschap 是祝康复，之后希望对方能 terugkomen（回来）。", en: "Beterschap wishes recovery, after which the person can terugkomen (return)." },
+    "buschauffeur|conducteur": { zh: "buschauffeur 开公交车，conducteur 是公共交通中的另一类工作人员。", en: "A buschauffeur drives a bus; a conducteur is another kind of public-transport staff member." },
+    "buschauffeur|omleiding": { zh: "发生 omleiding（绕行）时，buschauffeur 会按临时路线行驶。", en: "During an omleiding (diversion), the buschauffeur follows a temporary route." },
+    "buschauffeur|inchecken": { zh: "乘客上车后通常要 inchecken；buschauffeur 会提醒乘客遵守乘车流程。", en: "Passengers usually check in when boarding; the buschauffeur may remind them of the travel procedure." },
+    "aanmaning|vervaldatum": { zh: "未在 vervaldatum（到期日）付款，之后可能收到 aanmaning（催款通知）。", en: "If you do not pay by the vervaldatum (due date), you may later receive an aanmaning (payment reminder)." },
+    "aanmaning|terugbetalen": { zh: "收到 aanmaning 后，通常需要尽快 betalen 或 terugbetalen 尚欠金额。", en: "After receiving an aanmaning, you usually need to pay or terugbetalen (repay) the outstanding amount." },
+    "spoedlijn|dringend": { zh: "spoedlijn 用于处理 dringend（紧急）的情况。", en: "A spoedlijn is used for dringend (urgent) situations." },
+    "spoedlijn|bevestiging": { zh: "通过 spoedlijn 联系服务方后，可能会收到 afspraak 或处理结果的 bevestiging。", en: "After contacting a service on a spoedlijn, you may receive confirmation of an appointment or next step." },
+    "elektriciteit|energieleverancier": { zh: "energieleverancier 负责提供 elektriciteit（电力）并按用量收费。", en: "An energieleverancier supplies electricity and bills for its use." },
+    "elektriciteit|meterstand": { zh: "meterstand 用来记录 elektriciteit 的用量。", en: "A meterstand records how much elektriciteit (electricity) has been used." },
+    "elektriciteit|rekening": { zh: "电力使用费用会出现在 elektriciteit 的 rekening（账单）上。", en: "The cost of electricity appears on the electricity rekening (bill)." },
+    "annulering|afspraak": { zh: "annulering 是取消；常见对象之一是 afspraak（预约）。", en: "Annulering means cancellation; an afspraak (appointment) is a common thing to cancel." },
+    "annulering|bevestiging": { zh: "取消预约后，服务方可能发送 annulering 的 bevestiging（确认）。", en: "After cancelling an appointment, the provider may send a bevestiging (confirmation) of the annulering." },
+    "servicekosten|huurcontract": { zh: "huurcontract 会说明 huur 之外是否要支付 servicekosten。", en: "A huurcontract (rental contract) states whether servicekosten (service charges) are due in addition to rent." },
+    "servicekosten|verhuurder": { zh: "verhuurder 通常会说明并结算 servicekosten。", en: "The verhuurder (landlord) usually explains and settles the servicekosten (service charges)." },
+    "verzekeringspas|verzekering": { zh: "verzekeringspas 是证明医疗保险身份的卡片。", en: "A verzekeringspas is a card showing your insurance details." },
+    "verzekeringspas|herhaalrecept": { zh: "看诊或领取 herhaalrecept 时，药房/诊所可能需要核对 verzekeringspas。", en: "A clinic or pharmacy may check your insurance card for a repeat prescription." },
+    "verblijfsvergunning|paspoort": { zh: "申请 verblijfsvergunning（居留许可）时，paspoort 常是所需身份文件。", en: "A paspoort (passport) is commonly required when applying for a verblijfsvergunning (residence permit)." },
+    "verblijfsvergunning|gemeente": { zh: "居留手续可能需要与 gemeente（市政厅）办理相关登记。", en: "Residence procedures may involve registration with the gemeente (municipality)." },
+    "verblijfsvergunning|inschrijven": { zh: "领取或申请居留许可后，通常还要在当地登记住所。", en: "After arranging residence permission, you usually also register your address locally." },
+    "vergunning|gemeenteloket": { zh: "有些 vergunning（许可证）要通过 gemeenteloket（市政窗口）申请。", en: "Some vergunningen (permits) are requested through the gemeenteloket (municipal service desk)." },
+    "vergunning|formulier": { zh: "申请 vergunning 时，通常要提交 formulier（申请表）。", en: "Applying for a vergunning (permit) usually requires submitting a formulier (form)." },
+    "belangrijk|informatie": { zh: "重要事项通常会在重要 informatie（信息）中说明；这是常见搭配，不是同义关系。", en: "Important details are often given as belangrijke informatie; this is a collocation, not a synonym." },
+    "pauzeren|pauze": { zh: "pauzeren 是暂停这个动作，pauze 是暂停/休息这段时间。", en: "Pauzeren is the action to pause; pauze is the break itself." },
+    "doorgaan|stoppen": { zh: "doorgaan 是继续，stoppen 是停止；两者是动作对照。", en: "Doorgaan means continue; stoppen means stop. They contrast as actions." },
+    "besluit|beslissen": { zh: "beslissen 是作出决定，besluit 是作出的决定（名词）。", en: "Beslissen is to make a decision; besluit is the decision (noun)." },
+    "onduidelijk|uitleggen": { zh: "内容不清楚（onduidelijk）时，可以请人 uitleggen（解释）。", en: "When something is onduidelijk (unclear), you can ask someone to uitleggen (explain) it." },
+    "verkeerde maat|ruilen": { zh: "买到 verkeerde maat（尺码不合）时，常要 ruilen（换货）。", en: "If you get the verkeerde maat (wrong size), you may need to ruilen (exchange it)." },
+    "verkeerde maat|terugbrengen": { zh: "尺码不合时，可以把商品 terugbrengen（拿回店里退换）。", en: "If the size is wrong, you can terugbrengen (take the item back to the shop)." },
+    "kraan lekt|waterleiding": { zh: "水龙头（kraan）漏水可能与 waterleiding（水管）有关。", en: "A leaking kraan (tap) may involve the waterleiding (water pipe)." },
+    "kraan lekt|monteur": { zh: "kraan lekt（龙头漏水）时，可能需要请 monteur（维修工）处理。", en: "If the tap leaks, you may need a monteur (technician) to fix it." },
+    "te laat|vertraging": { zh: "交通 vertraging（延误）会让人 te laat（迟到）。", en: "A transport vertraging (delay) can make someone te laat (late)." },
+    "oude adres|verhuizen": { zh: "verhuizen（搬家）时，需要区分旧地址和新地址。", en: "When you verhuizen (move), you need to distinguish your old and new addresses." },
+    "all-in huur|servicekosten": { zh: "all-in huur 通常把 servicekosten 等费用包含在总租金里。", en: "All-in huur usually includes servicekosten (service charges) in the total rent." },
+    "kale huur|servicekosten": { zh: "kale huur 是不含 servicekosten 等附加费用的基础租金。", en: "Kale huur is the base rent before servicekosten and other additional charges." },
+    "vriendelijke groet|e-mail": { zh: "vriendelijke groet 是 e-mail 或正式信件末尾的常见结尾语。", en: "Vriendelijke groet is a common closing at the end of an email or formal letter." },
+    "uitgaven|budget": { zh: "uitgaven（支出）需要放进 budget（预算）里一起管理。", en: "Uitgaven (expenses) are tracked and managed within a budget." },
+    "uitgaven|bijhouden": { zh: "uitgaven bijhouden 是记录每月支出的常用搭配。", en: "Uitgaven bijhouden is a common collocation meaning to keep track of expenses." },
+    "beslissen|kiezen": { zh: "kiezen 是在选项中选择，beslissen 是作出决定；两者相关但不完全相同。", en: "Kiezen is selecting among options; beslissen is making a decision. They are related, not identical." },
+    "besluit|afwijzing": { zh: "行政 besluit（决定）可能是 afwijzing（拒绝），也可能是 goedkeuring（批准）。", en: "An administrative besluit (decision) may be an afwijzing (rejection) or a goedkeuring (approval)." },
+    "besluit|goedkeuring": { zh: "行政 besluit（决定）可能是 goedkeuring（批准），也可能是 afwijzing（拒绝）。", en: "An administrative besluit (decision) may be a goedkeuring (approval) or an afwijzing (rejection)." },
+    "vervangen|vervanger": { zh: "vervangen 是替换/代替，vervanger 是代替某人的人；是动词与名词的词族联系。", en: "Vervangen means to replace; a vervanger is a person who fills in. They are a verb/noun word-family link." },
+    "vergunning|aanvragen": { zh: "vergunning aanvragen 是申请许可证的常用办事搭配。", en: "Vergunning aanvragen is a common administrative collocation: apply for a permit." },
+    "medicijnen ophalen|apotheek": { zh: "处方药通常要到 apotheek（药房）去 ophalen（领取）。", en: "Prescription medicine is usually opgehaald (picked up) at an apotheek (pharmacy)." },
+    "werk hervatten|verzuim": { zh: "verzuim 是缺勤；缺勤后会讨论何时 werk hervatten（恢复工作）。", en: "Verzuim is absence from work; after an absence, people discuss when to werk hervatten (resume work)." },
+    "werk hervatten|herstel": { zh: "恢复工作（werk hervatten）通常与 herstel（康复/恢复）进度有关。", en: "Resuming work (werk hervatten) often depends on herstel (recovery)." },
+    "halte vervalt|omleiding": { zh: "某个 halte vervalt（站点停用）时，乘客可能需要 volgen 的 omleiding（绕行路线）。", en: "When a halte vervalt (is out of service), passengers may need an omleiding (diversion)." },
+    "halte vervalt|vertraging": { zh: "站点停用可能造成 vertraging（延误）或改乘。", en: "A stop being out of service can cause vertraging (delays) or require a change of route." },
+    "naam spellen|telefoonnummer": { zh: "打电话报 telefoonnummer 时，常需要把姓名拼读出来。", en: "When giving a telefoonnummer over the phone, you may need to spell your name." },
+    "slecht bereik|verbinding": { zh: "slecht bereik（信号差）会导致电话 verbinding（连接）不稳定。", en: "Slecht bereik (poor signal) can make a phoneverbinding (connection) unstable." },
+    "foto meesturen|bijlage": { zh: "邮件里 foto meesturen 时，照片通常作为 bijlage（附件）发送。", en: "When you send a photo along, it is usually included as a bijlage (attachment)." },
+    "vraag stellen|antwoord": { zh: "提出 vraag（问题）通常是为了得到 antwoord（回答）。", en: "A vraag (question) is asked to get an antwoord (answer)." },
+    "klacht indienen|bezwaar": { zh: "klacht indienen 是提交投诉；bezwaar 是对正式决定提出异议，相关但不是同义词。", en: "Klacht indienen means submit a complaint; bezwaar is a formal objection to a decision. They are related, not synonyms." },
+    "klacht indienen|formulier": { zh: "正式提交 klacht（投诉）时，可能需要填写 formulier（表格）。", en: "Submitting a formal klacht (complaint) may require a formulier (form)." },
+    "fout herstellen|oplossing": { zh: "发现 fout（错误）后，要找 oplossing（解决办法）并把它 herstellen（修复）。", en: "After finding a fout (error), find an oplossing (solution) and herstel (fix) it." },
+    "zonder afspraak|balie": { zh: "zonder afspraak（没有预约）到场时，通常要先询问 balie（柜台）。", en: "If you arrive zonder afspraak (without an appointment), you usually ask at the balie (service desk)." },
+    "beschikbare tijd|voorkeur": { zh: "选择预约时间时，先看 beschikbare tijd（可用时间），再说明 voorkeur（偏好）。", en: "When scheduling, check the beschikbare tijd (available time) and state your voorkeur (preference)." },
+    "online aanvragen|website": { zh: "很多手续可以通过 website（网站）online aanvragen（在线申请）。", en: "Many services can be applied for online via a website." },
+    "nummertje trekken|loket": { zh: "在服务大厅 nummertje trekken（取号）后，等叫号去 loket（窗口）。", en: "At a service hall, take a number and wait to be called to the loket (counter)." },
+    "nummertje trekken|wachten": { zh: "取号（nummertje trekken）后通常要 wachten（等待）。", en: "After taking a number (nummertje trekken), you usually wait (wachten)." },
+    "formulier ophalen|loket": { zh: "到 loket（窗口）可以询问或 ophalen（领取）formulier（表格）。", en: "At a loket (counter), you can ask for or pick up a formulier (form)." },
+    "formulier inleveren|balie": { zh: "填好的 formulier（表格）常在 balie（柜台）inleveren（提交）。", en: "A completed formulier (form) is often handed in at a balie (service desk)." },
+    "openstaande rekening|betalen": { zh: "openstaande rekening 是尚未支付的账单，需要 betalen（付款）。", en: "An openstaande rekening is an unpaid bill that still needs to be betaald (paid)." },
+    "openstaande rekening|bedrag": { zh: "账单会列出 openstaande rekening 尚欠的 bedrag（金额）。", en: "A bill lists the bedrag (amount) still owed on an openstaande rekening." },
+    "digitaal ondertekenen|document": { zh: "digitaal ondertekenen 就是在 document（文件）上进行电子签名。", en: "Digitaal ondertekenen means signing a document electronically." },
+    "digitaal ondertekenen|handtekening": { zh: "digitaal ondertekenen 是添加电子 handtekening（签名）。", en: "Digitaal ondertekenen means adding an electronic handtekening (signature)." },
+    "gebruikersnaam herstellen|account": { zh: "忘记 gebruikersnaam 时，通常要通过 account herstel流程找回账户。", en: "If you forget a gebruikersnaam, you use the account recovery process to regain access." },
+    "gebruikersnaam herstellen|wachtwoord": { zh: "恢复账户时，常常也需要重新设置 wachtwoord（密码）。", en: "Account recovery often also involves resetting the wachtwoord (password)." },
+    "wat kost het|prijs": { zh: "问 Wat kost het? 是在询问商品或服务的 prijs（价格）。", en: "Wat kost het? asks for the prijs (price) of a product or service." },
+    "wat kost het|bedrag": { zh: "Wat kost het? 是询问最后要付的 bedrag（金额）。", en: "Wat kost het? asks for the bedrag (amount) you will have to pay." },
+    "welke documenten|paspoort": { zh: "办理手续时，paspoort（护照）是常见的 documenten（文件）之一。", en: "A paspoort (passport) is one of the common documents requested for administrative tasks." },
+    "welke documenten|bewijs": { zh: "办理手续时，可能会被要求提供 bewijs（证明文件）。", en: "Administrative tasks may ask for a bewijs (supporting document/proof)." },
+    "hoe lang duurt het|termijn": { zh: "询问一项申请要多久，通常是在问处理 termijn（期限）。", en: "Asking how long an application takes is asking about its processing termijn (time period)." },
+    "hoe lang duurt het|wachten": { zh: "问 Hoe lang duurt het? 常是在确认需要等待（wachten）多久。", en: "Hoe lang duurt het? often asks how long you need to wait (wachten)." },
+  };
   return relationLexicons.scenarioRelations
     .filter(([from]) => normalizeWordText(from) === source)
-    .map(([_, target, type]) => candidate(analysis, target, type as MemoryBubbleRelationType, allWords, {
-      evidence: "lexicon",
-      source: "seed",
-      reasonZh: `${analysis.word.dutch} 和 ${target} 常在同一个生活任务里碰到，放在一起记更顺。`,
-      reasonEn: `${analysis.word.dutch} and ${target} often appear in the same real-life task, so learning them together helps.`,
-      strength: "strong",
-      confidence: "high",
-    }))
+    .map(([_, target, type]) => {
+      const reviewedReason = reviewedA2Reasons[`${source}|${normalizeWordText(target)}`];
+      return candidate(analysis, target, type as MemoryBubbleRelationType, allWords, {
+        evidence: reviewedReason ? "manual" : "lexicon",
+        source: reviewedReason ? "manual" : "seed",
+        reasonZh: reviewedReason?.zh ?? `${analysis.word.dutch} 和 ${target} 常在同一个生活任务里碰到，放在一起记更顺。`,
+        reasonEn: reviewedReason?.en ?? `${analysis.word.dutch} and ${target} often appear in the same real-life task, so learning them together helps.`,
+        strength: "strong",
+        confidence: "high",
+      });
+    })
     .filter(Boolean) as MemoryBubbleCandidate[];
 }
 
@@ -2041,7 +2227,12 @@ export function generateSynonymRelations(analysis: WordAnalysis, allWords: WordI
     relationLexicons.synonyms,
     "synonym",
     (target) => synonymSenseReason(analysis.word.dutch, target),
-  );
+  ).filter((candidate) => !relationLexicons.confusionPairs.some(([left, right]) => {
+    const source = normalizeWordText(analysis.word.dutch);
+    const target = normalizeWordText(candidate.targetText);
+    return (normalizeWordText(left) === source && normalizeWordText(right) === target) ||
+      (normalizeWordText(right) === source && normalizeWordText(left) === target);
+  }));
 }
 
 export function generateEnglishBridgeRelations(analysis: WordAnalysis, allWords: WordItem[]) {
@@ -2064,8 +2255,6 @@ export function generateAllRuleCandidates(analysis: WordAnalysis, allWords: Word
     ...generateDeclaredMemoryLinkRelations(analysis, allWords),
     ...generateWordFormationRelations(analysis, allWords),
     ...generateCompoundRelations(analysis, allWords),
-    ...generateZijnFormRelations(analysis, allWords),
-    ...generateVerbFormRelations(analysis, allWords),
     ...generatePronounFamilyRelations(analysis, allWords),
     ...generateVerbNounPairRelations(analysis, allWords),
     ...generateDerivationRelations(analysis, allWords),
@@ -2095,8 +2284,9 @@ export function generateAllRuleCandidates(analysis: WordAnalysis, allWords: Word
 
 function screenBubbleCandidates(analysis: WordAnalysis, candidates: MemoryBubbleCandidate[]) {
   return candidates
-    .filter((candidate) => candidate.relationType !== "verb-form" || isUsefulVerbFormCandidate(analysis, candidate))
-    .filter((candidate) => candidate.relationType === "verb-form" || !isPureVerbFormCandidate(analysis, candidate));
+    .filter((candidate) => candidate.relationType !== "verb-form")
+    .filter((candidate) => candidate.relationType !== "english-bridge")
+    .filter((candidate) => !isPureVerbFormCandidate(analysis, candidate));
 }
 
 function isUsefulVerbFormCandidate(analysis: WordAnalysis, candidate: MemoryBubbleCandidate) {

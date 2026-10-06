@@ -1,12 +1,12 @@
 import type { MemoryBubbleCandidate, MemoryBubbleRelationType, ScoredMemoryBubbleCandidate } from "@/lib/memoryBubbleEngine";
 import { normalizeWordText } from "@/lib/wordAnalysis";
+import { relationLexicons } from "@/data/relationLexicons";
 
 const relationPriority: MemoryBubbleRelationType[] = [
   "compound-part",
   "compound-family",
   "part-related",
   "pronoun-family",
-  "verb-form",
   "verb-noun-pair",
   "word-family",
   "synonym",
@@ -21,7 +21,6 @@ const relationPriority: MemoryBubbleRelationType[] = [
   "state-action",
   "scenario-word",
   "compound-parent",
-  "english-bridge",
 ];
 
 const evidenceScore: Record<MemoryBubbleCandidate["evidence"], number> = {
@@ -87,7 +86,6 @@ const highSignalRelationTypes = new Set<MemoryBubbleRelationType>([
   "compound-family",
   "part-related",
   "pronoun-family",
-  "verb-form",
   "verb-noun-pair",
   "word-family",
   "synonym",
@@ -103,6 +101,46 @@ const looseUsageRelationTypes = new Set<MemoryBubbleRelationType>([
   "state-action",
 ]);
 
+// Exact, reviewed A1/A2/B1 lexical links. These are intentionally narrow exceptions
+// to the general rule that loose scene/action links do not become learner bubbles.
+const curatedUsagePairs = new Set([
+  "invullen|formulier",
+  "invullen|adres",
+  "regelen|afspraak",
+  "besparen|geld",
+  "aanbieden|hulp",
+  "aanbieden|oplossing",
+  "regel|boete",
+  "regel|lezen",
+  "regel|uitleggen",
+]);
+
+function isReviewedActionObject(candidate: MemoryBubbleCandidate) {
+  if (!(candidate.sourceLevel === "A1" || candidate.sourceLevel === "A2" || candidate.sourceLevel === "B1") || candidate.relationType !== "action-object") return false;
+  const source = normalizeWordText(candidate.sourceText);
+  const target = normalizeWordText(candidate.targetText);
+  const direct = (relationLexicons.actionObjects[source] ?? []).some((word) => normalizeWordText(word) === target);
+  const reverse = (relationLexicons.actionObjects[target] ?? []).some((word) => normalizeWordText(word) === source);
+  return direct || reverse;
+}
+
+function isReviewedStateAction(candidate: MemoryBubbleCandidate) {
+  if (!(candidate.sourceLevel === "A1" || candidate.sourceLevel === "A2" || candidate.sourceLevel === "B1") || candidate.relationType !== "state-action") return false;
+  const source = normalizeWordText(candidate.sourceText);
+  const target = normalizeWordText(candidate.targetText);
+  const direct = (relationLexicons.stateActions[source] ?? []).some((word) => normalizeWordText(word) === target);
+  const reverse = (relationLexicons.stateActions[target] ?? []).some((word) => normalizeWordText(word) === source);
+  return direct || reverse;
+}
+
+function isApprovedLooseBubble(candidate: MemoryBubbleCandidate) {
+  const pair = `${normalizeWordText(candidate.sourceText)}|${normalizeWordText(candidate.targetText)}`;
+  return (candidate.source === "manual" && candidate.evidence === "manual") ||
+    curatedUsagePairs.has(pair) ||
+    isReviewedActionObject(candidate) ||
+    isReviewedStateAction(candidate);
+}
+
 function isHighSignalBubble(candidate: ScoredMemoryBubbleCandidate) {
   return highSignalRelationTypes.has(candidate.relationType);
 }
@@ -114,8 +152,9 @@ function isLooseUsageBubble(candidate: ScoredMemoryBubbleCandidate) {
 export function hardRejectMemoryBubble(candidate: MemoryBubbleCandidate) {
   const text = `${candidate.reasonZh} ${candidate.reasonEn}`;
   if (!candidate.reasonZh.trim()) return "missing-reason";
+  if (candidate.relationType === "verb-form") return "verb-form-hidden-from-bubbles";
   if (candidate.relationType === "english-bridge") return "english-bridge-hidden-from-bubbles";
-  if (looseUsageRelationTypes.has(candidate.relationType)) return "usage-path-hidden-from-bubbles";
+  if (looseUsageRelationTypes.has(candidate.relationType) && !isApprovedLooseBubble(candidate)) return "usage-path-hidden-from-bubbles";
   if (
     /真实用法|用法落点|第一生活画面|第一画面|生活画面|动作搭配|动作落到|自然短语|常见搭配|具体话里的位置|先看一句具体话|先看一段具体话|first life scene|real usage|usage anchor|action chunk|natural phrase|common chunk/i.test(text)
   ) {
@@ -171,7 +210,9 @@ export function filterLearnerBubbles(candidates: MemoryBubbleCandidate[], limit 
       const key = normalizeWordText(candidate.targetText);
       if (!key || normalizeWordText(candidate.sourceText) === key || seen.has(key)) return false;
       const relationCount = relationCounts.get(candidate.relationType) ?? 0;
-      if (isLooseUsageBubble(candidate) && looseUsageCount >= looseUsageLimit) return false;
+      const pairKey = `${normalizeWordText(candidate.sourceText)}|${key}`;
+      const isReviewedUsagePair = curatedUsagePairs.has(pairKey) || isReviewedActionObject(candidate) || isReviewedStateAction(candidate) || (candidate.source === "manual" && candidate.evidence === "manual");
+      if (isLooseUsageBubble(candidate) && looseUsageCount >= looseUsageLimit && !isReviewedUsagePair) return false;
       if (candidate.relationType === "scenario-word" && relationCount >= 3) return false;
       if (candidate.relationType === "category-member" && relationCount >= 6) return false;
       if (candidate.relationType === "time-category" && relationCount >= 3) return false;

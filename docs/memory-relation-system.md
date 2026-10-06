@@ -24,7 +24,6 @@
 - `category-member`: 同类别，比如 `minuut / uur / dag`
 - `scenario-neighbor`: 同场景词，比如 `huisarts / afspraak / ziek`
 - `confusion-pair`: 易混词，需要解释区别
-- `english-bridge`: 英文桥梁，比如 `trein ≈ train`
 - `article-family`: de/het 线索
 - `plural-family`: 复数规则相同
 
@@ -39,6 +38,8 @@
 - 没有中文和英文解释
 - 把语言名错误复数化，比如 `Engels -> Engelsen`
 - 把动词变位当作新单词硬连，比如 `kijken -> kijk`
+- 显示动词形式；动词变位只属于课程和语法工具
+- 显示英文桥梁；英文提示只属于记忆路径
 
 ## Generation Flow
 
@@ -54,7 +55,6 @@
    - scenario neighbors
    - confusion pairs
    - article/plural families
-   - English bridge
 4. 运行 quality check。
 5. 只把 `showToLearner=true` 且 `needsHumanReview=false` 的关系显示给前台。
 

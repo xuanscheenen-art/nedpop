@@ -2409,6 +2409,16 @@ function relatedWordAssociationsFor(selected: WordItem, words: WordItem[]): Word
       const focusedSharedTargets = sharedCategory ? focusedStrongCategoryTargets[sharedCategory]?.[sourceKey]?.map(normalizeDutch) ?? [] : [];
       if (
         sharedCategory &&
+        broadCategoryFallbackRelationIds.has(sharedCategory) &&
+        !focusedSharedTargets.length &&
+        !isVisibleWordPiece &&
+        !isPhraseChunkPart &&
+        !isGreetingPair
+      ) {
+        return [];
+      }
+      if (
+        sharedCategory &&
         focusedSharedTargets.length &&
         !focusedSharedTargets.includes(targetKey) &&
         !isVisibleWordPiece &&
@@ -2625,7 +2635,6 @@ const levelBridgeAssociationTypes = new Set<MemoryRelationType>([
   "compound-family",
   "part-related",
   "pronoun-family",
-  "verb-form",
   "verb-noun-pair",
   "word-family",
   "synonym",
@@ -2654,8 +2663,11 @@ function isGenericWordFamilyAssociation(association: WordAssociation) {
 
 function shouldSkipBubbleAssociation(association: WordAssociation) {
   if (association.type === "english-bridge") return true;
+  if (association.type === "verb-form") return true;
   if (association.type === "category-member") return true;
-  if (looseUsageAssociationTypes.has(association.type)) return true;
+  // Curated seed/manual usage links (e.g. formulier → invullen) are meaningful
+  // bubbles; hide only loose algorithmic scene/action guesses.
+  if (looseUsageAssociationTypes.has(association.type) && association.source !== "manual" && association.source !== "seed") return true;
   if (isGenericSameSceneAssociation(association)) return true;
   if (isGenericCategoryAssociation(association)) return true;
   if (isGenericWordFamilyAssociation(association)) return true;
@@ -2669,6 +2681,12 @@ function canBridgeLevelForBubble(association: WordAssociation) {
 
 function isPureVerbFormAssociation(selected: WordItem, association: WordAssociation) {
   if (association.type === "verb-noun-pair" || association.type === "confusion-pair") return false;
+  // Usage links are not conjugation links. An action can be a good cue for a
+  // noun such as uitgaven → bijhouden even when a surface-form stemmer is unsure.
+  if (association.type === "action-object" || association.type === "scenario-word" || association.type === "semantic-series") return false;
+  // A Dutch -ing derivative such as regeling/herhaling is a noun, not a verb
+  // inflection, even when the stemmer maps it back to the source verb.
+  if (association.type === "word-family" && normalizeDutch(association.dutch).endsWith("ing")) return false;
   const selectedInfinitive = infinitiveForWord(selected);
   if (!selectedInfinitive) return false;
   const selectedKey = normalizeDutch(selected.dutch);
@@ -2805,10 +2823,10 @@ export function memoryAssociationsFor(selected: WordItem, words: WordItem[], lim
   const visibleAssociations = [...highSignalAssociations, ...generated]
     .map((association) => normalizeAssociationForDisplay(selected, association))
     .filter((association) => association.type !== "english-bridge")
+    .filter((association) => association.type !== "verb-form")
     .filter((association) => !isNumberRelationText(selected.dutch) || !numberStructuralTypes.has(association.type) || isNumberRelationText(association.dutch))
     .filter((association) => !(suppressLooseGeneratedRelations && isLooseGeneratedAssociation(association)))
-    .filter((association) => association.type !== "verb-form" || isUsefulVerbFormAssociation(selected, association))
-    .filter((association) => association.type === "verb-form" || !isPureVerbFormAssociation(selected, association))
+    .filter((association) => !isPureVerbFormAssociation(selected, association))
     .filter((association) => canBridgeLevelForBubble(association) || !hiddenAdvancedTargets.has(normalizeDutch(association.dutch)));
   const preliminary = dedupeAssociations(visibleAssociations, limit);
   return preliminary;
