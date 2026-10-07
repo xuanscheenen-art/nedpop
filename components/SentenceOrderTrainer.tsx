@@ -21,6 +21,7 @@ type WordOrderRule = {
   whyEn: string;
   memoryZh: string;
   memoryEn: string;
+  examples?: Array<{ correct: string; wrong: string; whyZh: string; whyEn: string }>;
 };
 
 type PracticeQuestion = {
@@ -51,6 +52,14 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Dutch main clauses strongly protect position 2. Chinese can arrange who + when + action, but Dutch first locks the finite verb: Ik is position 1, ga must be position 2, then time and place follow.",
     memoryZh: "先找会变的动词，它要站第二。",
     memoryEn: "Find the changing verb first; it wants position 2.",
+    examples: [
+      { correct: "Vandaag hebben we een afspraak bij de huisarts.", wrong: "Vandaag we hebben een afspraak bij de huisarts.", whyZh: "Vandaag 占第一位，限定动词 hebben 必须第二位，因此 we 放在 hebben 后面。", whyEn: "Vandaag takes position 1, so the finite verb hebben must be second and we follows it." },
+      { correct: "Na het werk kookt mijn partner thuis.", wrong: "Na het werk mijn partner kookt thuis.", whyZh: "句首的时间短语占第一位，kookt 第二位，主语 mijn partner 随后。", whyEn: "The time phrase takes the first position, kookt is second, and the subject mijn partner follows." },
+      { correct: "In de pauze drinkt Sara koffie.", wrong: "In de pauze Sara drinkt koffie.", whyZh: "地点/时间短语 In de pauze 在句首时，限定动词 drinkt 仍要紧跟在第二位。", whyEn: "When In de pauze is at the beginning, the finite verb drinkt still follows in position 2." },
+      { correct: "Mijn buurman werkt vandaag in Leiden.", wrong: "Mijn buurman vandaag werkt in Leiden.", whyZh: "主语 Mijn buurman 在第一位，所以限定动词 werkt 要第二位，不能把时间 vandaag 插到它前面。", whyEn: "The subject Mijn buurman is first, so the finite verb werkt must be second; vandaag cannot come before it." },
+      { correct: "Op maandag begint de les om negen uur.", wrong: "Op maandag de les begint om negen uur.", whyZh: "Op maandag 是第一位置，begint 必须第二位；主语 de les 移到动词后。", whyEn: "Op maandag is in position 1, so begint must be second and the subject de les follows it." },
+      { correct: "Morgen is de winkel open.", wrong: "Morgen de winkel is open.", whyZh: "即使限定动词是 zijn 的变位 is，主句 V2 仍然适用：Morgen (1) + is (2)。", whyEn: "Main-clause V2 also applies when the finite verb is is: Morgen (1) + is (2)." },
+    ],
   },
   {
     id: "time-first",
@@ -68,6 +77,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Putting Morgen first emphasizes tomorrow. But Morgen has taken position 1, and ga still keeps position 2, so the subject ik moves after ga.",
     memoryZh: "时间先来，动词不退。",
     memoryEn: "Time can come first, but the verb does not move back.",
+    examples: [
+      { correct: "Vandaag werk ik thuis.", wrong: "Vandaag ik werk thuis.", whyZh: "Vandaag 在第一位，werk 第二位，主语 ik 随后。", whyEn: "Vandaag is first, werk is second, and the subject ik follows." },
+      { correct: "Vanavond belt Sara haar moeder.", wrong: "Vanavond Sara belt haar moeder.", whyZh: "句首时间 Vanavond 占第一位，所以限定动词 belt 要紧跟在第二位。", whyEn: "The time expression Vanavond takes the first position, so the finite verb belt follows in second." },
+      { correct: "Morgen komt de monteur.", wrong: "Morgen de monteur komt.", whyZh: "Morgen 是第一项，komt 第二，主语 de monteur 放在动词后。", whyEn: "Morgen is first, komt is second, and the subject de monteur follows the verb." },
+      { correct: "Na de les gaan we naar huis.", wrong: "Na de les we gaan naar huis.", whyZh: "句首时间短语 Na de les 后面，限定动词 gaan 必须先于主语 we。", whyEn: "After the fronted time phrase Na de les, the finite verb gaan must come before the subject we." },
+    ],
   },
   {
     id: "yes-no-question",
@@ -85,6 +100,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "A yes/no question has no question word, so Dutch moves the finite verb to the front. Also, when jij/je comes after the verb, the final t drops: ga jij, not gaat jij.",
     memoryZh: "问是不是，动词先出门。",
     memoryEn: "For yes/no questions, the verb walks out first.",
+    examples: [
+      { correct: "Werk je morgen?", wrong: "Je werkt morgen?", whyZh: "是/不是问句把限定动词 werk 放到句首；je 在后面时不加 t。", whyEn: "A yes/no question puts the finite verb werk first; it has no -t before je." },
+      { correct: "Hebben jullie een afspraak?", wrong: "Jullie hebben een afspraak?", whyZh: "问句中 hebben 移到主语 jullie 前面。", whyEn: "In the question, hebben moves before the subject jullie." },
+      { correct: "Komt u vandaag?", wrong: "U komt vandaag?", whyZh: "正式称呼 u 的问句也把动词放在主语前：Komt u...?", whyEn: "With formal u, the question also puts the verb before the subject: Komt u...?" },
+      { correct: "Woon je in Leiden?", wrong: "Woont je in Leiden?", whyZh: "jij/je 在动词后面时，动词词尾的 t 脱落：woon je。", whyEn: "When jij/je follows the verb, the verb's final -t drops: woon je." },
+    ],
   },
   {
     id: "question-word",
@@ -102,6 +123,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "The question word wanneer is position 1. Dutch still requires the verb in position 2, so it is Wanneer ga jij..., not a word-for-word order like Wanneer jij gaat.",
     memoryZh: "疑问词占第一，动词紧跟第二。",
     memoryEn: "The question word takes first place; the verb follows second.",
+    examples: [
+      { correct: "Waar werkt jouw broer?", wrong: "Waar jouw broer werkt?", whyZh: "疑问词 Waar 第一，限定动词 werkt 第二，主语随后。", whyEn: "The question word Waar is first, the finite verb werkt second, and the subject follows." },
+      { correct: "Wanneer begint de les?", wrong: "Wanneer de les begint?", whyZh: "Wanneer 占第一位，begint 必须第二位。", whyEn: "Wanneer takes the first position, so begint must be second." },
+      { correct: "Waarom belt u de huisarts?", wrong: "Waarom u belt de huisarts?", whyZh: "疑问词后面直接接限定动词 belt，再接主语 u。", whyEn: "The question word is followed by the finite verb belt and then the subject u." },
+      { correct: "Hoe laat vertrekt de trein?", wrong: "Hoe laat de trein vertrekt?", whyZh: "整个疑问短语 Hoe laat 在第一位，vertrekt 是第二位。", whyEn: "The whole question phrase Hoe laat is first; vertrekt is second." },
+    ],
   },
   {
     id: "time-place",
@@ -119,6 +146,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Dutch can move time and place around, but at A1 the safest order is when before where. It is easier to understand and prepares you for more complex variations later.",
     memoryZh: "先说什么时候，再说在哪里。",
     memoryEn: "Say when first, then where.",
+    examples: [
+      { correct: "Ik ga morgen naar de huisarts.", wrong: "Ik ga naar de huisarts morgen.", whyZh: "A1 常用顺序是主语、动词、时间、地点/方向。", whyEn: "A safe A1 order is subject, verb, time, then place or direction." },
+      { correct: "We eten vanavond thuis.", wrong: "We eten thuis vanavond.", whyZh: "基础中性语序通常把时间 vanavond 放在地点 thuis 前。", whyEn: "In the basic neutral order, time vanavond usually comes before place thuis." },
+      { correct: "Sara werkt vandaag op kantoor.", wrong: "Sara werkt op kantoor vandaag.", whyZh: "说明“何时”和“在哪里”时，先放 vandaag，再放 op kantoor。", whyEn: "When giving both when and where, put vandaag before op kantoor." },
+      { correct: "Ik studeer elke ochtend in de bibliotheek.", wrong: "Ik studeer in de bibliotheek elke ochtend.", whyZh: "频率/时间短语 elke ochtend 通常放在地点 in de bibliotheek 之前。", whyEn: "The time/frequency phrase elke ochtend usually comes before the place in de bibliotheek." },
+    ],
   },
   {
     id: "modal-end",
@@ -136,6 +169,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "The modal wil/moet/kan changes form, so it takes position 2. The real action maken no longer changes and moves to the end as an infinitive.",
     memoryZh: "想/能/必须先说，真正动作压到最后。",
     memoryEn: "Say want/can/must early; push the real action to the end.",
+    examples: [
+      { correct: "Ik moet vandaag boodschappen doen.", wrong: "Ik moet doen vandaag boodschappen.", whyZh: "情态动词 moet 在第二位，原形 doen 放句尾。", whyEn: "The modal moet is second; the infinitive doen goes at the end." },
+      { correct: "We kunnen morgen met de trein reizen.", wrong: "We kunnen reizen morgen met de trein.", whyZh: "kunnen 是变位动词；reizen 这个主要动作放在句末。", whyEn: "Kunnen is the finite verb; the main action reizen goes at the end." },
+      { correct: "Zij wil Nederlands leren.", wrong: "Zij wil leren Nederlands.", whyZh: "主要动词 leren 放在其宾语 Nederlands 后面，位于句尾。", whyEn: "The main verb leren follows its object Nederlands at the end of the clause." },
+      { correct: "U mag hier parkeren.", wrong: "U mag parkeren hier.", whyZh: "情态动词 mag 第二位，主要动词 parkeren 放到句尾。", whyEn: "The modal mag is second and the main verb parkeren goes to the end." },
+    ],
   },
   {
     id: "subordinate-because",
@@ -153,6 +192,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Omdat opens a subordinate clause. It is not a normal main clause, so V2 no longer applies. The verb ben is pushed to the end: omdat ik ziek ben.",
     memoryZh: "看到 omdat，动词往后站。",
     memoryEn: "When you see omdat, the verb steps back.",
+    examples: [
+      { correct: "Ik blijf thuis, omdat ik ziek ben.", wrong: "Ik blijf thuis, omdat ik ben ziek.", whyZh: "omdat 从句把变位动词 ben 放到从句末尾。", whyEn: "In the omdat clause, the finite verb ben goes to the end." },
+      { correct: "Hij neemt de bus, omdat zijn fiets kapot is.", wrong: "Hij neemt de bus, omdat zijn fiets is kapot.", whyZh: "从句主语后先放其他成分，变位动词 is 最后出现。", whyEn: "After the subordinate-clause subject, other information comes before the finite verb is." },
+      { correct: "We vertrekken vroeg, omdat de trein om acht uur vertrekt.", wrong: "We vertrekken vroeg, omdat de trein vertrekt om acht uur.", whyZh: "omdat 从句中，vertrekt 放在时间短语 om acht uur 后面。", whyEn: "In the omdat clause, vertrekt follows the time phrase om acht uur." },
+      { correct: "Ik bel later, omdat ik nu moet werken.", wrong: "Ik bel later, omdat ik moet nu werken.", whyZh: "有情态动词时，从句动词组放句尾：moet werken。", whyEn: "With a modal, the verb group goes to the end of the subordinate clause: moet werken." },
+    ],
   },
   {
     id: "separable",
@@ -170,6 +215,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "A separable verb works like a verb with a small tail. In the main clause, the changing part bel takes position 2, and the prefix op goes to the end.",
     memoryZh: "可分动词的小尾巴，常常跑到最后。",
     memoryEn: "The small separable prefix often runs to the end.",
+    examples: [
+      { correct: "Ik bel mijn moeder vanavond op.", wrong: "Ik opbel mijn moeder vanavond.", whyZh: "opbellen 在主句拆开：变位部分 bel 第二位，op 放句尾。", whyEn: "In a main clause, opbellen splits: bel is finite and op goes to the end." },
+      { correct: "Hij staat om zeven uur op.", wrong: "Hij opstaat om zeven uur.", whyZh: "opstaan 拆成 staat ... op，前缀 op 放到句尾。", whyEn: "Opstaan splits into staat ... op, with the prefix op at the end." },
+      { correct: "We ruimen na het eten de tafel af.", wrong: "We afruimen na het eten de tafel.", whyZh: "afruimen 的变位部分 ruimen 留在主句位置，af 后置。", whyEn: "The finite part ruimen stays in the main clause; af is separated to the end." },
+      { correct: "Ik doe mijn jas aan.", wrong: "Ik aandoe mijn jas.", whyZh: "aandoen 在主句中拆成 doe ... aan，不能把前缀 aan 留在动词前。", whyEn: "In a main clause, aandoen splits into doe ... aan; the prefix aan cannot stay before the verb." },
+    ],
   },
   {
     id: "niet-place",
@@ -187,6 +238,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Chinese often puts 'not' before the verb, but Dutch niet is not placed that way. At A1, learn common chunks: after place/time information, e.g. Ik woon hier niet.",
     memoryZh: "不是中文“不”直接放动词前。",
     memoryEn: "Dutch niet is not placed like Chinese bu before the verb.",
+    examples: [
+      { correct: "Ik begrijp de vraag niet.", wrong: "Ik niet begrijp de vraag.", whyZh: "否定整句时，niet 通常放在宾语等信息之后。", whyEn: "To negate the whole sentence, niet usually follows the object and other information." },
+      { correct: "Zij werkt vandaag niet.", wrong: "Zij niet werkt vandaag.", whyZh: "时间信息之后常放 niet：werkt vandaag niet。", whyEn: "Niet often follows the time phrase: werkt vandaag niet." },
+      { correct: "Hij is niet thuis.", wrong: "Hij niet is thuis.", whyZh: "在系动词 zijn 后、被否定的地点/状态前用 niet。", whyEn: "After zijn, use niet before the negated place or state." },
+      { correct: "Ik drink geen koffie.", wrong: "Ik drink niet koffie.", whyZh: "否定不定冠词名词时通常用 geen，而不是 niet。", whyEn: "To negate an indefinite noun phrase, use geen rather than niet." },
+    ],
   },
   {
     id: "toen-past",
@@ -204,6 +261,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Toen is not just a loose time word. It opens a past-time subordinate clause, so thuiskwam closes that clause. Because the subordinate clause comes first, the main clause starts with had.",
     memoryZh: "toen = 过去那一刻；从句动词收尾。",
     memoryEn: "toen = that past moment; close the clause with the verb.",
+    examples: [
+      { correct: "Toen ik thuiskwam, kookte mijn partner.", wrong: "Toen ik kwam thuis, kookte mijn partner.", whyZh: "toen 引导过去从句，thuiskwam 收在从句末尾。", whyEn: "Toen introduces a past subordinate clause; thuiskwam closes it." },
+      { correct: "Toen de les begon, zat iedereen klaar.", wrong: "Toen de les begon, iedereen zat klaar.", whyZh: "从句放句首后，主句仍然 V2：zat 紧跟在逗号后。", whyEn: "After a fronted subordinate clause, the main clause still uses V2: zat follows the comma." },
+      { correct: "Toen ik jong was, woonde ik in Delft.", wrong: "Toen ik was jong, woonde ik in Delft.", whyZh: "toen 从句的变位动词 was 放在从句末尾。", whyEn: "The finite verb was goes to the end of the toen clause." },
+      { correct: "Ik was opgelucht toen ik het bericht kreeg.", wrong: "Ik was opgelucht toen ik kreeg het bericht.", whyZh: "toen 从句即使放在句尾，动词 kreeg 仍然后置。", whyEn: "Even when the toen clause comes last, its verb kreeg remains at the end." },
+    ],
   },
   {
     id: "toen-als-wanneer",
@@ -221,6 +284,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "This refers to one specific past life period, not if I was little or whenever I was little. Use toen. Als is more conditional/repeated; wanneer asks when.",
     memoryZh: "过去那时用 toen；如果/每当用 als。",
     memoryEn: "Use toen for that past time; als for if/whenever.",
+    examples: [
+      { correct: "Toen ik klein was, woonde ik in Utrecht.", wrong: "Als ik klein was, woonde ik in Utrecht.", whyZh: "这里指过去的具体时期，用 toen，不是条件 als。", whyEn: "This refers to a specific past period, so use toen, not conditional als." },
+      { correct: "Als het regent, neem ik de bus.", wrong: "Toen het regent, neem ik de bus.", whyZh: "这是一般条件“如果下雨”，用 als；不是过去某时。", whyEn: "This is a general condition, “if it rains,” so use als, not past-time toen." },
+      { correct: "Wanneer vertrekt de volgende trein?", wrong: "Als vertrekt de volgende trein?", whyZh: "直接询问时间用 wanneer。", whyEn: "Use wanneer to ask directly about time." },
+      { correct: "Toen we aankwamen, was het museum al dicht.", wrong: "Wanneer we aankwamen, was het museum al dicht.", whyZh: "描述一次过去到达时，用 toen；wanneer 不表示这里的一次过去事件。", whyEn: "For one past arrival, use toen; wanneer does not express this single past event here." },
+    ],
   },
   {
     id: "while-sequence",
@@ -238,6 +307,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "At B1, emails and narratives often need sequence. Nadat opens the subordinate clause, had gelezen closes it as the verb group; the main clause keeps V2 with belde.",
     memoryZh: "先后同时看连接词；从句动词往后收。",
     memoryEn: "Use the connector for timing; push subordinate verbs back.",
+    examples: [
+      { correct: "Terwijl ik kookte, luisterde ik naar de radio.", wrong: "Terwijl ik kookte, ik luisterde naar de radio.", whyZh: "terwijl 从句放句首后，主句仍按 V2：luisterde ik。", whyEn: "After a fronted terwijl clause, the main clause still uses V2: luisterde ik." },
+      { correct: "Nadat we hadden gegeten, gingen we wandelen.", wrong: "Nadat we hadden gegeten, we gingen wandelen.", whyZh: "nadat 从句结束后，主句动词 gingen 先于主语 we。", whyEn: "After the nadat clause, the main-clause verb gingen comes before subject we." },
+      { correct: "Ik controleer de deur voordat ik vertrek.", wrong: "Ik controleer de deur voordat vertrek ik.", whyZh: "voordat 从句保持主语在前、动词后置：voordat ik vertrek。", whyEn: "The voordat clause keeps the subject before the verb at the end: voordat ik vertrek." },
+      { correct: "Nadat de vergadering was afgelopen, belde ik mijn collega.", wrong: "Nadat de vergadering was afgelopen, ik belde mijn collega.", whyZh: "前置从句后主句继续 V2：变位动词 belde 在主语 ik 前。", whyEn: "After a fronted subordinate clause, the main clause keeps V2: belde comes before ik." },
+    ],
   },
   {
     id: "cause-result-b1",
@@ -255,6 +330,12 @@ const wordOrderRules: WordOrderRule[] = [
     whyEn: "Daardoor is a result adverb, not a subordinating conjunction like omdat. When it takes position 1, the main clause still uses V2: kwam is second, ik follows.",
     memoryZh: "doordat 推动词；daardoor 还守 V2。",
     memoryEn: "doordat pushes verbs back; daardoor keeps V2.",
+    examples: [
+      { correct: "Doordat de bus te laat was, miste ik de afspraak.", wrong: "Doordat de bus was te laat, miste ik de afspraak.", whyZh: "doordat 引导原因从句，was 放在从句末尾。", whyEn: "Doordat introduces a cause clause; was goes to the end." },
+      { correct: "Het regende hard. Daardoor bleef ik thuis.", wrong: "Het regende hard. Daardoor ik bleef thuis.", whyZh: "daardoor 引导主句时仍用 V2：bleef 第二位，ik 在后。", whyEn: "A main clause starting with daardoor still uses V2: bleef is second and ik follows." },
+      { correct: "Doordat ik mijn trein miste, kwam ik te laat.", wrong: "Doordat ik miste mijn trein, kwam ik te laat.", whyZh: "原因从句里，miste 放在从句其他信息之后。", whyEn: "In the cause clause, miste follows the other clause information." },
+      { correct: "De website werkte niet. Daardoor kon ik niet inloggen.", wrong: "De website werkte niet. Daardoor ik kon niet inloggen.", whyZh: "daardoor 在主句第一位时，变位动词 kon 紧跟其后。", whyEn: "When daardoor is first in a main clause, the finite verb kon follows immediately." },
+    ],
   },
 ];
 
@@ -522,6 +603,27 @@ function RuleCard({ rule }: { rule: WordOrderRule }) {
           <p className="mt-2 text-xl font-black text-red-800">{rule.wrong}</p>
         </div>
       </div>
+
+      {rule.examples?.length ? (
+        <div className="mt-5 rounded-[24px] border border-blue-100 bg-white p-4 sm:p-5">
+          <h4 className="text-xl font-black text-ink">{language === "zh" ? "更多例句：找出第二位的动词" : "More examples: find the verb in position 2"}</h4>
+          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            {rule.examples.map((example) => (
+              <article key={example.correct} className="grid gap-2 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-mint p-3">
+                  <p className="text-xs font-black text-ocean">✓ {language === "zh" ? "正确" : "Correct"}</p>
+                  <p className="mt-1 font-black leading-6 text-ink">{example.correct}</p>
+                </div>
+                <div className="rounded-xl bg-red-50 p-3">
+                  <p className="text-xs font-black text-red-700">× {language === "zh" ? "错误" : "Incorrect"}</p>
+                  <p className="mt-1 font-black leading-6 text-red-800">{example.wrong}</p>
+                </div>
+                <p className="text-sm font-bold leading-6 text-ocean/75 sm:col-span-2">{language === "zh" ? example.whyZh : example.whyEn}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_0.8fr]">
         <p className="rounded-2xl bg-slate-50 p-4 font-bold leading-7 text-ocean">{language === "zh" ? rule.whyZh : rule.whyEn}</p>

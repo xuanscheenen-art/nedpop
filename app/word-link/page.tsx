@@ -1262,6 +1262,15 @@ function WordLinkContent() {
       setUpgradeLevel(pack.level);
       return;
     }
+    // Keep the URL in sync with the visible pack. Otherwise a stale `day`
+    // query (for example day=9) can be reapplied by the access/content effect
+    // and unexpectedly pull the learner back to an earlier day.
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("level", pack.level);
+    nextUrl.searchParams.set("day", String(pack.dayNumber));
+    nextUrl.searchParams.delete("word");
+    window.history.replaceState(window.history.state, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    setQueryParams((current) => ({ ...current, level: pack.level, day: String(pack.dayNumber), word: null }));
     setActivePackId(pack.id);
     setSelectedId(packWordsFor(pack)[0]?.wordId ?? effectiveWords[0]?.id);
   };

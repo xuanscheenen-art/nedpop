@@ -19,6 +19,7 @@ const gt = (language: "zh" | "en", text: string) => (language === "zh" ? text : 
 
 const grammarEn: Record<string, string> = {
   "工作": "work",
+  "旅行 / 出行": "travel",
   "学习": "learn",
   "住": "live",
   "做": "make/do",
@@ -202,6 +203,32 @@ const grammarEn: Record<string, string> = {
   "火车比公交快。": "The train is faster than the bus.",
   "如果形容词比较长，尤其是复杂形容词，常用 meer + adjective：meer praktisch, meer geschikt。": "For longer or more formal adjectives, Dutch often uses meer + adjective: meer praktisch, meer geschikt.",
   "最高级：最……": "Superlative: the most / -st",
+  "小词：名词加后缀": "Diminutives: add a noun suffix",
+  "小词不只是“变小”：日常里也很常见。": "Diminutives are common, not only for small things.",
+  "后缀看词尾和发音：-je / -tje / -etje / -pje / -kje。": "Choose the ending by the word ending and sound: -je / -tje / -etje / -pje / -kje.",
+  "小词用 het；复数通常加 -s。": "Diminutives take het; their plurals usually add -s.",
+  "荷兰语的小词（verkleinwoorden）可以表示体积小或亲昵语气，但也常是日常物品的普通叫法，不一定真的“小”。小词不只是机械地加 -je：词尾和发音会决定形式。": "Dutch diminutives (verkleinwoorden) can express small size or affection, but they are also ordinary everyday words and do not always mean something is physically small. The ending depends on the noun's final sounds and spelling, not just on adding -je.",
+  "名词 → -je / -tje / -etje / -pje / -kje；小词一律用 het，复数通常加 -s": "noun → -je / -tje / -etje / -pje / -kje; diminutives always take het and usually form the plural with -s",
+  "这间小房子在公园旁边。": "The little house is next to the park.",
+  "我睡前读一本小书。": "I read a little book before bed.",
+  "小杯子放在小桌子上。": "The little cup is on the little table.",
+  "院子里有一棵小树。": "There is a little tree in the garden.",
+  "她戴着一枚小金戒指。": "She is wearing a little gold ring.",
+  "他们住在一间小房子里。": "They live in a small home.",
+  "常见形式包括 -je（boekje）、-tje（tafeltje）、-etje（ringetje）、-pje（boompje）、-kje（koninkje）。先把高频词连同形式一起记；拼写有时会变化，例如 boom → boompje。小词是 het 词：het huisje；复数通常是 huisjes。": "Common forms include -je (boekje), -tje (tafeltje), -etje (ringetje), -pje (boompje), and -kje (koninkje). Learn frequent forms as chunks; spelling can change, as in boom → boompje. Diminutives take het: het huisje; the plural is usually huisjes.",
+  "小词后缀怎么选：以 p/t/k/d/s/f 等辅音结尾常加 -je；长音或弱读 e 后接 n/l/r 等常见 -tje；短元音后接 m/n/ng/l 常见 -etje；m 前是长音或弱读 e 常用 -pje；重音在前、以 -ing 结尾的常见词用 -kje 并省 g（koning → koninkje）。这些是入门线索，不是涵盖所有词的万能公式。所有小词都用 het；复数通常加 -s：het huisje → de huisjes。": "Choosing a suffix: words ending in sounds such as p/t/k/d/s/f commonly take -je; -tje is common after a long vowel or schwa plus n/l/r; -etje often follows a short vowel plus m/n/ng/l; -pje is common after m preceded by a long vowel or schwa; frequent stressed -ing nouns take -kje and drop g ( koning → koninkje). These are beginner clues, not a formula for every noun. All diminutives take het; plurals usually add -s: het huisje → de huisjes.",
+  "所有小词都使用 het，即使原词是 de 词：de tafel → het tafeltje。": "All diminutives take het, even when the base noun is a de-word: de tafel → het tafeltje.",
+  "小词后缀会受发音和拼写影响；boom 的小词是 boompje。": "The diminutive ending depends on sound and spelling; the diminutive of boom is boompje.",
+  "先找正确词干和发音，再选择后缀：tafel → tafeltje。": "Check the word and its final sound before choosing the suffix: tafel → tafeltje.",
+  "小词复数通常加 -s，不要再额外加 -en。": "Diminutive plurals usually add -s; do not add -en as well.",
+  "一本小书：een ___": "A little book: een ___",
+  "这间小房子：___ huisje": "The little house: ___ huisje",
+  "一棵小树：een ___": "A little tree: een ___",
+  "几个小桌子：twee ___": "Two little tables: twee ___",
+  "boek 的小词是 boekje。": "The diminutive of boek is boekje.",
+  "小词一律用 het：het huisje。": "Diminutives always take het: het huisje.",
+  "boom → boompje，拼写中保留 p。": "boom → boompje; the p is part of the spelling.",
+  "tafeltje 的复数通常加 -s：tafeltjes。": "The plural of tafeltje usually adds -s: tafeltjes.",
   "从一组东西里选“最……”，荷兰语常用 het + 形容词 + st。": "To say something is the most in a group, Dutch often uses het + adjective + st.",
   "这家店最便宜。": "This shop is the cheapest.",
   "这套房子最大。": "This house is the biggest.",
@@ -309,8 +336,8 @@ const grammarConcepts: Record<ToolId, {
     learnerAction: lt("先问：后面是地点、方向、来源、时间、工具还是目的？再选介词。", "First ask: is the following phrase place, direction, source, time, tool, or purpose? Then choose the preposition."),
   },
   adjectives: {
-    label: lt("形容词与顺序表达是什么？", "What are adjectives and order expressions?"),
-    what: lt("荷兰语形容词会因为位置变化。放在名词前时，很多时候要加 -e：een groot huis，但 het grote huis。比较级表达“更……”，最高级表达“最……”，rangtelwoorden 表达“第几”。", "Dutch adjectives change depending on position. Before a noun, they often take -e: een groot huis, but het grote huis. Comparatives express more..., superlatives express the most..., and ordinals express first/second/etc."),
+    label: lt("形容词、顺序与小词是什么？", "What are adjectives, order, and diminutives?"),
+    what: lt("荷兰语形容词会因为位置变化；比较级表达“更……”，最高级表达“最……”，rangtelwoorden 表达“第几”。荷兰语还常把名词变成小词（verkleinwoorden），如 huis → huisje。", "Dutch adjectives change depending on position; comparatives express more..., superlatives the most..., and ordinals first/second/etc. Dutch also commonly forms diminutives, as in huis → huisje."),
     why: lt("中文形容词一般不变，但荷兰语要先看：形容词是不是站在名词前？前面是 de/het/een？名词是 de 词还是 het 词？", "Chinese adjectives usually do not change, but Dutch asks: is the adjective before a noun? Is it after de/het/een? Is the noun a de-word or het-word?"),
     formula: "adjective before noun → often + e · een + het-word singular → no e",
     examples: ["het huis is groot", "het grote huis", "een groot huis", "de grote kamer"],
@@ -333,6 +360,60 @@ const originalVerbExamples = [
   ["leren", "学习"],
   ["wonen", "住"],
   ["maken", "做"],
+  ["reizen", "旅行 / 出行"],
+];
+
+const presentVerbExamples = [
+  {
+    infinitive: "werken",
+    meaning: "工作",
+    meaningEn: "to work",
+    sentences: [
+      ["Ik werk vandaag in Delft.", "我今天在代尔夫特工作。", "I work in Delft today."],
+      ["Jij werkt vandaag in Delft.", "你今天在代尔夫特工作。", "You work in Delft today."],
+      ["Wij werken vandaag in Delft.", "我们今天在代尔夫特工作。", "We work in Delft today."],
+    ],
+  },
+  {
+    infinitive: "leren",
+    meaning: "学习",
+    meaningEn: "to learn",
+    sentences: [
+      ["Ik leer Nederlands.", "我学荷兰语。", "I learn Dutch."],
+      ["Jij leert Nederlands.", "你学荷兰语。", "You learn Dutch."],
+      ["Wij leren Nederlands.", "我们学荷兰语。", "We learn Dutch."],
+    ],
+  },
+  {
+    infinitive: "wonen",
+    meaning: "居住",
+    meaningEn: "to live",
+    sentences: [
+      ["Ik woon in Leiden.", "我住在莱顿。", "I live in Leiden."],
+      ["Jij woont in Leiden.", "你住在莱顿。", "You live in Leiden."],
+      ["Wij wonen in Leiden.", "我们住在莱顿。", "We live in Leiden."],
+    ],
+  },
+  {
+    infinitive: "maken",
+    meaning: "做 / 制作",
+    meaningEn: "to make / do",
+    sentences: [
+      ["Ik maak een afspraak.", "我预约。", "I make an appointment."],
+      ["Jij maakt een afspraak.", "你预约。", "You make an appointment."],
+      ["Wij maken een afspraak.", "我们预约。", "We make an appointment."],
+    ],
+  },
+  {
+    infinitive: "reizen",
+    meaning: "出行",
+    meaningEn: "to travel",
+    sentences: [
+      ["Ik reis met de trein.", "我坐火车出行。", "I travel by train."],
+      ["Jij reist met de trein.", "你坐火车出行。", "You travel by train."],
+      ["Wij reizen met de trein.", "我们坐火车出行。", "We travel by train."],
+    ],
+  },
 ];
 
 const subjectRuleCards = [
@@ -435,6 +516,22 @@ const comparisonRules = [
     note: "先记一个判断：形容词在名词后面不变；在名词前面多半加 -e。最常见例外是 een + het-word + 单数：een groot huis, een klein boek。",
   },
   {
+    id: "diminutive",
+    title: "小词：名词加后缀",
+    badge: "A1/A2",
+    why: "荷兰语的小词（verkleinwoorden）可以表示体积小或亲昵语气，但也常是日常物品的普通叫法，不一定真的“小”。小词不只是机械地加 -je：词尾和发音会决定形式。",
+    rule: "名词 → -je / -tje / -etje / -pje / -kje；小词一律用 het，复数通常加 -s",
+    examples: [
+      ["huis", "huisje", "Het huisje staat naast het park.", "这间小房子在公园旁边。"],
+      ["boek", "boekje", "Ik lees een boekje voor het slapen.", "我睡前读一本小书。"],
+      ["tafel", "tafeltje", "Het kopje staat op het tafeltje.", "小杯子放在小桌子上。"],
+      ["boom", "boompje", "Er staat een boompje in de tuin.", "院子里有一棵小树。"],
+      ["ring", "ringetje", "Ze draagt een gouden ringetje.", "她戴着一枚小金戒指。"],
+      ["woning", "woninkje", "Ze wonen in een klein woninkje.", "他们住在一间小房子里。"],
+    ],
+    note: "小词后缀怎么选：以 p/t/k/d/s/f 等辅音结尾常加 -je；长音或弱读 e 后接 n/l/r 等常见 -tje；短元音后接 m/n/ng/l 常见 -etje；m 前是长音或弱读 e 常用 -pje；重音在前、以 -ing 结尾的常见词用 -kje 并省 g（koning → koninkje）。这些是入门线索，不是涵盖所有词的万能公式。所有小词都用 het；复数通常加 -s：het huisje → de huisjes。",
+  },
+  {
     id: "comparative",
     title: "比较级：更……",
     badge: "A1/A2",
@@ -481,6 +578,20 @@ const comparisonMistakes = [
   ["een verdieping", "de eerste verdieping", "说“第几层/第几个”要用序数词，不是普通数字。"],
   ["twee afspraak", "de tweede afspraak", "第二个预约要说 tweede afspraak。"],
   ["goedkoper als", "goedkoper dan", "比较时“比”一般用 dan。"],
+];
+
+const diminutiveMistakes = [
+  ["de huisje", "het huisje", "所有小词都使用 het，即使原词是 de 词：de tafel → het tafeltje。"],
+  ["boomje", "boompje", "小词后缀会受发音和拼写影响；boom 的小词是 boompje。"],
+  ["tafelje", "tafeltje", "tafel 以 l 结尾，常用 -tje：tafeltje。"],
+  ["huisjesen", "huisjes", "小词复数通常加 -s，不要再额外加 -en。"],
+];
+
+const diminutivePractice = [
+  { id: "d1", question: "一本小书：een ___", options: ["boekje", "boektje", "boeketje"], answer: "boekje", explanation: "boek 的小词是 boekje。" },
+  { id: "d2", question: "这间小房子：___ huisje", options: ["het", "de", "een de"], answer: "het", explanation: "小词一律用 het：het huisje。" },
+  { id: "d3", question: "一棵小树：een ___", options: ["boompje", "boomje", "boomtje"], answer: "boompje", explanation: "boom → boompje，拼写中保留 p。" },
+  { id: "d4", question: "几个小桌子：twee ___", options: ["tafeltjes", "tafeljeten", "tafelten"], answer: "tafeltjes", explanation: "tafeltje 的复数通常加 -s：tafeltjes。" },
 ];
 
 const adjectiveEMistakes = [
@@ -1128,7 +1239,7 @@ function PresentTenseModule({ language }: { language: "zh" | "en" }) {
         <p className="mt-4 text-lg font-bold leading-8 text-ocean/75">
           {language === "zh" ? "很多荷兰语动词原本的样子以 -en 结尾。" : "Many Dutch infinitives end in -en."}
         </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {originalVerbExamples.map(([dutch, zh]) => (
             <div key={dutch} className="rounded-2xl bg-white p-4">
               <div className="flex items-center justify-between gap-2">
@@ -1140,10 +1251,30 @@ function PresentTenseModule({ language }: { language: "zh" | "en" }) {
           ))}
         </div>
         <div className="mt-6 rounded-[24px] bg-white p-5">
-          <p className="text-sm font-black tracking-[0.14em] text-pop">werken</p>
-          <p className="mt-2 text-lg font-bold text-ocean/70">{language === "zh" ? "放进句子后会变成：" : "Inside a sentence it becomes:"}</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {["ik werk", "jij werkt", "wij werken"].map((item) => <ExampleLine key={item} text={item} />)}
+          <h4 className="text-2xl font-black text-ink">{language === "zh" ? "放进句子后会变成：看主语变化" : "Inside a sentence: see how the subject changes the verb"}</h4>
+          <p className="mt-2 font-bold leading-7 text-ocean/70">
+            {language === "zh" ? "下面用完整句子对照：ik 后通常去掉 -en；jij 后通常加 -t；wij 用动词原形。注意词干拼写也可能变化，例如 reizen → reis。" : "Compare full sentences: ik usually removes -en; jij usually adds -t; wij uses the infinitive. Stem spelling can also change, as in reizen → reis."}
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {presentVerbExamples.map((example) => (
+              <article key={example.infinitive} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-blue-100">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <p className="text-xl font-black text-pop">{example.infinitive}</p>
+                  <p className="text-sm font-bold text-ocean/60">{language === "zh" ? example.meaning : example.meaningEn}</p>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {example.sentences.map(([dutch, zh, en]) => (
+                    <div key={dutch} className="flex flex-col gap-1 rounded-xl bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-black text-ink">{dutch}</p>
+                        <p className="text-sm font-bold text-ocean/65">{language === "zh" ? zh : en}</p>
+                      </div>
+                      <AudioButton text={dutch} />
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
         </div>
         <p className="mt-4 rounded-2xl bg-peach p-4 text-sm font-black leading-6 text-ink">
@@ -1424,8 +1555,9 @@ function ComparisonOrdinalModule({ language }: { language: "zh" | "en" }) {
   const currentRule = comparisonRules.find((rule) => rule.id === activeRule) ?? comparisonRules[0];
   const isOrdinalRule = currentRule.id === "ordinal";
   const isAdjectiveERule = currentRule.id === "adjective-e";
-  const activeMistakes = isAdjectiveERule ? adjectiveEMistakes : comparisonMistakes;
-  const activePractice = isAdjectiveERule ? adjectiveEPractice : comparisonPractice;
+  const isDiminutiveRule = currentRule.id === "diminutive";
+  const activeMistakes = isAdjectiveERule ? adjectiveEMistakes : isDiminutiveRule ? diminutiveMistakes : comparisonMistakes;
+  const activePractice = isAdjectiveERule ? adjectiveEPractice : isDiminutiveRule ? diminutivePractice : comparisonPractice;
 
   useEffect(() => {
     setActiveDetailPart("rule");
@@ -1780,6 +1912,12 @@ function ComparisonOrdinalModule({ language }: { language: "zh" | "en" }) {
                       {language === "zh" ? "名词后：不加 e" : "After the noun: no e"}<br />
                       {language === "zh" ? "名词前：多半 + e" : "Before the noun: usually + e"}<br />
                       {language === "zh" ? "een + het 词单数：不加 e" : "een + singular het-word: no e"}
+                    </>
+                  ) : isDiminutiveRule ? (
+                    <>
+                      {language === "zh" ? "小词不只是“变小”：日常里也很常见。" : "Diminutives are common, not only for small things."}<br />
+                      {language === "zh" ? "后缀看词尾和发音：-je / -tje / -etje / -pje / -kje。" : "Choose the ending by sound: -je / -tje / -etje / -pje / -kje."}<br />
+                      {language === "zh" ? "小词用 het；复数通常加 -s。" : "Diminutives take het; plurals usually add -s."}
                     </>
                   ) : (
                     <>
