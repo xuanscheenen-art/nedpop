@@ -26,6 +26,11 @@ async function grantEntitlementForSession(session: Stripe.Checkout.Session) {
   const planLevels = paidPlanConfig[planId].unlockedLevels;
   const metadataLevels = parseMetadataUnlockedLevels(session.metadata?.unlocked_levels);
   const nextLevels = metadataLevels.length ? metadataLevels : planLevels;
+  const affiliateCode = session.custom_fields
+    ?.find((field) => field.key === "affiliate_code")
+    ?.text?.value
+    ?.trim()
+    .toUpperCase() || null;
 
   const { data: currentUser, error: readError } = await supabase
     .from("users")
@@ -65,6 +70,7 @@ async function grantEntitlementForSession(session: Stripe.Checkout.Session) {
       amount_total: session.amount_total,
       currency: session.currency,
       payment_status: session.payment_status,
+      affiliate_code: affiliateCode,
     },
     { onConflict: "stripe_checkout_session_id" },
   );
@@ -73,6 +79,89 @@ async function grantEntitlementForSession(session: Stripe.Checkout.Session) {
     return { ok: false as const, message: "Could not record purchase." };
   }
 
+  if (affiliateCode && session.payment_status === "paid") {
+    const { data: affiliate, error: affiliateError } = await supabase
+      .from("affiliate_codes")
+      .select("id, code, affiliate_name")
+      .eq("code", affiliateCode)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (affiliateError) {
+      return { ok: false as const, message: "Could not verify affiliate code." };
+    }
+
+    if (affiliate) {
+      const { data: previousPurchase, error: previousError } = await supabase
+        .from("user_purchases")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("payment_status", "paid")
+        .neq("stripe_checkout_session_id", session.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (previousError) {
+        return { ok: false as const, message: "Could not verify first purchase." };
+      }
+
+      if (!previousPurchase) {
+        const { error: commissionError } = await supabase.from("affiliate_orders").insert({
+          affiliate_code_id: affiliate.id,
+          affiliate_code: affiliateCode,
+          affiliate_name: affiliate.affiliate_name,
+          user_id: userId,
+          plan_id: planId,
+          stripe_checkout_session_id: session.id,
+          stripe_payment_intent_id: stripeId(session.payment_intent),
+          purchase_amount_minor: session.amount_total ?? 0,
+          purchase_currency: session.currency ?? "eur",
+          payment_status: session.payment_status,
+          commission_amount_minor: planId === "a1-pack" ? 300 : 500,
+          commission_currency: "eur",
+          commission_status: "pending",
+        });
+
+        // Replayed webhooks and concurrent first checkouts must never create a second commission.
+        if (commissionError && commissionError.code !== "23505") {
+          return { ok: false as const, message: "Could not record affiliate commission." };
+        }
+      }
+    }
+  }
+
+  return { ok: true as const };
+}
+
+async function recordRefund(charge: Stripe.Charge) {
+  const paymentIntentId = stripeId(charge.payment_intent);
+  if (!paymentIntentId) return { ok: true as const };
+
+  const supabase = getSupabaseAdminClient();
+  const fullyRefunded = charge.amount_refunded >= charge.amount;
+  const paymentStatus = fullyRefunded ? "refunded" : "partially_refunded";
+  const { error: purchaseError } = await supabase
+    .from("user_purchases")
+    .update({ payment_status: paymentStatus })
+    .eq("stripe_payment_intent_id", paymentIntentId);
+
+  if (purchaseError) {
+    return { ok: false as const, message: "Could not update refunded purchase." };
+  }
+
+  const { error: affiliateError } = await supabase
+    .from("affiliate_orders")
+    .update({
+      payment_status: paymentStatus,
+      refunded_amount_minor: charge.amount_refunded,
+      commission_status: fullyRefunded ? "cancelled" : "review",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_payment_intent_id", paymentIntentId);
+
+  if (affiliateError) {
+    return { ok: false as const, message: "Could not update affiliate refund status." };
+  }
   return { ok: true as const };
 }
 
@@ -103,6 +192,13 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await grantEntitlementForSession(session);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.message }, { status: 500 });
+    }
+  }
+
+  if (event.type === "charge.refunded") {
+    const result = await recordRefund(event.data.object as Stripe.Charge);
     if (!result.ok) {
       return NextResponse.json({ error: result.message }, { status: 500 });
     }

@@ -53,6 +53,14 @@ export async function POST(request: NextRequest) {
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     allow_promotion_codes: true,
+    custom_fields: [
+      {
+        key: "affiliate_code",
+        label: { type: "custom", custom: "推广码（选填）" },
+        type: "text",
+        optional: true,
+      },
+    ],
     // Leave payment_method_types unset so Checkout uses Dashboard-managed dynamic payment methods.
     client_reference_id: userData.user.id,
     customer_email: userData.user.email ?? undefined,

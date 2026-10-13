@@ -24,8 +24,8 @@ export default function PrivacyPage() {
           <h2 className="text-2xl font-black text-ink">{language === "zh" ? "付款信息" : "Payment information"}</h2>
           <p className="mt-3">
             {language === "zh"
-              ? "付款由 Stripe 处理。NedPop 不保存完整银行卡号。购买成功后，我们只保存订单、套餐、付款状态和用于解锁课程的必要记录。"
-              : "Payments are processed by Stripe. NedPop does not store complete card numbers. After a successful purchase, we retain only the order, package, payment status, and records required to unlock your courses."}
+              ? "付款由 Stripe 处理。NedPop 不保存完整银行卡号。购买成功后，我们保存订单、套餐、付款状态和用于解锁课程的必要记录；如果你填写推广码，我们也会保存推广码及其订单归属信息，用于核对推广订单和佣金。"
+              : "Payments are processed by Stripe. NedPop does not store complete card numbers. After a successful purchase, we retain the order, package, payment status, and records required to unlock your courses. If you enter an affiliate code, we also retain the code and its order attribution to verify referrals and commissions."}
           </p>
         </section>
         <section>
