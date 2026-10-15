@@ -86,7 +86,7 @@ checkout.session.async_payment_succeeded
 
 Entitlements are granted only after Stripe reports the Checkout Session as paid.
 
-Optional affiliate referrals are captured as a Checkout custom field and do not change prices or replace Stripe promotion codes. After running `docs/supabase-user-entitlements.sql`, run `docs/stripe-affiliate-referrals.sql`; then grant `users.is_admin = true` only to trusted operator accounts. Referral records and commissions are created by the signed Stripe webhook, not by browser input. Use `docs/stripe-affiliate-test-checklist.md` to test the entire flow with isolated Stripe and Supabase Test Mode credentials before deploying.
+The optional affiliate referral is a Stripe Checkout custom field. Stripe retains the submitted value on the Checkout Session for manual lookup in the Stripe Dashboard; NedPop does not store it in Supabase or calculate commissions. The field does not change prices or replace Stripe promotion codes.
 
 Required Stripe environment variables:
 
